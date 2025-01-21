@@ -10,10 +10,12 @@ import 'package:servicehponline/pages/home.dart';
 import 'package:servicehponline/pages/request_service_flow.dart';
 import 'package:servicehponline/pages/service_history_page.dart';
 import 'package:servicehponline/utils/constants.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await dotenv.load(fileName: ".env");
   runApp(const MyApp());
 }
 

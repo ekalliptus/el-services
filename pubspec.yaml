@@ -29,6 +29,7 @@ dependencies:
   intl: ^0.18.1
   geolocator: ^10.1.0
   geocoding: ^2.1.1
+  flutter_dotenv: ^5.1.0
 
 dev_dependencies:
   flutter_test:
@@ -41,11 +42,9 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/svg/
-    - assets/svg/problems/
     - assets/svg/devices/
-    - assets/svg/payments/
     - assets/svg/login/
+    - .env
 
 flutter_launcher_icons:
   android: "launcher_icon"

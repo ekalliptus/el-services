@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:servicehponline/models/service_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ServiceApi {
-  static const String baseUrl =
-      'https://678cfca6f067bf9e24e8e2e2.mockapi.io/api/v1';
+  final String baseUrl = dotenv.env['BASE_URL'] ?? '';
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<ServiceModel> createService(ServiceModel service) async {
