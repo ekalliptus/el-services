@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "160368990030",
+    "project_id": "servicehponline-1",
+    "storage_bucket": "servicehponline-1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160368990030:android:9782b765b50d4cc9c3301f",
+        "android_client_info": {
+          "package_name": "com.servicehponline"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "160368990030-sh2m1li3akfiql4mfcved050rfp320e5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.servicehponline",
+            "certificate_hash": "c5e0483e2613ca6a49015718975733e5e06893b2"
+          }
+        },
+        {
+          "client_id": "160368990030-oetollquefqao2t27bbfqdehj9lqa2a8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTgwd-G6T1ZR-GIT5uS39RDUtOdepYUP4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "160368990030-oetollquefqao2t27bbfqdehj9lqa2a8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
