@@ -10,9 +10,10 @@ class ServiceModel {
   final String? video;
   final String? price;
   final String brand;
-  final String model;
   final String description;
   final String shippingMethod;
+  final double? latitude;
+  final double? longitude;
   final DateTime? createdAt;
 
   ServiceModel({
@@ -24,12 +25,13 @@ class ServiceModel {
     required this.device,
     required this.problem,
     required this.brand,
-    required this.model,
     required this.description,
     required this.shippingMethod,
     this.picture,
     this.video,
     this.price,
+    this.latitude,
+    this.longitude,
     this.createdAt,
   });
 
@@ -43,12 +45,17 @@ class ServiceModel {
       device: json['device'] ?? '',
       problem: json['problem'] ?? '',
       brand: json['brand'] ?? '',
-      model: json['model'] ?? '',
       description: json['description'] ?? '',
       shippingMethod: json['shippingMethod'] ?? 'pickup',
       picture: json['picture'],
       video: json['video'],
       price: json['price']?.toString() ?? '-',
+      latitude: json['latitude'] != null
+          ? double.parse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.parse(json['longitude'].toString())
+          : null,
       createdAt:
           json['createdAt'] != null ? DateTime.parse(json['createdAt']) : null,
     );
@@ -64,12 +71,13 @@ class ServiceModel {
       'device': device,
       'problem': problem,
       'brand': brand,
-      'model': model,
       'description': description,
       'shippingMethod': shippingMethod,
       'picture': picture,
       'video': video,
       'price': price,
+      'latitude': latitude?.toString(),
+      'longitude': longitude?.toString(),
       'createdAt': createdAt?.toIso8601String(),
     };
   }

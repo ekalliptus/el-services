@@ -1,81 +1,64 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:servicehponline/models/device_problems.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ServiceCard extends StatelessWidget {
   final Map<String, String> device;
   final String active;
-  final Function setActive;
-  final Function nextPage;
+  final Function(String) setActive;
+  final VoidCallback nextPage;
 
   const ServiceCard({
-    super.key,
+    Key? key,
     required this.device,
     required this.active,
     required this.setActive,
     required this.nextPage,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    bool isActive = active == device["key"];
+    final isActive = active == device['key'];
+    final screenWidth = MediaQuery.of(context).size.width;
+    final cardWidth = (screenWidth - (48 + 24)) / 3; // Menghitung lebar card
+
     return GestureDetector(
-      onTap: () {
-        setActive(device["key"]!);
-      },
-      child: AspectRatio(
-        aspectRatio: 1.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: isActive ? Colors.blue : Colors.grey[100],
-            borderRadius: BorderRadius.circular(16.0),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: Colors.blue.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    )
-                  ]
-                : [],
+      onTap: () => setActive(device['key']!),
+      child: Container(
+        width: cardWidth,
+        height: cardWidth * 1.2, // Tinggi card proporsional dengan lebar
+        decoration: BoxDecoration(
+          color: isActive ? Colors.blue : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive ? Colors.blue : Colors.grey[300]!,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                height: 86,
-                width: 86,
-                padding: EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color:
-                      isActive ? Colors.white.withOpacity(0.2) : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: SvgPicture.asset(
-                  device["icon"]!,
-                  colorFilter: isActive
-                      ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
-                      : null,
-                  fit: BoxFit.contain,
-                ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: cardWidth * 0.5, // Ukuran icon proporsional dengan card
+              height: cardWidth * 0.5,
+              padding: EdgeInsets.all(cardWidth * 0.1),
+              child: SvgPicture.asset(
+                device['icon']!,
               ),
-              SizedBox(height: 12),
-              Text(
-                DeviceProblems.getDeviceName(device["key"]!),
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14.0,
-                  color: isActive ? Colors.white : Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              )
-            ],
-          ),
+            ),
+            SizedBox(height: cardWidth * 0.1),
+            Text(
+              DeviceProblems.getDeviceName(device['key']!),
+              style: GoogleFonts.poppins(
+                color: isActive ? Colors.white : Colors.black87,
+                fontSize: cardWidth * 0.14, // Ukuran font proporsional
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

@@ -11,27 +11,32 @@ class ServiceApi {
   Future<ServiceModel> createService(ServiceModel service) async {
     try {
       // Pastikan service memiliki userId dari user yang sedang login
-      service = ServiceModel(
-        id: service.id,
-        fullname: service.fullname,
-        address: service.address,
-        device: service.device,
-        problem: service.problem,
-        picture: service.picture,
-        video: service.video,
-        price: service.price,
-        userId: _auth.currentUser?.uid ?? "",
-        whatsapp: service.whatsapp,
-        brand: service.brand,
-        model: service.model,
-        description: service.description,
-        shippingMethod: service.shippingMethod,
-      );
+      final serviceData = {
+        'id': service.id,
+        'userId': _auth.currentUser?.uid ?? "",
+        'fullname': service.fullname,
+        'whatsapp': service.whatsapp,
+        'address': service.address,
+        'device': service.device,
+        'problem': service.problem,
+        'brand': service.brand,
+        'description': service.description,
+        'shippingMethod': service.shippingMethod,
+        'picture': service.picture,
+        'video': service.video,
+        'price': service.price,
+      };
+
+      // Tambahkan koordinat jika metode pengiriman adalah Jemput
+      if (service.shippingMethod == 'Jemput') {
+        serviceData['latitude'] = service.latitude?.toString();
+        serviceData['longitude'] = service.longitude?.toString();
+      }
 
       final response = await http.post(
         Uri.parse('$baseUrl/service'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode(service.toJson()),
+        body: json.encode(serviceData),
       );
 
       if (response.statusCode == 201) {

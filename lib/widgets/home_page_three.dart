@@ -6,8 +6,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:servicehponline/models/service_model.dart';
 import 'package:servicehponline/models/m_android.dart';
 import 'package:servicehponline/models/m_iphone.dart';
+import 'package:servicehponline/models/m_huawei.dart';
+import 'package:servicehponline/models/m_brands.dart';
 import 'package:servicehponline/widgets/page_indicator.dart';
 import 'package:servicehponline/widgets/confirmation_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:servicehponline/widgets/mobile_map_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePageThree extends StatefulWidget {
   final String selectedDevice;
@@ -37,35 +42,29 @@ class _HomePageThreeState extends State<HomePageThree> {
   String? _videoPath;
   bool _isLoading = false;
   String _selectedShipping = 'Jemput';
+  Position? _currentPosition;
+  String? _selectedBrand;
 
-  String get _deviceName {
-    if (widget.selectedDevice == 'iphone') {
-      return IPhoneProblems.problems
-          .expand((list) => list)
-          .firstWhere(
-            (problem) => problem.key == widget.selectedProblem,
-            orElse: () => IPhoneProblem(
-              key: widget.selectedProblem,
-              name: 'Unknown',
-              info: '',
-              icon: Icons.error,
-            ),
-          )
-          .name;
-    } else {
-      return AndroidProblems.problems
-          .expand((list) => list)
-          .firstWhere(
-            (problem) => problem.key == widget.selectedProblem,
-            orElse: () => AndroidProblem(
-              key: widget.selectedProblem,
-              name: 'Unknown',
-              info: '',
-              icon: Icons.error,
-            ),
-          )
-          .name;
+  List<String> get _availableBrands {
+    switch (widget.selectedDevice) {
+      case 'iphone':
+        return BrandModels.iphoneBrands;
+      case 'huawei':
+        return BrandModels.huaweiBrands;
+      default:
+        return BrandModels.androidBrands;
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedBrand = widget.selectedDevice == 'iphone'
+        ? 'Apple'
+        : widget.selectedDevice == 'huawei'
+            ? 'Huawei'
+            : null;
+    _getCurrentLocation();
   }
 
   @override
@@ -77,6 +76,40 @@ class _HomePageThreeState extends State<HomePageThree> {
     _modelController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw 'Layanan lokasi tidak aktif';
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw 'Izin lokasi ditolak';
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        throw 'Izin lokasi ditolak permanen. Silakan aktifkan di pengaturan.';
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+
+      setState(() {
+        _currentPosition = position;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -161,12 +194,11 @@ class _HomePageThreeState extends State<HomePageThree> {
     );
   }
 
-  Future<void> _createService() async {
+  void _createService() {
     if (_nameController.text.isEmpty ||
         _whatsappController.text.isEmpty ||
         _addressController.text.isEmpty ||
-        _brandController.text.isEmpty ||
-        _modelController.text.isEmpty ||
+        _selectedBrand == null ||
         _descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Mohon lengkapi semua data')),
@@ -174,37 +206,256 @@ class _HomePageThreeState extends State<HomePageThree> {
       return;
     }
 
-    setState(() => _isLoading = true);
-
-    try {
-      final service = ServiceModel(
-        userId: '',
-        fullname: _nameController.text,
-        whatsapp: _whatsappController.text,
-        address: _addressController.text,
-        device: widget.selectedDevice,
-        problem: widget.selectedProblem,
-        brand: _brandController.text,
-        model: _modelController.text,
-        picture: _images.isNotEmpty ? _images.first : null,
-        video: _videoPath,
-        description: _descriptionController.text,
-        shippingMethod: _selectedShipping,
-      );
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ConfirmationPage(service: service),
-        ),
-      );
-    } catch (e) {
+    // Validasi lokasi untuk metode penjemputan
+    if (_selectedShipping == 'Jemput' && _currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal membuat service: $e')),
+        SnackBar(content: Text('Mohon pilih lokasi penjemputan')),
       );
-    } finally {
-      setState(() => _isLoading = false);
+      return;
     }
+
+    final service = ServiceModel(
+      userId: '',
+      fullname: _nameController.text,
+      whatsapp: _whatsappController.text,
+      address: _addressController.text,
+      device: widget.selectedDevice,
+      problem: widget.selectedProblem,
+      brand: _selectedBrand!,
+      picture: _images.isNotEmpty ? _images.first : null,
+      video: _videoPath,
+      description: _descriptionController.text,
+      shippingMethod: _selectedShipping,
+      latitude:
+          _selectedShipping == 'Jemput' ? _currentPosition?.latitude : null,
+      longitude:
+          _selectedShipping == 'Jemput' ? _currentPosition?.longitude : null,
+    );
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ConfirmationPage(service: service),
+      ),
+    );
+  }
+
+  Future<void> _openGoogleMaps() async {
+    // Koordinat Service Center
+    const lat = -6.151882179907883;
+    const lng = 106.92619538817382;
+    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka Google Maps')),
+        );
+      }
+    }
+  }
+
+  Widget _buildShippingSection() {
+    // Koordinat Service Center
+    final serviceCenterPosition = Position(
+      latitude: -6.151882179907883,
+      longitude: 106.92619538817382,
+      timestamp: DateTime.now(),
+      accuracy: 0,
+      altitude: 0,
+      altitudeAccuracy: 0,
+      heading: 0,
+      headingAccuracy: 0,
+      speed: 0,
+      speedAccuracy: 0,
+    );
+
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Pilih Jasa Pengiriman',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 18.0,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 16.0),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    setState(() => _selectedShipping = 'Jemput');
+                    if (_currentPosition == null) {
+                      await _getCurrentLocation();
+                    }
+                  },
+                  icon: Icon(Icons.directions_car),
+                  label: Text('Jemput'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedShipping == 'Jemput'
+                        ? Colors.blue
+                        : Colors.grey[300],
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 12.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 12.0),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _selectedShipping = 'Antar';
+                      _currentPosition = null;
+                    });
+                  },
+                  icon: Icon(Icons.local_shipping),
+                  label: Text('Antar'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _selectedShipping == 'Antar'
+                        ? Colors.blue
+                        : Colors.grey[300],
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 12.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_selectedShipping == 'Jemput') ...[
+            SizedBox(height: 16.0),
+            Text(
+              'Pilih Lokasi Penjemputan',
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 14.0,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8.0),
+            MapPicker(
+              initialPosition: _currentPosition,
+              onPositionChanged: (Position position) {
+                setState(() => _currentPosition = position);
+              },
+            ),
+            if (_currentPosition != null) ...[
+              SizedBox(height: 8.0),
+              Text(
+                'Koordinat: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 12.0,
+                ),
+              ),
+            ],
+          ],
+          if (_selectedShipping == 'Antar') ...[
+            SizedBox(height: 16.0),
+            Container(
+              padding: EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue,
+                    size: 24.0,
+                  ),
+                  SizedBox(width: 12.0),
+                  Expanded(
+                    child: Text(
+                      'Silakan antar perangkat Anda ke alamat service center kami',
+                      style: TextStyle(
+                        color: Colors.blue,
+                        fontSize: 14.0,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16.0),
+            Text(
+              'Lokasi Service Center',
+              style: TextStyle(
+                color: Colors.black87,
+                fontSize: 14.0,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            SizedBox(height: 8.0),
+            MapPicker(
+              initialPosition: serviceCenterPosition,
+              onPositionChanged: (_) {},
+              isInteractive: false,
+            ),
+            SizedBox(height: 8.0),
+            Row(
+              children: [
+                Icon(
+                  Icons.location_on,
+                  size: 16,
+                  color: Colors.red,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Jl. Manunggal Juang II No.40, RT./rw/RW.06, Sukapura, Kec. Cilincing, Jkt Utara, Daerah Khusus Ibukota Jakarta 14140',
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12.0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.0),
+            ElevatedButton.icon(
+              onPressed: _openGoogleMaps,
+              icon: Icon(Icons.directions),
+              label: Text('Buka di Google Maps'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 12.0,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 
   @override
@@ -358,7 +609,9 @@ class _HomePageThreeState extends State<HomePageThree> {
                               'Perangkat',
                               widget.selectedDevice == 'iphone'
                                   ? 'iPhone'
-                                  : 'Android',
+                                  : widget.selectedDevice == 'huawei'
+                                      ? 'Huawei'
+                                      : 'Android',
                             ),
                             SizedBox(height: 12.0),
                             _buildDetailItem(
@@ -366,8 +619,8 @@ class _HomePageThreeState extends State<HomePageThree> {
                               _deviceName,
                             ),
                             SizedBox(height: 12.0),
-                            TextField(
-                              controller: _brandController,
+                            DropdownButtonFormField<String>(
+                              value: _selectedBrand,
                               decoration: InputDecoration(
                                 labelText: 'Merk Perangkat/Ponsel',
                                 prefixIcon: Icon(Icons.phone_android),
@@ -384,26 +637,18 @@ class _HomePageThreeState extends State<HomePageThree> {
                                   borderSide: BorderSide(color: Colors.blue),
                                 ),
                               ),
-                            ),
-                            SizedBox(height: 12.0),
-                            TextField(
-                              controller: _modelController,
-                              decoration: InputDecoration(
-                                labelText: 'Tipe Perangkat/Ponsel',
-                                prefixIcon: Icon(Icons.phone_iphone),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: BorderSide(color: Colors.blue),
-                                ),
-                              ),
+                              items: _availableBrands.map((String brand) {
+                                return DropdownMenuItem<String>(
+                                  value: brand,
+                                  child: Text(brand),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedBrand = newValue;
+// Reset model when brand changes
+                                });
+                              },
                             ),
                           ],
                         ),
@@ -625,83 +870,7 @@ class _HomePageThreeState extends State<HomePageThree> {
                         ),
                       ),
                       SizedBox(height: 20.0),
-                      Container(
-                        padding: EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Pilih Jasa Pengiriman',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedShipping = 'Jemput';
-                                      });
-                                    },
-                                    icon: Icon(Icons.directions_car),
-                                    label: Text('Jemput'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          _selectedShipping == 'Jemput'
-                                              ? Colors.blue
-                                              : Colors.grey[300],
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 24.0,
-                                        vertical: 12.0,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 16.0),
-                                Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      setState(() {
-                                        _selectedShipping = 'Antar';
-                                      });
-                                    },
-                                    icon: Icon(Icons.local_shipping),
-                                    label: Text('Antar'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          _selectedShipping == 'Antar'
-                                              ? Colors.blue
-                                              : Colors.grey[300],
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 24.0,
-                                        vertical: 12.0,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildShippingSection(),
                       SizedBox(height: 20.0),
                       ElevatedButton(
                         onPressed: _isLoading ? null : _createService,
@@ -766,5 +935,48 @@ class _HomePageThreeState extends State<HomePageThree> {
         ),
       ],
     );
+  }
+
+  String get _deviceName {
+    if (widget.selectedDevice == 'iphone') {
+      return IPhoneProblems.problems
+          .expand((list) => list)
+          .firstWhere(
+            (problem) => problem.key == widget.selectedProblem,
+            orElse: () => IPhoneProblem(
+              key: widget.selectedProblem,
+              name: 'Unknown',
+              info: '',
+              icon: Icons.error,
+            ),
+          )
+          .name;
+    } else if (widget.selectedDevice == 'huawei') {
+      return HuaweiProblems.problems
+          .expand((list) => list)
+          .firstWhere(
+            (problem) => problem.key == widget.selectedProblem,
+            orElse: () => HuaweiProblem(
+              key: widget.selectedProblem,
+              name: 'Unknown',
+              info: '',
+              icon: Icons.error,
+            ),
+          )
+          .name;
+    } else {
+      return AndroidProblems.problems
+          .expand((list) => list)
+          .firstWhere(
+            (problem) => problem.key == widget.selectedProblem,
+            orElse: () => AndroidProblem(
+              key: widget.selectedProblem,
+              name: 'Unknown',
+              info: '',
+              icon: Icons.error,
+            ),
+          )
+          .name;
+    }
   }
 }

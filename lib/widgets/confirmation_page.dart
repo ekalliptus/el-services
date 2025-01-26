@@ -255,7 +255,6 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                               : 'Android',
                         ),
                         _buildDetailRow('Merk', widget.service.brand),
-                        _buildDetailRow('Tipe', widget.service.model),
                         _buildDetailRow(
                           'Masalah',
                           DeviceProblems.getProblemName(widget.service.problem),

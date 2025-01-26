@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:servicehponline/models/m_android.dart';
 import 'package:servicehponline/models/m_iphone.dart';
+import 'package:servicehponline/models/m_huawei.dart';
 
 class DeviceProblem {
   final String key;
@@ -32,12 +33,22 @@ class DeviceProblem {
       icon: problem.icon,
     );
   }
+
+  factory DeviceProblem.fromHuawei(HuaweiProblem problem) {
+    return DeviceProblem(
+      key: problem.key,
+      name: problem.name,
+      info: problem.info,
+      icon: problem.icon,
+    );
+  }
 }
 
 class DeviceProblems {
   static final Map<String, String> _deviceNames = {
     'android': 'Android',
     'iphone': 'iPhone',
+    'huawei': 'Huawei',
   };
 
   static final Map<String, String> _problemNames = {
@@ -84,6 +95,28 @@ class DeviceProblems {
     'glass_android': 'Masalah Perbaikan Kaca LCD/Camera Android',
     'security_android': 'Masalah Face ID/Touch ID Android',
     'other_android': 'Masalah Kerusakan Lainnya Android',
+
+    // Huawei Problems
+    'lcd_huawei': 'Masalah LCD Huawei',
+    'battery_huawei': 'Masalah Baterai Huawei',
+    'charging_huawei': 'Masalah Port Charging/Cas Huawei',
+    'audio_huawei': 'Masalah Audio/Suara Huawei',
+    'connectivity_huawei': 'Masalah Wifi/GPS/Bluetooth Huawei',
+    'mati_total_huawei': 'Masalah Mati Total Huawei',
+    'bootloop_huawei': 'Masalah Bootloop/Logo/Hang Huawei',
+    'camera_huawei': 'Masalah Camera Huawei',
+    'handfree_huawei': 'Masalah Handfree Huawei',
+    'signal_huawei': 'Masalah Sinyal Huawei',
+    'button_huawei': 'Masalah On Off, Tombol Volume Huawei',
+    'simcard_huawei': 'Masalah Simcard Huawei',
+    'casing_huawei': 'Masalah Casing Huawei',
+    'ic_huawei': 'Masalah IC Huawei',
+    'flexible_huawei': 'Masalah Fleksibel Huawei',
+    'software_huawei': 'Masalah Software Huawei',
+    'hardware_huawei': 'Masalah Hardware Huawei',
+    'glass_huawei': 'Masalah Perbaikan Kaca LCD/Camera Huawei',
+    'security_huawei': 'Masalah Face ID/Fingerprint Huawei',
+    'other_huawei': 'Masalah Kerusakan Lainnya Huawei',
   };
 
   static String getDeviceName(String key) {
@@ -115,6 +148,10 @@ class DeviceProblems {
     'android': AndroidProblems.problems
         .map((list) =>
             list.map((problem) => DeviceProblem.fromAndroid(problem)).toList())
+        .toList(),
+    'huawei': HuaweiProblems.problems
+        .map((list) =>
+            list.map((problem) => DeviceProblem.fromHuawei(problem)).toList())
         .toList(),
   };
 }
