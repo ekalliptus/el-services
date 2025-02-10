@@ -3,15 +3,15 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:servicehponline/models/service_model.dart';
-import 'package:servicehponline/models/m_android.dart';
-import 'package:servicehponline/models/m_iphone.dart';
-import 'package:servicehponline/models/m_huawei.dart';
-import 'package:servicehponline/models/m_brands.dart';
-import 'package:servicehponline/widgets/page_indicator.dart';
-import 'package:servicehponline/widgets/confirmation_page.dart';
+import 'package:servicehponline/data/models/service_model.dart';
+import 'package:servicehponline/data/models/devices/m_android.dart';
+import 'package:servicehponline/data/models/devices/m_iphone.dart';
+import 'package:servicehponline/data/models/devices/m_huawei.dart';
+import 'package:servicehponline/data/models/devices/m_brands.dart';
+import 'package:servicehponline/features/user/widgets/page_indicator_widget.dart';
+import 'package:servicehponline/features/user/pages/confirmation_page.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:servicehponline/widgets/mobile_map_picker.dart';
+import 'package:servicehponline/features/user/widgets/mobile_map_picker_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomePageThree extends StatefulWidget {
@@ -60,7 +60,7 @@ class _HomePageThreeState extends State<HomePageThree> {
   void initState() {
     super.initState();
     _selectedBrand = widget.selectedDevice == 'iphone'
-        ? 'Apple'
+        ? 'iPhone'
         : widget.selectedDevice == 'huawei'
             ? 'Huawei'
             : null;
@@ -198,7 +198,8 @@ class _HomePageThreeState extends State<HomePageThree> {
     if (_nameController.text.isEmpty ||
         _whatsappController.text.isEmpty ||
         _addressController.text.isEmpty ||
-        _selectedBrand == null ||
+        _modelController.text.isEmpty ||
+        (widget.selectedDevice == 'android' && _selectedBrand == null) ||
         _descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Mohon lengkapi semua data')),
@@ -221,7 +222,12 @@ class _HomePageThreeState extends State<HomePageThree> {
       address: _addressController.text,
       device: widget.selectedDevice,
       problem: widget.selectedProblem,
-      brand: _selectedBrand!,
+      brand: widget.selectedDevice == 'iphone'
+          ? 'iPhone'
+          : widget.selectedDevice == 'huawei'
+              ? 'Huawei'
+              : _selectedBrand!,
+      model: _modelController.text,
       picture: _images.isNotEmpty ? _images.first : null,
       video: _videoPath,
       description: _descriptionController.text,
@@ -619,11 +625,44 @@ class _HomePageThreeState extends State<HomePageThree> {
                               _deviceName,
                             ),
                             SizedBox(height: 12.0),
-                            DropdownButtonFormField<String>(
-                              value: _selectedBrand,
+                            if (widget.selectedDevice == 'android') ...[
+                              DropdownButtonFormField<String>(
+                                value: _selectedBrand,
+                                decoration: InputDecoration(
+                                  labelText: 'Merk Perangkat/Ponsel',
+                                  prefixIcon: Icon(Icons.phone_android),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    borderSide:
+                                        BorderSide(color: Colors.grey[300]!),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                    borderSide: BorderSide(color: Colors.blue),
+                                  ),
+                                ),
+                                items: _availableBrands.map((String brand) {
+                                  return DropdownMenuItem<String>(
+                                    value: brand,
+                                    child: Text(brand),
+                                  );
+                                }).toList(),
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    _selectedBrand = newValue;
+                                  });
+                                },
+                              ),
+                              SizedBox(height: 12.0),
+                            ],
+                            TextField(
+                              controller: _modelController,
                               decoration: InputDecoration(
-                                labelText: 'Merk Perangkat/Ponsel',
-                                prefixIcon: Icon(Icons.phone_android),
+                                labelText: 'Model/Tipe HP',
+                                prefixIcon: Icon(Icons.phone_iphone),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
@@ -636,19 +675,12 @@ class _HomePageThreeState extends State<HomePageThree> {
                                   borderRadius: BorderRadius.circular(12.0),
                                   borderSide: BorderSide(color: Colors.blue),
                                 ),
+                                hintText: widget.selectedDevice == 'iphone'
+                                    ? 'Contoh: iPhone 12 Pro Max'
+                                    : widget.selectedDevice == 'huawei'
+                                        ? 'Contoh: P40 Pro'
+                                        : 'Contoh: Galaxy S21 Ultra',
                               ),
-                              items: _availableBrands.map((String brand) {
-                                return DropdownMenuItem<String>(
-                                  value: brand,
-                                  child: Text(brand),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                setState(() {
-                                  _selectedBrand = newValue;
-// Reset model when brand changes
-                                });
-                              },
                             ),
                           ],
                         ),

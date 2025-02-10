@@ -5,8 +5,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:servicehponline/blocs/auth/auth_bloc.dart';
 import 'package:servicehponline/blocs/auth/auth_event.dart';
 import 'package:servicehponline/blocs/auth/auth_state.dart';
-import 'package:servicehponline/services/authentication.dart';
-import 'package:servicehponline/pages/request_service_flow.dart';
+import 'package:servicehponline/core/services/authentication.dart';
+import 'package:servicehponline/features/user/widgets/request_service_flow_widget.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -17,14 +18,23 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final _formKey = GlobalKey<FormState>();
+  final _adminFormKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _authentication = Authentication();
+  final _supabase = supabase.Supabase.instance.client;
   bool _isChecked = false;
   bool _isLoading = false;
+  bool _isAdminLoading = false;
+
+  // Controller untuk form login admin
+  final _adminEmailController = TextEditingController();
+  final _adminPasswordController = TextEditingController();
 
   @override
   void dispose() {
     _phoneController.dispose();
+    _adminEmailController.dispose();
+    _adminPasswordController.dispose();
     super.dispose();
   }
 
@@ -81,6 +91,178 @@ class _HomeState extends State<Home> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  // Fungsi untuk menampilkan dialog login admin
+  Future<void> _showAdminLoginDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Login Admin',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: _adminFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: _adminEmailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Email tidak boleh kosong';
+                      }
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                          .hasMatch(value)) {
+                        return 'Email tidak valid';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  TextFormField(
+                    controller: _adminPasswordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: Icon(Icons.lock),
+                    ),
+                    obscureText: true,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _adminEmailController.clear();
+                _adminPasswordController.clear();
+              },
+              child: Text(
+                'BATAL',
+                style: GoogleFonts.poppins(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _isAdminLoading
+                  ? null
+                  : () async {
+                      if (_adminFormKey.currentState!.validate()) {
+                        setState(() => _isAdminLoading = true);
+                        try {
+                          // Login dengan Supabase
+                          final response =
+                              await _supabase.auth.signInWithPassword(
+                            email: _adminEmailController.text.trim(),
+                            password: _adminPasswordController.text,
+                          );
+
+                          if (!mounted) return;
+
+                          if (response.user != null) {
+                            try {
+                              // Cek role admin di profiles
+                              final userData = await _supabase
+                                  .from('profiles')
+                                  .select()
+                                  .match({'id': response.user!.id}).single();
+
+                              if (userData['role'] == 'admin') {
+                                Navigator.of(context).pop();
+                                Navigator.pushReplacementNamed(
+                                    context, '/admin');
+                              } else {
+                                // Jika bukan admin, logout dan tampilkan pesan error
+                                await _supabase.auth.signOut();
+                                throw Exception('Akses ditolak: Bukan admin');
+                              }
+                            } catch (e) {
+                              print('Error checking admin role: $e');
+                              // Logout jika gagal mengecek role
+                              await _supabase.auth.signOut();
+                              throw Exception(
+                                  'Gagal memverifikasi akses admin');
+                            }
+                          } else {
+                            throw Exception(
+                                'Login gagal: Response tidak valid');
+                          }
+                        } catch (e) {
+                          print('Login error: $e');
+                          if (!mounted) return;
+
+                          String errorMessage = 'Terjadi kesalahan';
+                          if (e
+                              .toString()
+                              .contains('Invalid login credentials')) {
+                            errorMessage = 'Email atau password salah';
+                          } else if (e.toString().contains('Akses ditolak')) {
+                            errorMessage = 'Anda tidak memiliki akses admin';
+                          } else if (e.toString().contains('network')) {
+                            errorMessage = 'Gagal terhubung ke server';
+                          }
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(errorMessage),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isAdminLoading = false);
+                          }
+                        }
+                      }
+                    },
+              child: _isAdminLoading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                      ),
+                    )
+                  : Text(
+                      'LOGIN',
+                      style: GoogleFonts.poppins(
+                        color: Colors.blue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -317,6 +499,18 @@ class _HomeState extends State<Home> {
                           ],
                         ),
                         const SizedBox(height: 24),
+                        // Tambahkan tombol login admin di bagian bawah
+                        TextButton(
+                          onPressed: () => _showAdminLoginDialog(),
+                          child: Text(
+                            'Login sebagai Admin',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

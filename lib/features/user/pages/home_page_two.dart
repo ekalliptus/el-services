@@ -1,8 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:servicehponline/models/device_problems.dart';
-import 'package:servicehponline/widgets/page_indicator.dart';
+import 'package:servicehponline/data/models/device_problems.dart';
+import 'package:servicehponline/features/user/widgets/page_indicator_widget.dart';
 
 class HomePageTwo extends StatelessWidget {
   final String selectedDevice;

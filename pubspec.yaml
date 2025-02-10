@@ -1,5 +1,5 @@
 name: servicehponline
-description: "Aplikasi Service HP Online untuk mempermudah service perangkat anda"
+description: "Service HP Online: Panggil Saja!"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -33,6 +33,17 @@ dependencies:
   js: ^0.6.7
   flutter_map: ^6.1.0
   latlong2: ^0.9.0
+  awesome_dialog: ^3.2.0
+  supabase_flutter: ^2.3.4
+  webview_flutter: ^4.7.0
+  webview_flutter_android: ^3.15.0
+  webview_flutter_wkwebview: ^3.12.0
+  flutter_image_compress: ^2.1.0
+  video_compress: ^3.1.2
+  path_provider: ^2.1.2
+  crypto: ^3.0.3
+  google_maps_flutter: ^2.10.0
+  video_player: ^2.9.2
 
 dev_dependencies:
   flutter_test:

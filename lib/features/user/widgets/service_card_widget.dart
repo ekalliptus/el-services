@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:servicehponline/models/device_problems.dart';
+import 'package:servicehponline/data/models/device_problems.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ServiceCard extends StatelessWidget {

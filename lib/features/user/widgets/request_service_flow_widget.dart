@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:servicehponline/widgets/home_page_one.dart';
-import 'package:servicehponline/widgets/home_page_two.dart';
-import 'package:servicehponline/widgets/home_page_three.dart';
+import 'package:servicehponline/features/user/pages/home_page_one.dart';
+import 'package:servicehponline/features/user/pages/home_page_two.dart';
+import 'package:servicehponline/features/user/pages/home_page_three.dart';
 
 class RequestServiceFlow extends StatefulWidget {
   final String username;
