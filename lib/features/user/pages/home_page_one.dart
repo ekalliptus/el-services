@@ -198,7 +198,7 @@ class _HomePageOneState extends State<HomePageOne>
 
       final response = await _supabase
           .from('services')
-          .select('*, status')
+          .select('*, service_cost, status')
           .eq('user_id', currentUser!.uid)
           .order('created_at', ascending: false)
           .limit(3);
@@ -894,29 +894,44 @@ class _HomePageOneState extends State<HomePageOne>
                                                       ),
                                                       decoration: BoxDecoration(
                                                         color: _getStatusColor(
-                                                                service.status)
-                                                            .withOpacity(0.1),
+                                                                service.status,
+                                                                serviceCost: service.price !=
+                                                                            null &&
+                                                                        service.price !=
+                                                                            '-'
+                                                                    ? service
+                                                                        .price
+                                                                    : null)
+                                                            .withAlpha(26),
                                                         borderRadius:
                                                             BorderRadius
                                                                 .circular(20),
                                                       ),
                                                       child: Text(
-                                                        service.status?.toUpperCase() ==
-                                                                    'PENDING' &&
-                                                                service.price !=
-                                                                    null
-                                                            ? 'Menunggu Pembayaran'
-                                                            : _getStatusText(
-                                                                service.status),
+                                                        _getStatusText(
+                                                            service.status,
+                                                            serviceCost: service
+                                                                            .price !=
+                                                                        null &&
+                                                                    service.price !=
+                                                                        '-'
+                                                                ? service.price
+                                                                : null),
                                                         style:
                                                             GoogleFonts.poppins(
                                                           fontSize: 12,
                                                           fontWeight:
                                                               FontWeight.w500,
-                                                          color:
-                                                              _getStatusColor(
-                                                                  service
-                                                                      .status),
+                                                          color: _getStatusColor(
+                                                              service.status,
+                                                              serviceCost: service
+                                                                              .price !=
+                                                                          null &&
+                                                                      service.price !=
+                                                                          '-'
+                                                                  ? service
+                                                                      .price
+                                                                  : null),
                                                         ),
                                                       ),
                                                     ),
@@ -1030,13 +1045,15 @@ class _HomePageOneState extends State<HomePageOne>
 
                                   return SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
+                                    physics: BouncingScrollPhysics(),
+                                    padding: EdgeInsets.only(bottom: 8),
                                     child: Row(
                                       children: testimonials.map((testimonial) {
                                         return Container(
                                           width: MediaQuery.of(context)
                                                   .size
-                                                  .width -
-                                              48, // Sesuaikan dengan lebar layar dikurangi padding
+                                                  .width *
+                                              0.85,
                                           margin: EdgeInsets.only(right: 12),
                                           padding: EdgeInsets.all(16),
                                           decoration: BoxDecoration(
@@ -1085,6 +1102,9 @@ class _HomePageOneState extends State<HomePageOne>
                                                                 .grey[600],
                                                             fontSize: 14,
                                                           ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
                                                       ],
                                                     ),
@@ -1092,7 +1112,8 @@ class _HomePageOneState extends State<HomePageOne>
                                                 ],
                                               ),
                                               SizedBox(height: 16),
-                                              Row(
+                                              Wrap(
+                                                spacing: 2,
                                                 children: List.generate(
                                                   5,
                                                   (index) => Icon(
@@ -1208,22 +1229,11 @@ class _HomePageOneState extends State<HomePageOne>
     );
   }
 
-  String _getStatusText(String? status) {
-    if (status == null) return 'Menunggu Admin';
-
-    final service = _recentServices.firstWhere(
-      (s) => s.status == status,
-      orElse: () => ServiceModel.fromJson({}),
-    );
-
-    // Jika status PENDING dan ada service_cost, tampilkan "Menunggu Pembayaran"
-    if (status.toUpperCase() == 'PENDING' && service.price != null) {
-      return 'Menunggu Pembayaran';
-    }
-
+  String _getStatusText(String? status, {dynamic serviceCost}) {
+    if (status == null) return '';
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return 'Menunggu Admin';
+        return serviceCost != null ? 'Menunggu Pembayaran' : 'Menunggu Admin';
       case 'PROCESSED':
         return 'Diproses';
       case 'COMPLETED':
@@ -1239,12 +1249,11 @@ class _HomePageOneState extends State<HomePageOne>
     }
   }
 
-  Color _getStatusColor(String? status) {
-    if (status == null) return Colors.orange;
-
+  Color _getStatusColor(String? status, {dynamic serviceCost}) {
+    if (status == null) return Colors.grey;
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return Colors.orange;
+        return serviceCost != null ? Colors.orange : Colors.blue;
       case 'PROCESSED':
         return Colors.blue;
       case 'COMPLETED':
@@ -1252,6 +1261,8 @@ class _HomePageOneState extends State<HomePageOne>
       case 'PAID':
         return Colors.green;
       case 'EXPIRED':
+        return Colors.red;
+      case 'COMPLAINED':
         return Colors.red;
       default:
         return Colors.grey;

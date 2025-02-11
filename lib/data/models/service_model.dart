@@ -71,7 +71,7 @@ class ServiceModel {
       shippingMethod: json['shipping_method'] ?? 'pickup',
       picture: json['picture_url'],
       video: json['video_url'],
-      price: json['service_cost']?.toString() ?? '-',
+      price: json['service_cost']?.toString(),
       latitude: parseCoordinate(json['latitude']),
       longitude: parseCoordinate(json['longitude']),
       createdAt: json['created_at'] != null

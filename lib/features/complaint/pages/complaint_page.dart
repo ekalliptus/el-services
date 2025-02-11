@@ -100,7 +100,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(
+                                    red: 33, green: 150, blue: 243, alpha: 26),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -141,7 +142,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(
+                                    red: 76, green: 175, blue: 80, alpha: 26),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -225,7 +227,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(
+                                    red: 33, green: 150, blue: 243, alpha: 26),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -265,7 +268,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(
+                                    red: 76, green: 175, blue: 80, alpha: 26),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
@@ -490,283 +494,399 @@ class _ComplaintPageState extends State<ComplaintPage> {
   Widget build(BuildContext context) {
     final currentUser = _auth.currentUser;
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Ajukan Komplain',
-          style: GoogleFonts.poppins(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    _buildAvatar(widget.service, currentUser),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Service #${widget.service['id']}',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            widget.service['device']
-                                        ?.toString()
-                                        .toLowerCase() ==
-                                    'android'
-                                ? '${widget.service['brand']} - ${widget.service['model']}'
-                                : '${widget.service['brand']} - ${widget.service['model']}',
-                            style: GoogleFonts.poppins(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+    return WillPopScope(
+      onWillPop: () async {
+        if (_isSubmitting) {
+          return false;
+        }
+
+        if (_complaintController.text.isNotEmpty ||
+            _selectedImage != null ||
+            _selectedVideo != null) {
+          final shouldPop = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(
+                'Batalkan Komplain?',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Detail Komplain',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: TextField(
-                controller: _complaintController,
-                maxLines: 8,
-                maxLength: 500,
-                decoration: InputDecoration(
-                  hintText: 'Jelaskan detail komplain Anda...',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
-                  counterText: '',
-                ),
+              content: Text(
+                'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  height: 1.5,
+                  color: Colors.black87,
                 ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Text(
-                'Maksimal 500 karakter',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Dokumentasi',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: _pickImage,
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: _selectedImage != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                _selectedImage!,
-                                fit: BoxFit.cover,
-                              ),
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.add_photo_alternate_outlined,
-                                  color: Colors.grey[600],
-                                  size: 32,
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Tambah Foto',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    'TIDAK',
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: InkWell(
-                    onTap: _pickVideo,
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: _selectedVideo != null
-                          ? Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                if (_videoController?.value.isInitialized ??
-                                    false)
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: AspectRatio(
-                                      aspectRatio:
-                                          _videoController!.value.aspectRatio,
-                                      child: VideoPlayer(_videoController!),
-                                    ),
-                                  ),
-                                Icon(
-                                  Icons.play_circle_fill,
-                                  color: Colors.white,
-                                  size: 48,
-                                ),
-                              ],
-                            )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.videocam_outlined,
-                                  color: Colors.grey[600],
-                                  size: 32,
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Tambah Video',
-                                  style: GoogleFonts.poppins(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    'YA',
+                    style: GoogleFonts.poppins(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
               ],
             ),
-            if (_selectedImage != null || _selectedVideo != null) ...[
+          );
+          return shouldPop ?? false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.black87),
+            onPressed: () async {
+              if (_isSubmitting) return;
+
+              if (_complaintController.text.isNotEmpty ||
+                  _selectedImage != null ||
+                  _selectedVideo != null) {
+                final shouldPop = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(
+                      'Batalkan Komplain?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    content: Text(
+                      'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          'TIDAK',
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'YA',
+                          style: GoogleFonts.poppins(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+                if (shouldPop ?? false) {
+                  Navigator.pop(context);
+                }
+              } else {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          title: Text(
+            'Ajukan Komplain',
+            style: GoogleFonts.poppins(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      _buildAvatar(widget.service, currentUser),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Service #${widget.service['id']}',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              widget.service['device']
+                                          ?.toString()
+                                          .toLowerCase() ==
+                                      'android'
+                                  ? '${widget.service['brand']} - ${widget.service['model']}'
+                                  : '${widget.service['brand']} - ${widget.service['model']}',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Detail Komplain',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: _isSubmitting ? Colors.grey[100] : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: TextField(
+                  controller: _complaintController,
+                  maxLines: 8,
+                  maxLength: 500,
+                  enabled: !_isSubmitting,
+                  decoration: InputDecoration(
+                    hintText: 'Jelaskan detail komplain Anda...',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    counterText: '',
+                  ),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: Text(
+                  'Maksimal 500 karakter',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Dokumentasi',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
               SizedBox(height: 8),
               Row(
                 children: [
-                  if (_selectedImage != null)
-                    TextButton.icon(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () => setState(() => _selectedImage = null),
-                      icon: Icon(Icons.delete_outline,
-                          color: _isSubmitting ? Colors.grey : Colors.red),
-                      label: Text(
-                        'Hapus Foto',
-                        style: GoogleFonts.poppins(
-                          color: _isSubmitting ? Colors.grey : Colors.red,
-                          fontSize: 12,
+                  Expanded(
+                    child: InkWell(
+                      onTap: _pickImage,
+                      child: Container(
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
                         ),
+                        child: _selectedImage != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(
+                                  _selectedImage!,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.add_photo_alternate_outlined,
+                                    color: Colors.grey[600],
+                                    size: 32,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Tambah Foto',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
-                  if (_selectedVideo != null)
-                    TextButton.icon(
-                      onPressed: _isSubmitting
-                          ? null
-                          : () {
-                              setState(() {
-                                _selectedVideo = null;
-                                _videoController?.dispose();
-                                _videoController = null;
-                              });
-                            },
-                      icon: Icon(Icons.delete_outline,
-                          color: _isSubmitting ? Colors.grey : Colors.red),
-                      label: Text(
-                        'Hapus Video',
-                        style: GoogleFonts.poppins(
-                          color: _isSubmitting ? Colors.grey : Colors.red,
-                          fontSize: 12,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: InkWell(
+                      onTap: _pickVideo,
+                      child: Container(
+                        height: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[300]!),
                         ),
+                        child: _selectedVideo != null
+                            ? Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  if (_videoController?.value.isInitialized ??
+                                      false)
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: AspectRatio(
+                                        aspectRatio:
+                                            _videoController!.value.aspectRatio,
+                                        child: VideoPlayer(_videoController!),
+                                      ),
+                                    ),
+                                  Icon(
+                                    Icons.play_circle_fill,
+                                    color: Colors.white,
+                                    size: 48,
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.videocam_outlined,
+                                    color: Colors.grey[600],
+                                    size: 32,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Tambah Video',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
                     ),
+                  ),
                 ],
               ),
-            ],
-            SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitComplaint,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: _isSubmitting
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        'Kirim Komplain',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
+              if (_selectedImage != null || _selectedVideo != null) ...[
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (_selectedImage != null)
+                      TextButton.icon(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => setState(() => _selectedImage = null),
+                        icon: Icon(Icons.delete_outline,
+                            color: _isSubmitting ? Colors.grey : Colors.red),
+                        label: Text(
+                          'Hapus Foto',
+                          style: GoogleFonts.poppins(
+                            color: _isSubmitting ? Colors.grey : Colors.red,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
+                    if (_selectedVideo != null)
+                      TextButton.icon(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () {
+                                setState(() {
+                                  _selectedVideo = null;
+                                  _videoController?.dispose();
+                                  _videoController = null;
+                                });
+                              },
+                        icon: Icon(Icons.delete_outline,
+                            color: _isSubmitting ? Colors.grey : Colors.red),
+                        label: Text(
+                          'Hapus Video',
+                          style: GoogleFonts.poppins(
+                            color: _isSubmitting ? Colors.grey : Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitComplaint,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    disabledBackgroundColor: Colors.blue.withOpacity(0.6),
+                  ),
+                  child: _isSubmitting
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          'Kirim Komplain',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

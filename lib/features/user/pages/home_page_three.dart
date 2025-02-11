@@ -13,6 +13,7 @@ import 'package:servicehponline/features/user/pages/confirmation_page.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:servicehponline/features/user/widgets/mobile_map_picker_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
 
 class HomePageThree extends StatefulWidget {
   final String selectedDevice;
@@ -549,9 +550,14 @@ class _HomePageThreeState extends State<HomePageThree> {
                             SizedBox(height: 16.0),
                             TextField(
                               controller: _whatsappController,
-                              keyboardType: TextInputType.phone,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(15),
+                              ],
                               decoration: InputDecoration(
                                 labelText: 'Nomor WhatsApp',
+                                hintText: 'Contoh: 08123456789',
                                 prefixIcon: Icon(Icons.phone),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12.0),
@@ -939,7 +945,8 @@ class _HomePageThreeState extends State<HomePageThree> {
   }
 
   Widget _buildDetailItem(String label, String value) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
@@ -948,15 +955,7 @@ class _HomePageThreeState extends State<HomePageThree> {
             fontSize: 14.0,
           ),
         ),
-        SizedBox(width: 8.0),
-        Text(
-          ':',
-          style: TextStyle(
-            color: Colors.black54,
-            fontSize: 14.0,
-          ),
-        ),
-        SizedBox(width: 8.0),
+        SizedBox(height: 4.0),
         Text(
           value,
           style: TextStyle(
@@ -964,6 +963,8 @@ class _HomePageThreeState extends State<HomePageThree> {
             fontSize: 14.0,
             fontWeight: FontWeight.w500,
           ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
         ),
       ],
     );

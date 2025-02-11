@@ -105,62 +105,78 @@ class HomePageTwo extends StatelessWidget {
     required String info,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16.0),
-        child: Container(
-          padding: EdgeInsets.all(24.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16.0),
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12.0),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: 100.0,
+        maxHeight: 100.0,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16.0),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 48.0,
+                  height: 48.0,
+                  padding: EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: Colors.blue,
+                    size: 24.0,
+                  ),
                 ),
-                child: Icon(
-                  icon,
-                  color: Colors.blue,
-                  size: 24.0,
-                ),
-              ),
-              SizedBox(width: 16.0),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.w500,
+                SizedBox(width: 12.0),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 15.0,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    SizedBox(height: 4.0),
-                    Text(
-                      info,
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 14.0,
+                      SizedBox(height: 4.0),
+                      Text(
+                        info,
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 13.0,
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.black54,
-                size: 16.0,
-              ),
-            ],
+                SizedBox(width: 8.0),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.black54,
+                  size: 16.0,
+                ),
+              ],
+            ),
           ),
         ),
       ),

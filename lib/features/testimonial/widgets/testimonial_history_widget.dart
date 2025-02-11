@@ -223,175 +223,287 @@ class _TestimonialPageState extends State<TestimonialPage> {
   Widget build(BuildContext context) {
     final currentUser = _auth.currentUser;
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          widget.isUpdate ? 'Update Testimoni' : 'Tulis Testimoni',
-          style: GoogleFonts.poppins(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    _buildAvatar(widget.service, currentUser),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Service #${widget.service['id']}',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            widget.service['device']
-                                        ?.toString()
-                                        .toLowerCase() ==
-                                    'android'
-                                ? '${widget.service['brand']} - ${widget.service['model']}'
-                                : '${widget.service['brand']} - ${widget.service['model']}',
-                            style: GoogleFonts.poppins(
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+    return WillPopScope(
+      onWillPop: () async {
+        if (_isSubmitting) {
+          return false;
+        }
+
+        if (_testimonialController.text.isNotEmpty) {
+          final shouldPop = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(
+                'Batalkan Testimoni?',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Rating Anda',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+              content: Text(
+                'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
               ),
-            ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: List.generate(
-                5,
-                (index) => GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _currentRating = index + 1;
-                    });
-                  },
-                  child: Padding(
-                    padding: EdgeInsets.only(right: index == 4 ? 0 : 4),
-                    child: Icon(
-                      index < _currentRating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: MediaQuery.of(context).size.width < 360 ? 20 : 28,
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(
+                    'TIDAK',
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
-              ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    'YA',
+                    style: GoogleFonts.poppins(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 24),
-            if (widget.isUpdate && _previousTestimonial != null) ...[
+          );
+          return shouldPop ?? false;
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back, color: Colors.black87),
+            onPressed: () async {
+              if (_isSubmitting) return;
+
+              if (_testimonialController.text.isNotEmpty) {
+                final shouldPop = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(
+                      'Batalkan Testimoni?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    content: Text(
+                      'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          'TIDAK',
+                          style: GoogleFonts.poppins(
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          'YA',
+                          style: GoogleFonts.poppins(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+                if (shouldPop ?? false) {
+                  Navigator.pop(context);
+                }
+              } else {
+                Navigator.pop(context);
+              }
+            },
+          ),
+          title: Text(
+            widget.isUpdate ? 'Update Testimoni' : 'Tulis Testimoni',
+            style: GoogleFonts.poppins(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      _buildAvatar(widget.service, currentUser),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Service #${widget.service['id']}',
+                              style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 16,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              widget.service['device']
+                                          ?.toString()
+                                          .toLowerCase() ==
+                                      'android'
+                                  ? '${widget.service['brand']} - ${widget.service['model']}'
+                                  : '${widget.service['brand']} - ${widget.service['model']}',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
               Text(
-                'Testimoni Sebelumnya',
+                'Rating Anda',
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
               ),
               SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: Text(
-                  _previousTestimonial!,
-                  style: GoogleFonts.poppins(
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                    height: 1.5,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: List.generate(
+                  5,
+                  (index) => GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _currentRating = index + 1;
+                      });
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.only(right: index == 4 ? 0 : 4),
+                      child: Icon(
+                        index < _currentRating ? Icons.star : Icons.star_border,
+                        color: Colors.amber,
+                        size: MediaQuery.of(context).size.width < 360 ? 20 : 28,
+                      ),
+                    ),
                   ),
                 ),
               ),
               SizedBox(height: 24),
-            ],
-            Text(
-              widget.isUpdate ? 'Update Testimoni' : 'Testimoni',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
-            ),
-            SizedBox(height: 8),
-            TextField(
-              controller: _testimonialController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                hintText: widget.isUpdate
-                    ? 'Tulis testimoni baru Anda...'
-                    : 'Bagikan pengalaman Anda...',
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
-            ),
-            SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitTestimonial,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              if (widget.isUpdate && _previousTestimonial != null) ...[
+                Text(
+                  'Testimoni Sebelumnya',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
                 ),
-                child: _isSubmitting
-                    ? SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        widget.isUpdate
-                            ? 'Update Testimoni'
-                            : 'Kirim Testimoni',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Text(
+                    _previousTestimonial!,
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey[700],
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24),
+              ],
+              Text(
+                widget.isUpdate ? 'Update Testimoni' : 'Testimoni',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
               ),
-            ),
-          ],
+              SizedBox(height: 8),
+              TextField(
+                controller: _testimonialController,
+                maxLines: 5,
+                enabled: !_isSubmitting,
+                decoration: InputDecoration(
+                  hintText: widget.isUpdate
+                      ? 'Tulis testimoni baru Anda...'
+                      : 'Bagikan pengalaman Anda...',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: _isSubmitting ? Colors.grey[100] : Colors.grey[50],
+                ),
+              ),
+              SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitTestimonial,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    disabledBackgroundColor: Colors.blue.withOpacity(0.6),
+                  ),
+                  child: _isSubmitting
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          widget.isUpdate
+                              ? 'Update Testimoni'
+                              : 'Kirim Testimoni',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

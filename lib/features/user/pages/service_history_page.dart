@@ -63,10 +63,10 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     return DateFormat('dd MMM yyyy, HH:mm').format(date);
   }
 
-  String _getStatusText(String status) {
+  String _getStatusText(String status, {dynamic serviceCost}) {
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return 'Menunggu Admin';
+        return serviceCost != null ? 'Menunggu Pembayaran' : 'Menunggu Admin';
       case 'PROCESSED':
         return 'Diproses';
       case 'COMPLETED':
@@ -75,15 +75,17 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
         return 'Sudah Dibayar';
       case 'EXPIRED':
         return 'Kadaluarsa';
+      case 'COMPLAINED':
+        return 'Dikomplain';
       default:
         return status;
     }
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(String status, {dynamic serviceCost}) {
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return Colors.orange;
+        return serviceCost != null ? Colors.orange : Colors.blue;
       case 'PROCESSED':
         return Colors.blue;
       case 'COMPLETED':
@@ -91,6 +93,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
       case 'PAID':
         return Colors.green;
       case 'EXPIRED':
+        return Colors.red;
+      case 'COMPLAINED':
         return Colors.red;
       default:
         return Colors.grey;
@@ -246,6 +250,7 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     final needsPayment = hasPayment && status == 'PENDING';
     final isExpanded = _expandedCards[service['id'].toString()] ?? false;
     final canGiveFeedback = status == 'COMPLETED';
+    final serviceCost = service['service_cost'];
 
     return FutureBuilder<Map<String, dynamic>?>(
       future: _supabase
@@ -287,13 +292,16 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(status).withOpacity(0.1),
+                          color:
+                              _getStatusColor(status, serviceCost: serviceCost)
+                                  .withAlpha(26),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          _getStatusText(status),
+                          _getStatusText(status, serviceCost: serviceCost),
                           style: TextStyle(
-                            color: _getStatusColor(status),
+                            color: _getStatusColor(status,
+                                serviceCost: serviceCost),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -358,7 +366,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.1),
+                                  color: Colors.green.withValues(
+                                      red: 76, green: 175, blue: 80, alpha: 26),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
                                     color: Colors.green,
@@ -441,8 +450,16 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                               padding: EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
                                 color: hasTestimonial
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.amber.withOpacity(0.1),
+                                    ? Colors.green.withValues(
+                                        red: 76,
+                                        green: 175,
+                                        blue: 80,
+                                        alpha: 26)
+                                    : Colors.amber.withValues(
+                                        red: 255,
+                                        green: 193,
+                                        blue: 7,
+                                        alpha: 26),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: hasTestimonial
@@ -490,8 +507,16 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                               padding: EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
                                 color: service['complain'] == true
-                                    ? Colors.grey.withOpacity(0.1)
-                                    : Colors.red.withOpacity(0.1),
+                                    ? Colors.grey.withValues(
+                                        red: 158,
+                                        green: 158,
+                                        blue: 158,
+                                        alpha: 26)
+                                    : Colors.red.withValues(
+                                        red: 244,
+                                        green: 67,
+                                        blue: 54,
+                                        alpha: 26),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                     color: service['complain'] == true
@@ -583,70 +608,94 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
+          contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          insetPadding: EdgeInsets.symmetric(horizontal: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text(
             'Beri Rating',
-            style: TextStyle(
+            style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center,
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Seberapa puas Anda dengan pelayanan kami?',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  5,
-                  (index) => IconButton(
-                    icon: Icon(
-                      index < rating ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
-                      size: 32,
-                    ),
-                    onPressed: () {
-                      setState(() => rating = index + 1);
-                    },
+          content: Container(
+            width: MediaQuery.of(context).size.width * 0.8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Seberapa puas Anda dengan pelayanan kami?',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
                   ),
                 ),
-              ),
-            ],
+                SizedBox(height: 16),
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 4,
+                  children: List.generate(
+                    5,
+                    (index) => IconButton(
+                      constraints: BoxConstraints(
+                        minWidth: 40,
+                        maxWidth: 40,
+                      ),
+                      padding: EdgeInsets.zero,
+                      icon: Icon(
+                        index < rating ? Icons.star : Icons.star_border,
+                        color: Colors.amber,
+                        size: 32,
+                      ),
+                      onPressed: () {
+                        setState(() => rating = index + 1);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                'BATAL',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: rating > 0
-                  ? () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TestimonialPage(
-                            service: service,
-                            rating: rating,
-                          ),
-                        ),
-                      );
-                    }
-                  : null,
-              child: Text(
-                'LANJUT',
-                style: TextStyle(
-                  color: rating > 0 ? Colors.blue : Colors.grey,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'BATAL',
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
-              ),
+                TextButton(
+                  onPressed: rating > 0
+                      ? () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TestimonialPage(
+                                service: service,
+                                rating: rating,
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                  child: Text(
+                    'LANJUT',
+                    style: GoogleFonts.poppins(
+                      color: rating > 0 ? Colors.blue : Colors.grey,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -672,7 +721,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
             width: 200,
             height: 200,
             decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue
+                  .withValues(red: 33, green: 150, blue: 243, alpha: 26),
               shape: BoxShape.circle,
             ),
             child: Icon(

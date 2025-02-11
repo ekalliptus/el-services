@@ -192,6 +192,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.w600,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
                                     DeviceProblems.formatDeviceName(
@@ -200,10 +201,12 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                                       color: Colors.grey[600],
                                       fontSize: 12,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ],
                               ),
                             ),
+                            SizedBox(width: 8),
                             Text(
                               DateFormat('dd MMM yyyy').format(
                                 DateTime.parse(testimonial['created_at']),
@@ -216,7 +219,8 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                           ],
                         ),
                         SizedBox(height: 12),
-                        Row(
+                        Wrap(
+                          spacing: 2,
                           children: List.generate(
                             5,
                             (index) => Icon(
@@ -235,6 +239,8 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                             fontSize: 14,
                             height: 1.5,
                           ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 5,
                         ),
                       ],
                     ),
