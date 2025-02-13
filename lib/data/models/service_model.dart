@@ -6,7 +6,9 @@ class ServiceModel {
   final String address;
   final String device;
   final String problem;
-  final String? picture;
+  final String? pictureDamage;
+  final String? pictureFront;
+  final String? pictureBack;
   final String? video;
   final String? price;
   final String brand;
@@ -31,7 +33,9 @@ class ServiceModel {
     required this.model,
     required this.description,
     required this.shippingMethod,
-    this.picture,
+    this.pictureDamage,
+    this.pictureFront,
+    this.pictureBack,
     this.video,
     this.price,
     this.latitude,
@@ -69,7 +73,9 @@ class ServiceModel {
       model: json['model'] ?? '',
       description: json['description'] ?? '',
       shippingMethod: json['shipping_method'] ?? 'pickup',
-      picture: json['picture_url'],
+      pictureDamage: json['picture_damage_url'],
+      pictureFront: json['picture_front_url'],
+      pictureBack: json['picture_back_url'],
       video: json['video_url'],
       price: json['service_cost']?.toString(),
       latitude: parseCoordinate(json['latitude']),
@@ -95,7 +101,9 @@ class ServiceModel {
       'model': model,
       'description': description,
       'shipping_method': shippingMethod,
-      'picture_url': picture,
+      'picture_damage_url': pictureDamage,
+      'picture_front_url': pictureFront,
+      'picture_back_url': pictureBack,
       'video_url': video,
       'service_cost': price,
       'latitude': latitude?.toString(),
@@ -105,4 +113,10 @@ class ServiceModel {
       'status': status,
     };
   }
+
+  // Getters for URLs
+  String? get pictureDamageUrl => pictureDamage;
+  String? get pictureFrontUrl => pictureFront;
+  String? get pictureBackUrl => pictureBack;
+  String? get videoUrl => video;
 }

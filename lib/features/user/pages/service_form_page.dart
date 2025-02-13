@@ -59,10 +59,12 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
         model: _modelController.text,
         description: _descriptionController.text,
         shippingMethod: _shippingMethod,
-        latitude: _latitude,
-        longitude: _longitude,
-        picture: _picturePath,
+        pictureDamage: _picturePath,
+        pictureFront: _picturePath,
+        pictureBack: _picturePath,
         video: _videoPath,
+        latitude: _selectedProblem == 'jemput' ? _latitude : null,
+        longitude: _selectedProblem == 'jemput' ? _longitude : null,
       );
 
       Navigator.push(

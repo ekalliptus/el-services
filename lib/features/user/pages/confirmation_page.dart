@@ -59,50 +59,79 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
       final serviceId = response[0]['id'];
 
       // Upload gambar ke storage jika ada
-      if (widget.service.picture != null) {
+      if (widget.service.pictureDamage != null ||
+          widget.service.pictureFront != null ||
+          widget.service.pictureBack != null ||
+          widget.service.video != null) {
         try {
-          final file = File(widget.service.picture!);
-          final fileExt = file.path.split('.').last;
-          final fileName =
-              'service_${serviceId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-          final filePath = fileName;
+          Map<String, String> mediaUrls = {};
 
-          await _supabase.storage.from('services').upload(filePath, file);
+          // Upload foto kerusakan
+          if (widget.service.pictureDamage != null) {
+            final damagePicture = File(widget.service.pictureDamage!);
+            final damageExt = damagePicture.path.split('.').last;
+            final damageFileName =
+                'service_${serviceId}_damage_${DateTime.now().millisecondsSinceEpoch}.$damageExt';
 
-          final pictureUrl =
-              _supabase.storage.from('services').getPublicUrl(filePath);
+            await _supabase.storage
+                .from('services')
+                .upload(damageFileName, damagePicture);
+            mediaUrls['picture_damage_url'] =
+                _supabase.storage.from('services').getPublicUrl(damageFileName);
+          }
 
-          // Update service dengan URL gambar
-          await _supabase
-              .from('services')
-              .update({'picture_url': pictureUrl}).eq('id', serviceId);
+          // Upload foto tampak depan
+          if (widget.service.pictureFront != null) {
+            final frontPicture = File(widget.service.pictureFront!);
+            final frontExt = frontPicture.path.split('.').last;
+            final frontFileName =
+                'service_${serviceId}_front_${DateTime.now().millisecondsSinceEpoch}.$frontExt';
+
+            await _supabase.storage
+                .from('services')
+                .upload(frontFileName, frontPicture);
+            mediaUrls['picture_front_url'] =
+                _supabase.storage.from('services').getPublicUrl(frontFileName);
+          }
+
+          // Upload foto tampak belakang
+          if (widget.service.pictureBack != null) {
+            final backPicture = File(widget.service.pictureBack!);
+            final backExt = backPicture.path.split('.').last;
+            final backFileName =
+                'service_${serviceId}_back_${DateTime.now().millisecondsSinceEpoch}.$backExt';
+
+            await _supabase.storage
+                .from('services')
+                .upload(backFileName, backPicture);
+            mediaUrls['picture_back_url'] =
+                _supabase.storage.from('services').getPublicUrl(backFileName);
+          }
+
+          // Upload video jika ada
+          if (widget.service.video != null) {
+            final video = File(widget.service.video!);
+            final videoExt = video.path.split('.').last;
+            final videoFileName =
+                'service_${serviceId}_video_${DateTime.now().millisecondsSinceEpoch}.$videoExt';
+
+            await _supabase.storage
+                .from('services')
+                .upload(videoFileName, video);
+            mediaUrls['video_url'] =
+                _supabase.storage.from('services').getPublicUrl(videoFileName);
+          }
+
+          // Update service dengan URL media
+          if (mediaUrls.isNotEmpty) {
+            await _supabase
+                .from('services')
+                .update(mediaUrls)
+                .eq('id', serviceId);
+          }
         } catch (e) {
-          print('Error uploading picture: $e');
-          // Lanjutkan eksekusi meskipun upload gambar gagal
-        }
-      }
-
-      // Upload video ke storage jika ada
-      if (widget.service.video != null) {
-        try {
-          final file = File(widget.service.video!);
-          final fileExt = file.path.split('.').last;
-          final fileName =
-              'service_${serviceId}_${DateTime.now().millisecondsSinceEpoch}.$fileExt';
-          final filePath = fileName;
-
-          await _supabase.storage.from('services').upload(filePath, file);
-
-          final videoUrl =
-              _supabase.storage.from('services').getPublicUrl(filePath);
-
-          // Update service dengan URL video
-          await _supabase
-              .from('services')
-              .update({'video_url': videoUrl}).eq('id', serviceId);
-        } catch (e) {
-          print('Error uploading video: $e');
-          // Lanjutkan eksekusi meskipun upload video gagal
+          print('Error uploading media: $e');
+          // Lanjutkan eksekusi meskipun upload media gagal
         }
       }
 
@@ -386,7 +415,9 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                       ],
                     ),
                   ),
-                  if (widget.service.picture != null ||
+                  if (widget.service.pictureDamage != null ||
+                      widget.service.pictureFront != null ||
+                      widget.service.pictureBack != null ||
                       widget.service.video != null) ...[
                     SizedBox(height: 16.0),
                     Container(
@@ -408,20 +439,85 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                             ),
                           ),
                           SizedBox(height: 16.0),
-                          if (widget.service.picture != null)
+                          if (widget.service.pictureDamage != null) ...[
+                            Text(
+                              'Foto Kerusakan:',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8.0),
                             Container(
                               height: 200,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8.0),
                                 image: DecorationImage(
-                                  image:
-                                      FileImage(File(widget.service.picture!)),
+                                  image: FileImage(
+                                      File(widget.service.pictureDamage!)),
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
+                          ],
+                          if (widget.service.pictureFront != null) ...[
+                            SizedBox(height: 16.0),
+                            Text(
+                              'Foto Tampak Depan:',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8.0),
+                            Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                image: DecorationImage(
+                                  image: FileImage(
+                                      File(widget.service.pictureFront!)),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (widget.service.pictureBack != null) ...[
+                            SizedBox(height: 16.0),
+                            Text(
+                              'Foto Tampak Belakang:',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8.0),
+                            Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                image: DecorationImage(
+                                  image: FileImage(
+                                      File(widget.service.pictureBack!)),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ],
                           if (widget.service.video != null) ...[
                             SizedBox(height: 16.0),
+                            Text(
+                              'Video:',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 14.0,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 8.0),
                             Container(
                               height: 200,
                               decoration: BoxDecoration(

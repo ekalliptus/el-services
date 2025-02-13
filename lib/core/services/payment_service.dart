@@ -32,12 +32,28 @@ class PaymentService {
       }
 
       // 1. Upload media jika ada
-      String? imageUrl;
+      String? damagePictureUrl;
+      String? frontPictureUrl;
+      String? backPictureUrl;
       String? videoUrl;
 
-      if (service.picture != null) {
-        imageUrl = await _storageService.uploadImage(
-          File(service.picture!),
+      if (service.pictureDamage != null) {
+        damagePictureUrl = await _storageService.uploadImage(
+          File(service.pictureDamage!),
+          'temp',
+        );
+      }
+
+      if (service.pictureFront != null) {
+        frontPictureUrl = await _storageService.uploadImage(
+          File(service.pictureFront!),
+          'temp',
+        );
+      }
+
+      if (service.pictureBack != null) {
+        backPictureUrl = await _storageService.uploadImage(
+          File(service.pictureBack!),
           'temp',
         );
       }
@@ -66,15 +82,11 @@ class PaymentService {
         'status': 'PENDING',
         'service_cost': null, // Biaya service awalnya null
         'created_at': DateTime.now().toIso8601String(),
+        'picture_damage_url': damagePictureUrl,
+        'picture_front_url': frontPictureUrl,
+        'picture_back_url': backPictureUrl,
+        'video_url': videoUrl,
       };
-
-      // Tambahkan URL media jika ada
-      if (imageUrl != null) {
-        serviceData['picture_url'] = imageUrl;
-      }
-      if (videoUrl != null) {
-        serviceData['video_url'] = videoUrl;
-      }
 
       final response = await _supabase
           .from('services')
@@ -85,35 +97,61 @@ class PaymentService {
       print('Service data saved to Supabase: $response');
 
       // 3. Update nama file media dengan ID yang benar jika ada
-      if (imageUrl != null || videoUrl != null) {
-        final serviceId = response['id'];
+      final serviceId = response['id'];
 
-        if (imageUrl != null) {
-          final newImageUrl = await _storageService.uploadImage(
-            File(service.picture!),
-            serviceId,
-          );
-          await _storageService.deleteMedia(imageUrl);
+      if (damagePictureUrl != null) {
+        final newDamageUrl = await _storageService.uploadImage(
+          File(service.pictureDamage!),
+          serviceId,
+        );
+        await _storageService.deleteMedia(damagePictureUrl);
 
-          if (newImageUrl != null) {
-            await _supabase
-                .from('services')
-                .update({'picture_url': newImageUrl}).eq('id', serviceId);
-          }
+        if (newDamageUrl != null) {
+          await _supabase
+              .from('services')
+              .update({'picture_damage_url': newDamageUrl}).eq('id', serviceId);
         }
+      }
 
-        if (videoUrl != null) {
-          final newVideoUrl = await _storageService.uploadVideo(
-            File(service.video!),
-            serviceId,
-          );
-          await _storageService.deleteMedia(videoUrl);
+      if (frontPictureUrl != null) {
+        final newFrontUrl = await _storageService.uploadImage(
+          File(service.pictureFront!),
+          serviceId,
+        );
+        await _storageService.deleteMedia(frontPictureUrl);
 
-          if (newVideoUrl != null) {
-            await _supabase
-                .from('services')
-                .update({'video_url': newVideoUrl}).eq('id', serviceId);
-          }
+        if (newFrontUrl != null) {
+          await _supabase
+              .from('services')
+              .update({'picture_front_url': newFrontUrl}).eq('id', serviceId);
+        }
+      }
+
+      if (backPictureUrl != null) {
+        final newBackUrl = await _storageService.uploadImage(
+          File(service.pictureBack!),
+          serviceId,
+        );
+        await _storageService.deleteMedia(backPictureUrl);
+
+        if (newBackUrl != null) {
+          await _supabase
+              .from('services')
+              .update({'picture_back_url': newBackUrl}).eq('id', serviceId);
+        }
+      }
+
+      if (videoUrl != null) {
+        final newVideoUrl = await _storageService.uploadVideo(
+          File(service.video!),
+          serviceId,
+        );
+        await _storageService.deleteMedia(videoUrl);
+
+        if (newVideoUrl != null) {
+          await _supabase
+              .from('services')
+              .update({'video_url': newVideoUrl}).eq('id', serviceId);
         }
       }
 

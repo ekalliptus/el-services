@@ -22,7 +22,9 @@ class ServiceApi {
         'brand': service.brand,
         'description': service.description,
         'shippingMethod': service.shippingMethod,
-        'picture': service.picture,
+        'picture_damage_url': service.pictureDamageUrl, 
+        'picture_front_url': service.pictureFrontUrl,
+        'picture_back_url': service.pictureBackUrl,
         'video': service.video,
         'price': service.price,
       };

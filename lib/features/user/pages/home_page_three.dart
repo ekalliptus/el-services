@@ -14,6 +14,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:servicehponline/features/user/widgets/mobile_map_picker_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomePageThree extends StatefulWidget {
   final String selectedDevice;
@@ -39,7 +40,9 @@ class _HomePageThreeState extends State<HomePageThree> {
   final _modelController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _imagePicker = ImagePicker();
-  final List<String> _images = [];
+  final List<String> _damageImages = [];
+  final List<String> _frontImages = [];
+  final List<String> _backImages = [];
   String? _videoPath;
   bool _isLoading = false;
   String _selectedShipping = 'Jemput';
@@ -113,12 +116,22 @@ class _HomePageThreeState extends State<HomePageThree> {
     }
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImage(ImageSource source, String category) async {
     try {
       final image = await _imagePicker.pickImage(source: source);
       if (image != null) {
         setState(() {
-          _images.add(image.path);
+          switch (category) {
+            case 'damage':
+              _damageImages.add(image.path);
+              break;
+            case 'front':
+              _frontImages.add(image.path);
+              break;
+            case 'back':
+              _backImages.add(image.path);
+              break;
+          }
         });
       }
     } catch (e) {
@@ -142,56 +155,179 @@ class _HomePageThreeState extends State<HomePageThree> {
     }
   }
 
-  void _showMediaSourceDialog() {
-    showDialog(
+  Future<void> _showMediaSourceDialog(String category) async {
+    String title = '';
+    switch (category) {
+      case 'damage':
+        title = 'Foto Kerusakan';
+        break;
+      case 'front':
+        title = 'Foto Tampak Depan';
+        break;
+      case 'back':
+        title = 'Foto Tampak Belakang';
+        break;
+      case 'video':
+        title = 'Video';
+        break;
+    }
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Pilih Media',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18.0,
-            fontWeight: FontWeight.w500,
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Tambah $title',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 16),
+              if (category != 'video')
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pickImage(ImageSource.camera, category);
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.camera_alt,
+                                color: Colors.blue,
+                                size: 32,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Kamera',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pickImage(ImageSource.gallery, category);
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.photo_library,
+                                color: Colors.green,
+                                size: 32,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Galeri',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              if (category == 'video')
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pickVideo(ImageSource.camera);
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.videocam,
+                                color: Colors.blue,
+                                size: 32,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Kamera',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _pickVideo(ImageSource.gallery);
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.video_library,
+                                color: Colors.green,
+                                size: 32,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Galeri',
+                              style: GoogleFonts.poppins(
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.camera_alt, color: Colors.blue),
-              title: Text('Foto dari Kamera'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.photo_library, color: Colors.blue),
-              title: Text('Foto dari Galeri'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.videocam, color: Colors.blue),
-              title: Text('Video dari Kamera'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickVideo(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.video_library, color: Colors.blue),
-              title: Text('Video dari Galeri'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickVideo(ImageSource.gallery);
-              },
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -203,7 +339,22 @@ class _HomePageThreeState extends State<HomePageThree> {
         (widget.selectedDevice == 'android' && _selectedBrand == null) ||
         _descriptionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Mohon lengkapi semua data')),
+        SnackBar(
+          content: Text('Mohon lengkapi semua data'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validasi format nomor WhatsApp
+    String whatsappNumber = _whatsappController.text;
+    if (!whatsappNumber.startsWith('62')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Nomor WhatsApp harus diawali dengan 62'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -211,7 +362,10 @@ class _HomePageThreeState extends State<HomePageThree> {
     // Validasi lokasi untuk metode penjemputan
     if (_selectedShipping == 'Jemput' && _currentPosition == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Mohon pilih lokasi penjemputan')),
+        SnackBar(
+          content: Text('Mohon pilih lokasi penjemputan'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -229,7 +383,9 @@ class _HomePageThreeState extends State<HomePageThree> {
               ? 'Huawei'
               : _selectedBrand!,
       model: _modelController.text,
-      picture: _images.isNotEmpty ? _images.first : null,
+      pictureDamage: _damageImages.isNotEmpty ? _damageImages.first : null,
+      pictureFront: _frontImages.isNotEmpty ? _frontImages.first : null,
+      pictureBack: _backImages.isNotEmpty ? _backImages.first : null,
       video: _videoPath,
       description: _descriptionController.text,
       shippingMethod: _selectedShipping,
@@ -548,28 +704,16 @@ class _HomePageThreeState extends State<HomePageThree> {
                               ),
                             ),
                             SizedBox(height: 16.0),
-                            TextField(
+                            TextFormField(
                               controller: _whatsappController,
                               keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(15),
-                              ],
                               decoration: InputDecoration(
                                 labelText: 'Nomor WhatsApp',
-                                hintText: 'Contoh: 08123456789',
-                                prefixIcon: Icon(Icons.phone),
+                                hintText: 'Contoh: 628123456789',
+                                helperText: 'Nomor harus diawali dengan 62',
+                                helperStyle: TextStyle(color: Colors.grey[600]),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: BorderSide(color: Colors.blue),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                             ),
@@ -692,177 +836,7 @@ class _HomePageThreeState extends State<HomePageThree> {
                         ),
                       ),
                       SizedBox(height: 20.0),
-                      Container(
-                        padding: EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Dokumentasi',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            if (_images.isEmpty && _videoPath == null)
-                              Center(
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      Icons.photo_library,
-                                      size: 48.0,
-                                      color: Colors.black54,
-                                    ),
-                                    SizedBox(height: 8.0),
-                                    Text(
-                                      'Belum ada foto atau video',
-                                      style: TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 16.0,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            else
-                              Column(
-                                children: [
-                                  if (_images.isNotEmpty)
-                                    Container(
-                                      height: 120.0,
-                                      child: ListView.separated(
-                                        scrollDirection: Axis.horizontal,
-                                        itemCount: _images.length,
-                                        separatorBuilder: (context, index) =>
-                                            SizedBox(width: 8.0),
-                                        itemBuilder: (context, index) {
-                                          return Stack(
-                                            children: [
-                                              ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(12.0),
-                                                child: Image.file(
-                                                  File(_images[index]),
-                                                  fit: BoxFit.cover,
-                                                  width: 120.0,
-                                                  height: 120.0,
-                                                ),
-                                              ),
-                                              Positioned(
-                                                top: 4,
-                                                right: 4,
-                                                child: GestureDetector(
-                                                  onTap: () {
-                                                    setState(() {
-                                                      _images.removeAt(index);
-                                                    });
-                                                  },
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(4),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.black54,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    child: Icon(
-                                                      Icons.close,
-                                                      color: Colors.white,
-                                                      size: 16,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  if (_videoPath != null) ...[
-                                    SizedBox(height: 16.0),
-                                    Stack(
-                                      children: [
-                                        Container(
-                                          height: 120.0,
-                                          width: double.infinity,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[200],
-                                            borderRadius:
-                                                BorderRadius.circular(12.0),
-                                          ),
-                                          child: Center(
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Icon(
-                                                  Icons.video_file,
-                                                  size: 48.0,
-                                                  color: Colors.blue,
-                                                ),
-                                                SizedBox(height: 8.0),
-                                                Text(
-                                                  'Video dipilih',
-                                                  style: TextStyle(
-                                                    color: Colors.black87,
-                                                    fontSize: 16.0,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        Positioned(
-                                          top: 4,
-                                          right: 4,
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              setState(() {
-                                                _videoPath = null;
-                                              });
-                                            },
-                                            child: Container(
-                                              padding: EdgeInsets.all(4),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black54,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Icon(
-                                                Icons.close,
-                                                color: Colors.white,
-                                                size: 16,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            SizedBox(height: 16.0),
-                            ElevatedButton.icon(
-                              onPressed: _showMediaSourceDialog,
-                              icon: Icon(Icons.add),
-                              label: Text('Tambah Foto/Video'),
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 24.0,
-                                  vertical: 12.0,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildDocumentationSection(),
                       SizedBox(height: 20.0),
                       Container(
                         padding: EdgeInsets.all(16.0),
@@ -1011,5 +985,423 @@ class _HomePageThreeState extends State<HomePageThree> {
           )
           .name;
     }
+  }
+
+  Widget _buildDocumentationSection() {
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dokumentasi',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 18.0,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 16.0),
+          // Foto Kerusakan
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Foto Kerusakan',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_damageImages.isEmpty)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.photo_library,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada foto kerusakan',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _damageImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: FileImage(File(_damageImages[index])),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _damageImages.removeAt(index);
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () => _showMediaSourceDialog('damage'),
+                icon: Icon(Icons.add_a_photo),
+                label: Text('Tambah Foto Kerusakan'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Foto Tampak Depan
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Foto Tampak Depan',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_frontImages.isEmpty)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.photo_library,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada foto tampak depan',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _frontImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: FileImage(File(_frontImages[index])),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _frontImages.removeAt(index);
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () => _showMediaSourceDialog('front'),
+                icon: Icon(Icons.add_a_photo),
+                label: Text('Tambah Foto Tampak Depan'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Foto Tampak Belakang
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Foto Tampak Belakang',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_backImages.isEmpty)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.photo_library,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada foto tampak belakang',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _backImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: FileImage(File(_backImages[index])),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _backImages.removeAt(index);
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () => _showMediaSourceDialog('back'),
+                icon: Icon(Icons.add_a_photo),
+                label: Text('Tambah Foto Tampak Belakang'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Video
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Video',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_videoPath == null)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.videocam,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada video',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Stack(
+                  children: [
+                    Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _videoPath = null;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              SizedBox(height: 8),
+              if (_videoPath == null)
+                ElevatedButton.icon(
+                  onPressed: () => _showMediaSourceDialog('video'),
+                  icon: Icon(Icons.videocam),
+                  label: Text('Tambah Video'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
