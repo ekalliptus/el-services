@@ -70,7 +70,15 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ConfirmationPage(service: service),
+          builder: (context) => ConfirmationPage(
+            service: service,
+            prevPage: () => Navigator.pop(context),
+            onConfirm: () => Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/history',
+              (route) => false,
+            ),
+          ),
         ),
       );
     }

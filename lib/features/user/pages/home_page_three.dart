@@ -13,8 +13,12 @@ import 'package:servicehponline/features/user/pages/confirmation_page.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:servicehponline/features/user/widgets/mobile_map_picker_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/mixins/gps_mixin.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:servicehponline/features/user/widgets/pattern_lock_dialog.dart';
+import 'package:flutter/services.dart';
 
 class HomePageThree extends StatefulWidget {
   final String selectedDevice;
@@ -32,22 +36,41 @@ class HomePageThree extends StatefulWidget {
   State<HomePageThree> createState() => _HomePageThreeState();
 }
 
-class _HomePageThreeState extends State<HomePageThree> {
+class _HomePageThreeState extends State<HomePageThree>
+    with WidgetsBindingObserver, GPSMixin {
   final _nameController = TextEditingController();
   final _whatsappController = TextEditingController();
   final _addressController = TextEditingController();
   final _brandController = TextEditingController();
   final _modelController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _devicePasswordController = TextEditingController();
+
+  // FocusNode untuk setiap field
+  final _nameFocus = FocusNode();
+  final _whatsappFocus = FocusNode();
+  final _addressFocus = FocusNode();
+  final _modelFocus = FocusNode();
+  final _devicePasswordFocus = FocusNode();
+
   final _imagePicker = ImagePicker();
   final List<String> _damageImages = [];
   final List<String> _frontImages = [];
   final List<String> _backImages = [];
   String? _videoPath;
   bool _isLoading = false;
+  bool _isSubmitting = false;
   String _selectedShipping = 'Jemput';
   Position? _currentPosition;
   String? _selectedBrand;
+  final _supabase = Supabase.instance.client;
+  final _firebaseAuth = firebase_auth.FirebaseAuth.instance;
+  String? _savedWhatsapp;
+  final _formKey = GlobalKey<FormState>();
+  String? _savedName;
+  String? _savedAddress;
+  String? _selectedPasswordType;
+  List<String> _passwordTypes = ['Tidak Ada', 'Pola', 'PIN', 'Password'];
 
   List<String> get _availableBrands {
     switch (widget.selectedDevice) {
@@ -63,6 +86,7 @@ class _HomePageThreeState extends State<HomePageThree> {
   @override
   void initState() {
     super.initState();
+    _loadSavedProfile();
     _selectedBrand = widget.selectedDevice == 'iphone'
         ? 'iPhone'
         : widget.selectedDevice == 'huawei'
@@ -79,7 +103,39 @@ class _HomePageThreeState extends State<HomePageThree> {
     _brandController.dispose();
     _modelController.dispose();
     _descriptionController.dispose();
+    _devicePasswordController.dispose();
+
+    // Dispose FocusNode
+    _nameFocus.dispose();
+    _whatsappFocus.dispose();
+    _addressFocus.dispose();
+    _modelFocus.dispose();
+    _devicePasswordFocus.dispose();
+
     super.dispose();
+  }
+
+  Future<void> _loadSavedProfile() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) return;
+
+      final profileData = await _supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.uid)
+          .maybeSingle();
+
+      if (profileData != null && mounted) {
+        setState(() {
+          _savedName = user.displayName;
+          _savedAddress = profileData['address'];
+          _savedWhatsapp = profileData['whatsapp'];
+        });
+      }
+    } catch (e) {
+      print('Error loading profile data: $e');
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -331,93 +387,1044 @@ class _HomePageThreeState extends State<HomePageThree> {
     );
   }
 
-  void _createService() {
-    if (_nameController.text.isEmpty ||
-        _whatsappController.text.isEmpty ||
-        _addressController.text.isEmpty ||
-        _modelController.text.isEmpty ||
-        (widget.selectedDevice == 'android' && _selectedBrand == null) ||
-        _descriptionController.text.isEmpty) {
+  Future<void> _createService() async {
+    if (_isLoading || _isSubmitting) return;
+
+    setState(() {
+      _isLoading = true;
+      _isSubmitting = true;
+    });
+
+    try {
+      // Reset validasi sebelumnya
+      _formKey.currentState?.validate();
+
+      // Cek field kosong dan set fokus ke field pertama yang kosong
+      bool isValid = true;
+      FocusNode? firstEmptyFieldFocus;
+
+      if (_nameController.text.isEmpty) {
+        isValid = false;
+        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _nameFocus;
+      }
+
+      if (_whatsappController.text.isEmpty) {
+        isValid = false;
+        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _whatsappFocus;
+      }
+
+      if (_addressController.text.isEmpty) {
+        isValid = false;
+        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _addressFocus;
+      }
+
+      if (_modelController.text.isEmpty) {
+        isValid = false;
+        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _modelFocus;
+      }
+
+      if (_selectedPasswordType != 'Tidak Ada' &&
+          _devicePasswordController.text.isEmpty) {
+        isValid = false;
+        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _devicePasswordFocus;
+      }
+
+      if (!isValid) {
+        // Set fokus ke field kosong pertama
+        if (firstEmptyFieldFocus != null) {
+          firstEmptyFieldFocus.requestFocus();
+        }
+
+        // Trigger validasi ulang untuk menampilkan pesan error
+        _formKey.currentState?.validate();
+
+        throw Exception("Mohon lengkapi semua kolom yang ditandai");
+      }
+
+      // Buat ServiceModel tanpa mengirim ke Supabase
+      final serviceModel = ServiceModel(
+        id: 0, // ID sementara
+        userId: _firebaseAuth.currentUser?.uid ?? '',
+        fullname: _nameController.text,
+        whatsapp: _whatsappController.text,
+        address: _addressController.text,
+        device: widget.selectedDevice,
+        brand: _selectedBrand ?? '',
+        model: _modelController.text,
+        problem: widget.selectedProblem,
+        description: _descriptionController.text,
+        shippingMethod: _selectedShipping,
+        devicePassword: _selectedPasswordType != 'Tidak Ada'
+            ? _devicePasswordController.text
+            : null,
+        devicePasswordType:
+            _selectedPasswordType != 'Tidak Ada' ? _selectedPasswordType : null,
+        latitude:
+            _selectedShipping == 'Jemput' ? _currentPosition?.latitude : null,
+        longitude:
+            _selectedShipping == 'Jemput' ? _currentPosition?.longitude : null,
+        status: 'PENDING',
+        createdAt: DateTime.now(),
+        pictureDamage: _damageImages.isNotEmpty ? _damageImages.first : null,
+        pictureFront: _frontImages.isNotEmpty ? _frontImages.first : null,
+        pictureBack: _backImages.isNotEmpty ? _backImages.first : null,
+        video: _videoPath,
+      );
+
+      if (!mounted) return;
+
+      // Navigasi ke halaman konfirmasi
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ConfirmationPage(
+            service: serviceModel,
+            prevPage: () => Navigator.pop(context),
+            onConfirm: () async {
+              // Proses submit akan dilakukan di ConfirmationPage
+              Navigator.pop(context);
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Mohon lengkapi semua data'),
+          content: Text(e.toString()),
           backgroundColor: Colors.red,
         ),
       );
-      return;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isSubmitting = false;
+        });
+      }
     }
+  }
 
-    // Validasi format nomor WhatsApp
-    String whatsappNumber = _whatsappController.text;
-    if (!whatsappNumber.startsWith('62')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Nomor WhatsApp harus diawali dengan 62'),
-          backgroundColor: Colors.red,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Opacity(
+          opacity: isGpsEnabled ? 1.0 : 0.5,
+          child: AbsorbPointer(
+            absorbing: !isGpsEnabled,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        PageIndicator(currentPage: 2, darkMode: false),
+                        SizedBox(height: 20.0),
+                        Text(
+                          "Data Service",
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 32.0,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        SizedBox(height: 12.0),
+                        Text(
+                          "Lengkapi data berikut dengan benar\nsupaya cepat kami setujui proses perbaikan",
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 16.0,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20.0),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.0),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Data Diri',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 16.0),
+                                _buildForm(),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 20.0),
+                          Container(
+                            padding: EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.0),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Detail Perangkat',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 16.0),
+                                _buildDetailItem(
+                                  'Perangkat',
+                                  widget.selectedDevice == 'iphone'
+                                      ? 'iPhone'
+                                      : widget.selectedDevice == 'huawei'
+                                          ? 'Huawei'
+                                          : 'Android',
+                                ),
+                                SizedBox(height: 12.0),
+                                _buildDetailItem(
+                                  'Masalah',
+                                  _deviceName,
+                                ),
+                                SizedBox(height: 12.0),
+                                if (widget.selectedDevice == 'android') ...[
+                                  DropdownButtonFormField<String>(
+                                    value: _selectedBrand,
+                                    decoration: InputDecoration(
+                                      labelText: 'Merk Perangkat/Ponsel',
+                                      prefixIcon: Icon(Icons.phone_android),
+                                      border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        borderSide:
+                                            BorderSide(color: Colors.blue),
+                                      ),
+                                      errorBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        borderSide:
+                                            BorderSide(color: Colors.red),
+                                      ),
+                                      focusedErrorBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        borderSide: BorderSide(
+                                            color: Colors.red, width: 2),
+                                      ),
+                                    ),
+                                    items: _availableBrands.map((String brand) {
+                                      return DropdownMenuItem<String>(
+                                        value: brand,
+                                        child: Text(brand),
+                                      );
+                                    }).toList(),
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        _selectedBrand = newValue;
+                                      });
+                                    },
+                                  ),
+                                  SizedBox(height: 12.0),
+                                ],
+                                TextFormField(
+                                  controller: _modelController,
+                                  focusNode: _modelFocus,
+                                  decoration: InputDecoration(
+                                    labelText: 'Model/Tipe HP',
+                                    prefixIcon: Icon(Icons.phone_iphone),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide:
+                                          BorderSide(color: Colors.grey[300]!),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide:
+                                          BorderSide(color: Colors.blue),
+                                    ),
+                                    errorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide: BorderSide(color: Colors.red),
+                                    ),
+                                    focusedErrorBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide: BorderSide(
+                                          color: Colors.red, width: 2),
+                                    ),
+                                    hintText: widget.selectedDevice == 'iphone'
+                                        ? 'Contoh: iPhone 12 Pro Max'
+                                        : widget.selectedDevice == 'huawei'
+                                            ? 'Contoh: P40 Pro'
+                                            : 'Contoh: Galaxy S21 Ultra',
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Model/Tipe HP harus diisi';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 20.0),
+                          _buildDocumentationSection(),
+                          SizedBox(height: 20.0),
+                          Container(
+                            padding: EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.0),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Keterangan Kerusakan',
+                                  style: TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SizedBox(height: 16.0),
+                                TextField(
+                                  controller: _descriptionController,
+                                  maxLines: 3,
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        'Jelaskan detail kerusakan perangkat Anda',
+                                    prefixIcon: Icon(Icons.description),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide:
+                                          BorderSide(color: Colors.grey[300]!),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      borderSide:
+                                          BorderSide(color: Colors.blue),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 20.0),
+                          _buildShippingSection(),
+                          SizedBox(height: 20.0),
+                          _buildDevicePasswordSection(),
+                          SizedBox(height: 20.0),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _createService,
+                            child: _isLoading
+                                ? SizedBox(
+                                    width: 24.0,
+                                    height: 24.0,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.0,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : Text('Lanjutkan'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 16.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.0),
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: 20.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-      );
-      return;
-    }
-
-    // Validasi lokasi untuk metode penjemputan
-    if (_selectedShipping == 'Jemput' && _currentPosition == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Mohon pilih lokasi penjemputan'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final service = ServiceModel(
-      userId: '',
-      fullname: _nameController.text,
-      whatsapp: _whatsappController.text,
-      address: _addressController.text,
-      device: widget.selectedDevice,
-      problem: widget.selectedProblem,
-      brand: widget.selectedDevice == 'iphone'
-          ? 'iPhone'
-          : widget.selectedDevice == 'huawei'
-              ? 'Huawei'
-              : _selectedBrand!,
-      model: _modelController.text,
-      pictureDamage: _damageImages.isNotEmpty ? _damageImages.first : null,
-      pictureFront: _frontImages.isNotEmpty ? _frontImages.first : null,
-      pictureBack: _backImages.isNotEmpty ? _backImages.first : null,
-      video: _videoPath,
-      description: _descriptionController.text,
-      shippingMethod: _selectedShipping,
-      latitude:
-          _selectedShipping == 'Jemput' ? _currentPosition?.latitude : null,
-      longitude:
-          _selectedShipping == 'Jemput' ? _currentPosition?.longitude : null,
-    );
-
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ConfirmationPage(service: service),
       ),
     );
   }
 
-  Future<void> _openGoogleMaps() async {
-    // Koordinat Service Center
-    const lat = -6.151882179907883;
-    const lng = 106.92619538817382;
-    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+  Widget _buildDetailItem(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.black54,
+            fontSize: 14.0,
+          ),
+        ),
+        SizedBox(height: 4.0),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 14.0,
+            fontWeight: FontWeight.w500,
+          ),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 2,
+        ),
+      ],
+    );
+  }
 
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
+  String get _deviceName {
+    if (widget.selectedDevice == 'iphone') {
+      return IPhoneProblems.problems
+          .expand((list) => list)
+          .firstWhere(
+            (problem) => problem.key == widget.selectedProblem,
+            orElse: () => IPhoneProblem(
+              key: widget.selectedProblem,
+              name: 'Unknown',
+              info: '',
+              icon: Icons.error,
+            ),
+          )
+          .name;
+    } else if (widget.selectedDevice == 'huawei') {
+      return HuaweiProblems.problems
+          .expand((list) => list)
+          .firstWhere(
+            (problem) => problem.key == widget.selectedProblem,
+            orElse: () => HuaweiProblem(
+              key: widget.selectedProblem,
+              name: 'Unknown',
+              info: '',
+              icon: Icons.error,
+            ),
+          )
+          .name;
     } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membuka Google Maps')),
-        );
-      }
+      return AndroidProblems.problems
+          .expand((list) => list)
+          .firstWhere(
+            (problem) => problem.key == widget.selectedProblem,
+            orElse: () => AndroidProblem(
+              key: widget.selectedProblem,
+              name: 'Unknown',
+              info: '',
+              icon: Icons.error,
+            ),
+          )
+          .name;
     }
+  }
+
+  Widget _buildDocumentationSection() {
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dokumentasi',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 18.0,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 16.0),
+          // Foto Kerusakan
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Foto Kerusakan',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_damageImages.isEmpty)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.photo_library,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada foto kerusakan',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _damageImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: <Widget>[
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: FileImage(File(_damageImages[index])),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _damageImages.removeAt(index);
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () => _showMediaSourceDialog('damage'),
+                icon: Icon(Icons.add_a_photo),
+                label: Text('Tambah Foto Kerusakan'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Foto Tampak Depan
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Foto Tampak Depan',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_frontImages.isEmpty)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.photo_library,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada foto tampak depan',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _frontImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: <Widget>[
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: FileImage(File(_frontImages[index])),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _frontImages.removeAt(index);
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () => _showMediaSourceDialog('front'),
+                icon: Icon(Icons.add_a_photo),
+                label: Text('Tambah Foto Tampak Depan'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Foto Tampak Belakang
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Foto Tampak Belakang',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_backImages.isEmpty)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.photo_library,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada foto tampak belakang',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _backImages.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: <Widget>[
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            image: DecorationImage(
+                              image: FileImage(File(_backImages[index])),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _backImages.removeAt(index);
+                              });
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.close,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              SizedBox(height: 8),
+              ElevatedButton.icon(
+                onPressed: () => _showMediaSourceDialog('back'),
+                icon: Icon(Icons.add_a_photo),
+                label: Text('Tambah Foto Tampak Belakang'),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
+          // Video
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Video',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+              SizedBox(height: 8),
+              if (_videoPath == null)
+                Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.videocam,
+                        size: 48.0,
+                        color: Colors.black54,
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Belum ada video',
+                        style: TextStyle(
+                          color: Colors.black54,
+                          fontSize: 16.0,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Stack(
+                  children: <Widget>[
+                    Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: InkWell(
+                        onTap: () {
+                          setState(() {
+                            _videoPath = null;
+                          });
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              SizedBox(height: 8),
+              if (_videoPath == null)
+                ElevatedButton.icon(
+                  onPressed: () => _showMediaSourceDialog('video'),
+                  icon: Icon(Icons.videocam),
+                  label: Text('Tambah Video'),
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForm() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTextField(
+            controller: _nameController,
+            focusNode: _nameFocus,
+            label: 'Nama Lengkap',
+            icon: Icons.person,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Nama lengkap harus diisi';
+              }
+              return null;
+            },
+            savedValue: _savedName,
+          ),
+          SizedBox(height: 16),
+          _buildTextField(
+            controller: _whatsappController,
+            focusNode: _whatsappFocus,
+            label: 'Nomor WhatsApp',
+            icon: Icons.phone,
+            keyboardType: TextInputType.phone,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Nomor WhatsApp harus diisi';
+              }
+              return null;
+            },
+            savedValue: _savedWhatsapp,
+          ),
+          SizedBox(height: 16),
+          _buildTextField(
+            controller: _addressController,
+            focusNode: _addressFocus,
+            label: 'Alamat',
+            icon: Icons.location_on,
+            maxLines: 3,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Alamat harus diisi';
+              }
+              return null;
+            },
+            savedValue: _savedAddress,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    FocusNode? focusNode,
+    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? savedValue,
+    String? hintText,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: Icon(icon),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.blue),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red, width: 2),
+            ),
+            hintText: hintText,
+          ),
+          validator: validator,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+        ),
+        if (savedValue != null && savedValue.isNotEmpty) ...[
+          SizedBox(height: 8),
+          _buildSuggestButton(
+            title: 'Gunakan data tersimpan',
+            onTap: () {
+              setState(() {
+                controller.text = savedValue;
+              });
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSuggestButton(
+      {required String title, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.history,
+              size: 16,
+              color: Colors.blue,
+            ),
+            SizedBox(width: 4),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.blue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildShippingSection() {
@@ -621,373 +1628,7 @@ class _HomePageThreeState extends State<HomePageThree> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    PageIndicator(currentPage: 2, darkMode: false),
-                    SizedBox(height: 20.0),
-                    Text(
-                      "Data Service",
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 32.0,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    SizedBox(height: 12.0),
-                    Text(
-                      "Lengkapi data berikut dengan benar\nsupaya cepat kami setujui proses perbaikan",
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 16.0,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20.0),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Data Diri',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            TextField(
-                              controller: _nameController,
-                              decoration: InputDecoration(
-                                labelText: 'Nama Lengkap',
-                                prefixIcon: Icon(Icons.person),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: BorderSide(color: Colors.blue),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            TextFormField(
-                              controller: _whatsappController,
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                labelText: 'Nomor WhatsApp',
-                                hintText: 'Contoh: 628123456789',
-                                helperText: 'Nomor harus diawali dengan 62',
-                                helperStyle: TextStyle(color: Colors.grey[600]),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            TextField(
-                              controller: _addressController,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                labelText: 'Alamat Lengkap',
-                                prefixIcon: Icon(Icons.location_on),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: BorderSide(color: Colors.blue),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20.0),
-                      Container(
-                        padding: EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Detail Perangkat',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            _buildDetailItem(
-                              'Perangkat',
-                              widget.selectedDevice == 'iphone'
-                                  ? 'iPhone'
-                                  : widget.selectedDevice == 'huawei'
-                                      ? 'Huawei'
-                                      : 'Android',
-                            ),
-                            SizedBox(height: 12.0),
-                            _buildDetailItem(
-                              'Masalah',
-                              _deviceName,
-                            ),
-                            SizedBox(height: 12.0),
-                            if (widget.selectedDevice == 'android') ...[
-                              DropdownButtonFormField<String>(
-                                value: _selectedBrand,
-                                decoration: InputDecoration(
-                                  labelText: 'Merk Perangkat/Ponsel',
-                                  prefixIcon: Icon(Icons.phone_android),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12.0),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12.0),
-                                    borderSide:
-                                        BorderSide(color: Colors.grey[300]!),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12.0),
-                                    borderSide: BorderSide(color: Colors.blue),
-                                  ),
-                                ),
-                                items: _availableBrands.map((String brand) {
-                                  return DropdownMenuItem<String>(
-                                    value: brand,
-                                    child: Text(brand),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    _selectedBrand = newValue;
-                                  });
-                                },
-                              ),
-                              SizedBox(height: 12.0),
-                            ],
-                            TextField(
-                              controller: _modelController,
-                              decoration: InputDecoration(
-                                labelText: 'Model/Tipe HP',
-                                prefixIcon: Icon(Icons.phone_iphone),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: BorderSide(color: Colors.blue),
-                                ),
-                                hintText: widget.selectedDevice == 'iphone'
-                                    ? 'Contoh: iPhone 12 Pro Max'
-                                    : widget.selectedDevice == 'huawei'
-                                        ? 'Contoh: P40 Pro'
-                                        : 'Contoh: Galaxy S21 Ultra',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20.0),
-                      _buildDocumentationSection(),
-                      SizedBox(height: 20.0),
-                      Container(
-                        padding: EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.0),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Keterangan Kerusakan',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 16.0),
-                            TextField(
-                              controller: _descriptionController,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                labelText:
-                                    'Jelaskan detail kerusakan perangkat Anda',
-                                prefixIcon: Icon(Icons.description),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[300]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                  borderSide: BorderSide(color: Colors.blue),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20.0),
-                      _buildShippingSection(),
-                      SizedBox(height: 20.0),
-                      ElevatedButton(
-                        onPressed: _isLoading ? null : _createService,
-                        child: _isLoading
-                            ? SizedBox(
-                                width: 24.0,
-                                height: 24.0,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.0,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
-                                ),
-                              )
-                            : Text('Lanjutkan'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: 16.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20.0),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.black54,
-            fontSize: 14.0,
-          ),
-        ),
-        SizedBox(height: 4.0),
-        Text(
-          value,
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 14.0,
-            fontWeight: FontWeight.w500,
-          ),
-          overflow: TextOverflow.ellipsis,
-          maxLines: 2,
-        ),
-      ],
-    );
-  }
-
-  String get _deviceName {
-    if (widget.selectedDevice == 'iphone') {
-      return IPhoneProblems.problems
-          .expand((list) => list)
-          .firstWhere(
-            (problem) => problem.key == widget.selectedProblem,
-            orElse: () => IPhoneProblem(
-              key: widget.selectedProblem,
-              name: 'Unknown',
-              info: '',
-              icon: Icons.error,
-            ),
-          )
-          .name;
-    } else if (widget.selectedDevice == 'huawei') {
-      return HuaweiProblems.problems
-          .expand((list) => list)
-          .firstWhere(
-            (problem) => problem.key == widget.selectedProblem,
-            orElse: () => HuaweiProblem(
-              key: widget.selectedProblem,
-              name: 'Unknown',
-              info: '',
-              icon: Icons.error,
-            ),
-          )
-          .name;
-    } else {
-      return AndroidProblems.problems
-          .expand((list) => list)
-          .firstWhere(
-            (problem) => problem.key == widget.selectedProblem,
-            orElse: () => AndroidProblem(
-              key: widget.selectedProblem,
-              name: 'Unknown',
-              info: '',
-              icon: Icons.error,
-            ),
-          )
-          .name;
-    }
-  }
-
-  Widget _buildDocumentationSection() {
+  Widget _buildDevicePasswordSection() {
     return Container(
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -999,7 +1640,7 @@ class _HomePageThreeState extends State<HomePageThree> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Dokumentasi',
+            'Kata Sandi Perangkat',
             style: TextStyle(
               color: Colors.black87,
               fontSize: 18.0,
@@ -1007,401 +1648,245 @@ class _HomePageThreeState extends State<HomePageThree> {
             ),
           ),
           SizedBox(height: 16.0),
-          // Foto Kerusakan
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Foto Kerusakan',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
+          DropdownButtonFormField<String>(
+            value: _selectedPasswordType ?? 'Tidak Ada',
+            decoration: InputDecoration(
+              labelText: 'Jenis Kata Sandi',
+              prefixIcon: Icon(Icons.lock_outline),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
               ),
-              SizedBox(height: 8),
-              if (_damageImages.isEmpty)
-                Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.photo_library,
-                        size: 48.0,
-                        color: Colors.black54,
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Belum ada foto kerusakan',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: _damageImages.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: FileImage(File(_damageImages[index])),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _damageImages.removeAt(index);
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showMediaSourceDialog('damage'),
-                icon: Icon(Icons.add_a_photo),
-                label: Text('Tambah Foto Kerusakan'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide(color: Colors.grey[300]!),
               ),
-            ],
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide(color: Colors.blue),
+              ),
+            ),
+            items: _passwordTypes.map((String type) {
+              return DropdownMenuItem<String>(
+                value: type,
+                child: getPasswordTypeIcon(type),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              setState(() {
+                if (_selectedPasswordType != newValue) {
+                  _devicePasswordController.clear();
+                }
+
+                _selectedPasswordType = newValue;
+                if (newValue == 'Pola') {
+                  _showPatternLockDialog();
+                }
+              });
+            },
           ),
-          SizedBox(height: 16),
-          // Foto Tampak Depan
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Foto Tampak Depan',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Colors.grey[700],
+          if (_selectedPasswordType != null &&
+              _selectedPasswordType != 'Tidak Ada' &&
+              _selectedPasswordType != 'Pola') ...[
+            SizedBox(height: 12.0),
+            TextFormField(
+              controller: _devicePasswordController,
+              focusNode: _devicePasswordFocus,
+              keyboardType: _selectedPasswordType == 'PIN'
+                  ? TextInputType.number
+                  : TextInputType.text,
+              inputFormatters: _selectedPasswordType == 'PIN'
+                  ? [FilteringTextInputFormatter.digitsOnly]
+                  : null,
+              decoration: InputDecoration(
+                labelText: 'Masukkan ${_selectedPasswordType}',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
                 ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide(color: Colors.red),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide(color: Colors.red, width: 2),
+                ),
+                hintText: _selectedPasswordType == 'PIN'
+                    ? 'Contoh: 123456'
+                    : 'Masukkan password perangkat',
+                helperText: _selectedPasswordType == 'PIN'
+                    ? 'PIN terdiri dari angka saja'
+                    : _selectedPasswordType == 'Password'
+                        ? 'Password bisa terdiri dari huruf, angka, dan simbol'
+                        : null,
               ),
-              SizedBox(height: 8),
-              if (_frontImages.isEmpty)
-                Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.photo_library,
-                        size: 48.0,
-                        color: Colors.black54,
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Belum ada foto tampak depan',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: _frontImages.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: FileImage(File(_frontImages[index])),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _frontImages.removeAt(index);
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showMediaSourceDialog('front'),
-                icon: Icon(Icons.add_a_photo),
-                label: Text('Tambah Foto Tampak Depan'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
+              validator: (value) {
+                if (_selectedPasswordType != 'Tidak Ada' &&
+                    (value == null || value.isEmpty)) {
+                  return '${_selectedPasswordType} harus diisi';
+                }
+                return null;
+              },
+            ),
+          ],
+          if (_selectedPasswordType == 'Pola' &&
+              _devicePasswordController.text.isNotEmpty) ...[
+            SizedBox(height: 12.0),
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
-          ),
-          SizedBox(height: 16),
-          // Foto Tampak Belakang
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Foto Tampak Belakang',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
-              ),
-              SizedBox(height: 8),
-              if (_backImages.isEmpty)
-                Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.photo_library,
-                        size: 48.0,
-                        color: Colors.black54,
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Belum ada foto tampak belakang',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: _backImages.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: FileImage(File(_backImages[index])),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _backImages.removeAt(index);
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showMediaSourceDialog('back'),
-                icon: Icon(Icons.add_a_photo),
-                label: Text('Tambah Foto Tampak Belakang'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          // Video
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Video',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
-              ),
-              SizedBox(height: 8),
-              if (_videoPath == null)
-                Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.videocam,
-                        size: 48.0,
-                        color: Colors.black54,
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Belum ada video',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                Stack(
-                  children: [
-                    Container(
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          Icons.play_circle_fill,
-                          color: Colors.white,
-                          size: 48,
-                        ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Pola telah diatur',
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey[700],
                       ),
                     ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            _videoPath = null;
-                          });
-                        },
-                        child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.black54,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
+                  ),
+                  TextButton(
+                    onPressed: _showPatternLockDialog,
+                    child: Text(
+                      'Ubah',
+                      style: GoogleFonts.poppins(
+                        color: Colors.blue,
                       ),
                     ),
-                  ],
-                ),
-              SizedBox(height: 8),
-              if (_videoPath == null)
-                ElevatedButton.icon(
-                  onPressed: () => _showMediaSourceDialog('video'),
-                  icon: Icon(Icons.videocam),
-                  label: Text('Tambah Video'),
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
                   ),
-                ),
-            ],
-          ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  void _showPatternLockDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PatternLockDialog(
+        onPatternComplete: (pattern) {
+          setState(() {
+            _devicePasswordController.text = pattern;
+          });
+        },
+      ),
+    );
+  }
+
+  Future<void> _openGoogleMaps() async {
+    // Koordinat Service Center
+    const lat = -6.151882179907883;
+    const lng = 106.92619538817382;
+    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka Google Maps')),
+        );
+      }
+    }
+  }
+
+  // Helper method untuk mendapatkan icon yang sesuai berdasarkan jenis password
+  Widget getPasswordTypeIcon(String passwordType) {
+    switch (passwordType) {
+      case 'Tidak Ada':
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.no_encryption_outlined,
+              color: Colors.grey[700],
+              size: 20,
+            ),
+            SizedBox(width: 8),
+            Text(
+              "Tidak Ada",
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+              ),
+            ),
+          ],
+        );
+      case 'Pola':
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.grid_3x3,
+              color: Colors.orange[700],
+              size: 20,
+            ),
+            SizedBox(width: 8),
+            Text(
+              "Pola",
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.orange[700],
+              ),
+            ),
+          ],
+        );
+      case 'PIN':
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.dialpad,
+              color: Colors.blue[700],
+              size: 20,
+            ),
+            SizedBox(width: 8),
+            Text(
+              "PIN",
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.blue[700],
+              ),
+            ),
+          ],
+        );
+      case 'Password':
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.password_outlined,
+              color: Colors.purple[700],
+              size: 20,
+            ),
+            SizedBox(width: 8),
+            Text(
+              "Password",
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.purple[700],
+              ),
+            ),
+          ],
+        );
+      default:
+        return Icon(Icons.lock_outline);
+    }
   }
 }

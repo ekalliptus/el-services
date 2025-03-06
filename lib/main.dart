@@ -13,6 +13,8 @@ import 'package:servicehponline/features/admin/admin_dashboard.dart';
 import 'package:servicehponline/core/constants/constants.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
+import 'package:provider/provider.dart';
+import 'package:servicehponline/core/services/realtime_service.dart';
 
 void main() async {
   try {
@@ -37,8 +39,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => AuthBloc()..add(AuthCheckRequested()),
+    return MultiProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => AuthBloc()..add(AuthCheckRequested()),
+        ),
+        Provider<RealtimeService>(
+          create: (_) => RealtimeService(),
+          dispose: (_, service) => service.dispose(),
+        ),
+      ],
       child: MaterialApp(
         title: 'Service HP Online',
         debugShowCheckedModeBanner: false,

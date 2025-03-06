@@ -49,11 +49,11 @@ class _HomePageOneState extends State<HomePageOne>
   String _active = "";
   String _currentAddress = "Memuat lokasi...";
   bool _isLoadingLocation = true;
-  bool _isGpsEnabled = false;
   StreamSubscription<ServiceStatus>? _gpsStatusSubscription;
   BuildContext? _dialogContext;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       GlobalKey<RefreshIndicatorState>();
+  bool _isGpsEnabled = false;
 
   @override
   void initState() {
@@ -81,11 +81,23 @@ class _HomePageOneState extends State<HomePageOne>
   }
 
   Future<void> _checkGPSAndCloseDialog() async {
+    try {
     bool isEnabled = await Geolocator.isLocationServiceEnabled();
-    if (isEnabled && mounted && _dialogContext != null) {
+      if (mounted) {
+        setState(() {
+          _isGpsEnabled = isEnabled;
+        });
+
+        if (isEnabled) {
+          if (_dialogContext != null) {
       Navigator.of(_dialogContext!).pop();
       _dialogContext = null;
+          }
       _getCurrentLocation();
+        }
+      }
+    } catch (e) {
+      print('Error checking GPS status: $e');
     }
   }
 
@@ -115,18 +127,105 @@ class _HomePageOneState extends State<HomePageOne>
   }
 
   void _setupGpsListener() {
+    _gpsStatusSubscription?.cancel(); // Batalkan subscription yang ada
     _gpsStatusSubscription = Geolocator.getServiceStatusStream().listen(
-      (ServiceStatus status) {
+      (ServiceStatus status) async {
         if (status == ServiceStatus.enabled) {
-          _getCurrentLocation();
+          await _checkGPSAndCloseDialog();
         } else if (status == ServiceStatus.disabled) {
+          if (mounted) {
           setState(() {
+              _isGpsEnabled = false;
             _currentAddress = 'Layanan lokasi tidak aktif';
           });
-          _getCurrentLocation();
+            _showGpsDialog();
+          }
         }
       },
     );
+  }
+
+  void _showGpsDialog() {
+    if (!mounted || _dialogContext != null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        _dialogContext = dialogContext;
+        return WillPopScope(
+          onWillPop: () async {
+            bool isEnabled = await Geolocator.isLocationServiceEnabled();
+            if (isEnabled) {
+              if (mounted) {
+                setState(() => _isGpsEnabled = true);
+                Navigator.of(dialogContext).pop();
+                _dialogContext = null;
+          _getCurrentLocation();
+        }
+              return false;
+            }
+            return true;
+          },
+          child: AlertDialog(
+            title: Text(
+              'GPS Tidak Aktif',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.location_off,
+                  size: 64,
+                  color: Colors.red,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Aplikasi membutuhkan akses lokasi untuk melanjutkan. Silakan aktifkan GPS pada perangkat Anda.',
+                  style: GoogleFonts.poppins(),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'AKTIFKAN GPS',
+                        style: GoogleFonts.poppins(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () async {
+                        await Geolocator.openLocationSettings();
+                        // Cek status GPS setelah kembali dari pengaturan
+                        await _checkGPSAndCloseDialog();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    ).then((_) {
+      // Reset _dialogContext ketika dialog ditutup
+      _dialogContext = null;
+    });
   }
 
   String _getGreeting() {
@@ -227,135 +326,17 @@ class _HomePageOneState extends State<HomePageOne>
     setState(() => _isLoadingLocation = true);
 
     try {
-      // Cek apakah layanan lokasi diaktifkan
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      setState(() => _isGpsEnabled = serviceEnabled);
+        setState(() {
+        _isGpsEnabled = serviceEnabled;
+        if (!serviceEnabled) {
+          _currentAddress = 'Layanan lokasi tidak aktif';
+        }
+      });
 
       if (!serviceEnabled) {
-        setState(() {
-          _currentAddress = 'Layanan lokasi tidak aktif';
-          _isLoadingLocation = false;
-        });
-
-        // Tampilkan dialog untuk mengaktifkan GPS
-        if (!mounted) return;
-
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return WillPopScope(
-              onWillPop: () async {
-                // Cek status GPS saat tombol back ditekan
-                bool isEnabled = await Geolocator.isLocationServiceEnabled();
-                if (isEnabled) {
-                  Navigator.of(dialogContext).pop();
-                  _getCurrentLocation();
-                  return false;
-                }
-                return true;
-              },
-              child: StatefulBuilder(
-                builder: (context, setDialogState) {
-                  // Setup listener untuk status GPS
-                  Geolocator.getServiceStatusStream()
-                      .listen((ServiceStatus status) {
-                    if (status == ServiceStatus.enabled && mounted) {
-                      setDialogState(() {
-                        _isGpsEnabled = true;
-                      });
-                    } else {
-                      setDialogState(() {
-                        _isGpsEnabled = false;
-                      });
-                    }
-                  });
-
-                  return AlertDialog(
-                    title: Text(
-                      'GPS Tidak Aktif',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.location_off,
-                          size: 64,
-                          color: Colors.red,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Aplikasi membutuhkan akses lokasi untuk melanjutkan. Silakan aktifkan GPS pada perangkat Anda.',
-                          style: GoogleFonts.poppins(),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                    actions: <Widget>[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                'AKTIFKAN GPS',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              onPressed: () async {
-                                await Geolocator.openLocationSettings();
-                                // Cek status GPS setelah kembali dari pengaturan
-                                bool isEnabled =
-                                    await Geolocator.isLocationServiceEnabled();
-                                if (isEnabled && mounted) {
-                                  setDialogState(() {
-                                    _isGpsEnabled = true;
-                                  });
-                                }
-                              },
-                            ),
-                          ),
-                          SizedBox(width: 8),
-                          TextButton(
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: 12, horizontal: 16),
-                            ),
-                            child: Text(
-                              'TUTUP',
-                              style: GoogleFonts.poppins(
-                                color:
-                                    _isGpsEnabled ? Colors.blue : Colors.grey,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            onPressed: _isGpsEnabled
-                                ? () {
-                                    Navigator.of(dialogContext).pop();
-                                    _getCurrentLocation();
-                                  }
-                                : null,
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-            );
-          },
-        );
+        setState(() => _isLoadingLocation = false);
+        _showGpsDialog();
         return;
       }
 
@@ -365,6 +346,7 @@ class _HomePageOneState extends State<HomePageOne>
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           setState(() {
+            _isGpsEnabled = false;
             _currentAddress = 'Izin lokasi ditolak';
             _isLoadingLocation = false;
           });
@@ -374,6 +356,7 @@ class _HomePageOneState extends State<HomePageOne>
 
       if (permission == LocationPermission.deniedForever) {
         setState(() {
+          _isGpsEnabled = false;
           _currentAddress = 'Izin lokasi ditolak permanen';
           _isLoadingLocation = false;
         });
@@ -396,6 +379,7 @@ class _HomePageOneState extends State<HomePageOne>
         setState(() {
           _currentAddress = '${place.subLocality}, ${place.locality}';
           _isLoadingLocation = false;
+          _isGpsEnabled = true;
         });
       }
     } catch (e) {
@@ -403,6 +387,7 @@ class _HomePageOneState extends State<HomePageOne>
         setState(() {
           _currentAddress = 'Gagal mendapatkan lokasi';
           _isLoadingLocation = false;
+          _isGpsEnabled = false;
         });
       }
     }
@@ -491,7 +476,8 @@ class _HomePageOneState extends State<HomePageOne>
 
   @override
   Widget build(BuildContext context) {
-    bool isGpsActive = _currentAddress != 'Layanan lokasi tidak aktif';
+    // Menggunakan _isGpsEnabled untuk mengontrol status GPS
+    bool isGpsActive = _isGpsEnabled;
 
     return WillPopScope(
       onWillPop: () async {
@@ -726,136 +712,136 @@ class _HomePageOneState extends State<HomePageOne>
                     child: RefreshIndicator(
                       key: _refreshIndicatorKey,
                       onRefresh: _refreshAllData,
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Column(
-                            children: [
-                              // Device Grid
-                              Container(
-                                height: MediaQuery.of(context).size.width *
-                                    0.4, // Tinggi container disesuaikan dengan lebar layar
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  children: [
-                                    ...DeviceData.devices[0]
-                                        .map((device) => Expanded(
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 4.0),
-                                                child: ServiceCard(
-                                                  device: device,
-                                                  active: _active,
-                                                  setActive: setActiveFunc,
-                                                  nextPage: widget.nextPage,
-                                                ),
-                                              ),
-                                            ))
-                                        .toList(),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(height: 12),
-
-                              // Recent History Section
-                              Row(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          children: [
+                            // Device Grid
+                            Container(
+                              height: MediaQuery.of(context).size.width *
+                                  0.4, // Tinggi container disesuaikan dengan lebar layar
+                              child: Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
-                                  Text(
-                                    'Riwayat Service Terakhir',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushNamed(context, '/history');
-                                    },
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size(50, 30),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      'Lihat Semua',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ),
+                                  ...DeviceData.devices[0]
+                                      .map((device) => Expanded(
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 4.0),
+                                              child: ServiceCard(
+                                                device: device,
+                                                active: _active,
+                                                setActive: setActiveFunc,
+                                                nextPage: widget.nextPage,
+                                              ),
+                                            ),
+                                          ))
+                                      .toList(),
                                 ],
                               ),
+                            ),
                               SizedBox(height: 12),
-                              if (_isLoadingHistory)
-                                Center(
-                                  child: CircularProgressIndicator(),
-                                )
-                              else if (_recentServices.isEmpty)
-                                Container(
-                                  padding: EdgeInsets.symmetric(vertical: 24),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(16),
+
+                            // Recent History Section
+                            Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Riwayat Service Terakhir',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      'Belum ada riwayat service',
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/history');
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size(50, 30),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    'Lihat Semua',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.blue,
                                     ),
                                   ),
-                                )
-                              else
-                                Column(
-                                  children: _recentServices.map((service) {
-                                    return Container(
-                                      margin: EdgeInsets.only(bottom: 12),
-                                      padding: EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            if (_isLoadingHistory)
+                              Center(
+                                child: CircularProgressIndicator(),
+                              )
+                            else if (_recentServices.isEmpty)
+                              Container(
+                                padding: EdgeInsets.symmetric(vertical: 24),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Belum ada riwayat service',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            else
+                              Column(
+                                children: _recentServices.map((service) {
+                                  return Container(
+                                    margin: EdgeInsets.only(bottom: 12),
+                                    padding: EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          padding: EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Icon(
+                                                  service.device
+                                                          .contains('iphone')
+                                                ? Icons.phone_iphone
+                                                : Icons.phone_android,
+                                            color: Colors.blue,
+                                            size: 24,
+                                          ),
+                                        ),
+                                              SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Container(
-                                                padding: EdgeInsets.all(12),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                ),
-                                                child: Icon(
-                                                  service.device
-                                                          .contains('iphone')
-                                                      ? Icons.phone_iphone
-                                                      : Icons.phone_android,
-                                                  color: Colors.blue,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                              SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
+                                              Text(
                                                       DeviceProblems
                                                           .formatDeviceName({
                                                         'device':
@@ -867,32 +853,32 @@ class _HomePageOneState extends State<HomePageOne>
                                                           GoogleFonts.poppins(
                                                         fontWeight:
                                                             FontWeight.w600,
-                                                        fontSize: 14,
-                                                        color: Colors.black87,
-                                                      ),
-                                                    ),
-                                                    SizedBox(height: 4),
-                                                    Text(
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              ),
+                                              SizedBox(height: 4),
+                                              Text(
                                                       DeviceProblems
                                                           .getProblemName(
-                                                              service.problem),
-                                                      maxLines: 2,
+                                                    service.problem),
+                                                maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                       style:
                                                           GoogleFonts.poppins(
-                                                        fontSize: 13,
-                                                        color: Colors.grey[600],
-                                                      ),
-                                                    ),
+                                                  fontSize: 13,
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
                                                     SizedBox(height: 8),
-                                                    Container(
+                                        Container(
                                                       padding:
                                                           EdgeInsets.symmetric(
                                                         horizontal: 8,
                                                         vertical: 4,
-                                                      ),
-                                                      decoration: BoxDecoration(
+                                          ),
+                                          decoration: BoxDecoration(
                                                         color: _getStatusColor(
                                                                 service.status,
                                                                 serviceCost: service.price !=
@@ -903,11 +889,11 @@ class _HomePageOneState extends State<HomePageOne>
                                                                         .price
                                                                     : null)
                                                             .withAlpha(26),
-                                                        borderRadius:
+                                            borderRadius:
                                                             BorderRadius
                                                                 .circular(20),
-                                                      ),
-                                                      child: Text(
+                                          ),
+                                          child: Text(
                                                         _getStatusText(
                                                             service.status,
                                                             serviceCost: service
@@ -919,10 +905,10 @@ class _HomePageOneState extends State<HomePageOne>
                                                                 : null),
                                                         style:
                                                             GoogleFonts.poppins(
-                                                          fontSize: 12,
+                                              fontSize: 12,
                                                           fontWeight:
                                                               FontWeight.w500,
-                                                          color: _getStatusColor(
+                                              color: _getStatusColor(
                                                               service.status,
                                                               serviceCost: service
                                                                               .price !=
@@ -939,160 +925,160 @@ class _HomePageOneState extends State<HomePageOne>
                                                 ),
                                               ),
                                             ],
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
 
-                              // Testimonial Section
-                              SizedBox(height: 24),
-                              Row(
+                            // Testimonial Section
+                            SizedBox(height: 24),
+                            Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
+                              children: [
+                                Text(
                                     'Testimoni',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            AllTestimonialsPage(),
+                                      ),
+                                    );
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size(50, 30),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    'Lihat Semua',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.blue,
                                     ),
                                   ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AllTestimonialsPage(),
-                                        ),
-                                      );
-                                    },
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size(50, 30),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      'Lihat Semua',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 12),
-                              FutureBuilder<List<Map<String, dynamic>>>(
-                                future: _supabase
-                                    .from('testimonials')
-                                    .select()
-                                    .order('created_at', ascending: false)
-                                    .limit(5),
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return Center(
-                                        child: CircularProgressIndicator());
-                                  }
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 12),
+                            FutureBuilder<List<Map<String, dynamic>>>(
+                              future: _supabase
+                                  .from('testimonials')
+                                  .select()
+                                  .order('created_at', ascending: false)
+                                  .limit(5),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return Center(
+                                      child: CircularProgressIndicator());
+                                }
 
-                                  if (snapshot.hasError) {
-                                    return Container(
+                                if (snapshot.hasError) {
+                                  return Container(
                                       padding:
                                           EdgeInsets.symmetric(vertical: 24),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          'Gagal memuat testimoni',
-                                          style: GoogleFonts.poppins(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Gagal memuat testimoni',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
                                         ),
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  );
+                                }
 
-                                  final testimonials = snapshot.data ?? [];
+                                final testimonials = snapshot.data ?? [];
 
-                                  if (testimonials.isEmpty) {
-                                    return Container(
+                                if (testimonials.isEmpty) {
+                                  return Container(
                                       padding:
                                           EdgeInsets.symmetric(vertical: 24),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          'Belum ada testimoni',
-                                          style: GoogleFonts.poppins(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Belum ada testimoni',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.grey[600],
+                                          fontSize: 14,
                                         ),
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  );
+                                }
 
-                                  return SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
+                                return SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
                                     physics: BouncingScrollPhysics(),
                                     padding: EdgeInsets.only(bottom: 8),
-                                    child: Row(
-                                      children: testimonials.map((testimonial) {
-                                        return Container(
+                                  child: Row(
+                                    children: testimonials.map((testimonial) {
+                                      return Container(
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
                                               0.85,
-                                          margin: EdgeInsets.only(right: 12),
-                                          padding: EdgeInsets.all(16),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[100],
-                                            borderRadius:
-                                                BorderRadius.circular(16),
+                                        margin: EdgeInsets.only(right: 12),
+                                        padding: EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                             border: Border.all(
                                               color: Colors.grey[200]!,
                                               width: 1,
                                             ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
                                                   _buildAvatar(testimonial),
-                                                  SizedBox(width: 12),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(
+                                                SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
                                                           testimonial[
                                                               'fullname'],
                                                           style: GoogleFonts
                                                               .poppins(
-                                                            fontWeight:
-                                                                FontWeight.w600,
+                                                          fontWeight:
+                                                              FontWeight.w600,
                                                             fontSize: 16,
-                                                          ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
                                                         ),
-                                                        Text(
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                      Text(
                                                           DeviceProblems
                                                               .formatDeviceName(
                                                                   testimonial),
@@ -1105,61 +1091,61 @@ class _HomePageOneState extends State<HomePageOne>
                                                           maxLines: 1,
                                                           overflow: TextOverflow
                                                               .ellipsis,
-                                                        ),
-                                                      ],
-                                                    ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                              ],
+                                            ),
                                               SizedBox(height: 16),
                                               Wrap(
                                                 spacing: 2,
-                                                children: List.generate(
-                                                  5,
-                                                  (index) => Icon(
-                                                    index <
-                                                            (testimonial[
-                                                                    'rating'] ??
-                                                                0)
-                                                        ? Icons.star
-                                                        : Icons.star_border,
-                                                    color: Colors.amber,
-                                                    size: 20,
-                                                  ),
+                                              children: List.generate(
+                                                5,
+                                                (index) => Icon(
+                                                  index <
+                                                          (testimonial[
+                                                                  'rating'] ??
+                                                              0)
+                                                      ? Icons.star
+                                                      : Icons.star_border,
+                                                  color: Colors.amber,
+                                                  size: 20,
                                                 ),
                                               ),
+                                            ),
                                               SizedBox(height: 12),
-                                              Text(
-                                                testimonial['content'],
-                                                style: GoogleFonts.poppins(
-                                                  fontSize: 14,
-                                                  height: 1.5,
+                                            Text(
+                                              testimonial['content'],
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                height: 1.5,
                                                   color: Colors.black87,
-                                                ),
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
                                               ),
+                                              maxLines: 3,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                               SizedBox(height: 12),
-                                              Text(
+                                            Text(
                                                 DateFormat('dd MMMM yyyy')
                                                     .format(
                                                   DateTime.parse(testimonial[
                                                       'created_at']),
-                                                ),
-                                                style: GoogleFonts.poppins(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
                                               ),
-                                            ],
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+                                              style: GoogleFonts.poppins(
+                                                color: Colors.grey[600],
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                           ),
                         ),
                       ),

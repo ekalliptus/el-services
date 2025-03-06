@@ -1,33 +1,63 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:servicehponline/data/models/service_model.dart';
-import 'dart:io';
 import 'package:servicehponline/data/models/device_problems.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:servicehponline/features/user/pages/service_history_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase;
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:servicehponline/features/user/widgets/page_indicator_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/mixins/gps_mixin.dart';
 
 class ConfirmationPage extends StatefulWidget {
   final ServiceModel service;
+  final VoidCallback prevPage;
+  final VoidCallback onConfirm;
 
   const ConfirmationPage({
     Key? key,
     required this.service,
+    required this.prevPage,
+    required this.onConfirm,
   }) : super(key: key);
 
   @override
   State<ConfirmationPage> createState() => _ConfirmationPageState();
 }
 
-class _ConfirmationPageState extends State<ConfirmationPage> {
+class _ConfirmationPageState extends State<ConfirmationPage>
+    with WidgetsBindingObserver, GPSMixin {
   final _supabase = Supabase.instance.client;
-  final _firebaseAuth = firebase.FirebaseAuth.instance;
+  final _firebaseAuth = firebase_auth.FirebaseAuth.instance;
   bool _isLoading = false;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+  }
 
   Future<void> _submitService() async {
-    setState(() => _isLoading = true);
+    if (_isLoading || _isSubmitting) return;
+
+    setState(() {
+      _isLoading = true;
+      _isSubmitting = true;
+    });
 
     try {
       final user = _firebaseAuth.currentUser;
@@ -50,6 +80,14 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
         'status': 'PENDING',
         'created_at': DateTime.now().toIso8601String(),
       };
+
+      if (!mounted) {
+        setState(() {
+          _isLoading = false;
+          _isSubmitting = false;
+        });
+        return;
+      }
 
       final response =
           await _supabase.from('services').insert(serviceData).select();
@@ -141,11 +179,12 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
         context: context,
         dialogType: DialogType.success,
         animType: AnimType.bottomSlide,
+        dismissOnTouchOutside: false,
+        dismissOnBackKeyPress: false,
         title: 'Berhasil!',
         desc:
             'Permintaan service berhasil dikirim. Admin akan segera menentukan biaya service.',
         btnOkOnPress: () {
-          // Navigasi ke halaman riwayat service dengan WillPopScope
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
@@ -165,50 +204,398 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
         btnOkText: 'Lihat Riwayat',
       ).show();
     } catch (e) {
+      print('Error submitting service: $e');
       if (!mounted) return;
+
+      String errorMessage = 'Gagal mengirim permintaan service. ';
+      if (e.toString().contains('PostgrestException')) {
+        errorMessage += 'Terjadi kesalahan pada database. Silakan coba lagi.';
+      } else {
+        errorMessage += e.toString();
+      }
 
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
         animType: AnimType.bottomSlide,
+        dismissOnTouchOutside: true,
         title: 'Gagal!',
-        desc: 'Gagal mengirim permintaan service: $e',
-        btnOkOnPress: () {},
+        desc: errorMessage,
+        btnOkOnPress: () {
+          Navigator.of(context).pop();
+        },
         btnOkColor: Colors.red,
         btnOkText: 'OK',
       ).show();
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isSubmitting = false;
+        });
+      }
     }
   }
 
-  Widget _buildDetailRow(String label, String value,
-      {Color? valueColor, FontWeight? valueWeight}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        if (_isLoading || _isSubmitting) {
+          AwesomeDialog(
+            context: context,
+            dialogType: DialogType.warning,
+            animType: AnimType.scale,
+            title: 'Peringatan',
+            desc: 'Mohon tunggu hingga proses pengiriman selesai',
+            btnOkColor: Colors.orange,
+            btnOkText: 'OK',
+            btnOkOnPress: () {},
+            dismissOnBackKeyPress: false,
+            dismissOnTouchOutside: false,
+          ).show();
+          return false;
+        }
+        return true;
+      },
+      child: Stack(
         children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 14.0,
+          Scaffold(
+            backgroundColor: Colors.white,
+            body: SafeArea(
+              child: AbsorbPointer(
+                absorbing: _isLoading || _isSubmitting,
+                child: Opacity(
+                  opacity: isGpsEnabled ? 1.0 : 0.5,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              PageIndicator(currentPage: 3, darkMode: false),
+                              SizedBox(height: 20.0),
+                              Text(
+                                "Konfirmasi",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black87,
+                                  fontSize: 32.0,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              SizedBox(height: 12.0),
+                              Text(
+                                "Periksa kembali data service Anda",
+                                style: GoogleFonts.poppins(
+                                  color: Colors.black54,
+                                  fontSize: 16.0,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _buildSection(
+                                  title: "Data Perangkat",
+                                  content: [
+                                    _buildInfoRow(
+                                      label: "Perangkat",
+                                      value: DeviceProblems.formatDeviceName({
+                                        'device': widget.service.device,
+                                        'brand': widget.service.brand,
+                                        'model': widget.service.model,
+                                      }),
+                                    ),
+                                    _buildInfoRow(
+                                      label: "Masalah",
+                                      value: DeviceProblems.getProblemName(
+                                          widget.service.problem),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 24.0),
+                                _buildSection(
+                                  title: "Data Diri",
+                                  content: [
+                                    _buildInfoRow(
+                                      label: "Nama Lengkap",
+                                      value: widget.service.fullname,
+                                    ),
+                                    _buildInfoRow(
+                                      label: "WhatsApp",
+                                      value: widget.service.whatsapp,
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 24.0),
+                                _buildSection(
+                                  title: "Lokasi Penjemputan",
+                                  content: [
+                                    _buildInfoRow(
+                                      label: "Alamat",
+                                      value: widget.service.address,
+                                    ),
+                                  ],
+                                ),
+                                if (widget.service.note.isNotEmpty) ...[
+                                  SizedBox(height: 24.0),
+                                  _buildSection(
+                                    title: "Catatan Tambahan",
+                                    content: [
+                                      _buildInfoRow(
+                                        label: "Catatan",
+                                        value: widget.service.note,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                SizedBox(height: 24.0),
+                                _buildSection(
+                                  title: "Metode Pengiriman",
+                                  content: [
+                                    _buildInfoRow(
+                                      label: "Metode",
+                                      value: widget.service.shippingMethod ==
+                                              'Jemput'
+                                          ? 'Dijemput oleh kurir'
+                                          : 'Diantar ke service center',
+                                    ),
+                                    if (widget.service.latitude != null &&
+                                        widget.service.longitude != null)
+                                      _buildInfoRow(
+                                        label: "Lokasi Penjemputan",
+                                        value:
+                                            "Lat: ${widget.service.latitude}, Long: ${widget.service.longitude}",
+                                      ),
+                                  ],
+                                ),
+                                if (widget.service.devicePasswordType !=
+                                    null) ...[
+                                  SizedBox(height: 24.0),
+                                  _buildSection(
+                                    title: "Password Perangkat",
+                                    content: [
+                                      _buildInfoRow(
+                                        label: "Jenis Password",
+                                        value:
+                                            widget.service.devicePasswordType!,
+                                      ),
+                                      _buildInfoRow(
+                                        label: "Password",
+                                        value: widget.service.devicePassword ??
+                                            '-',
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                                SizedBox(height: 24.0),
+                                _buildSection(
+                                  title: "Dokumentasi",
+                                  content: [
+                                    if (widget.service.pictureDamage != null)
+                                      _buildImagePreview(
+                                        label: "Foto Kerusakan",
+                                        imagePath:
+                                            widget.service.pictureDamage!,
+                                      ),
+                                    if (widget.service.pictureFront != null)
+                                      _buildImagePreview(
+                                        label: "Foto Tampak Depan",
+                                        imagePath: widget.service.pictureFront!,
+                                      ),
+                                    if (widget.service.pictureBack != null)
+                                      _buildImagePreview(
+                                        label: "Foto Tampak Belakang",
+                                        imagePath: widget.service.pictureBack!,
+                                      ),
+                                    if (widget.service.video != null)
+                                      _buildVideoPreview(
+                                        label: "Video",
+                                        videoPath: widget.service.video!,
+                                      ),
+                                  ],
+                                ),
+                                SizedBox(height: 32.0),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextButton(
+                                  onPressed:
+                                      _isLoading ? null : widget.prevPage,
+                                  style: TextButton.styleFrom(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 16.0),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                      side: BorderSide(
+                                          color: _isLoading
+                                              ? Colors.grey[200]!
+                                              : Colors.grey[300]!),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    "KEMBALI",
+                                    style: GoogleFonts.poppins(
+                                      color: _isLoading
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 16.0),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _submitService,
+                                  style: ElevatedButton.styleFrom(
+                                    padding:
+                                        EdgeInsets.symmetric(vertical: 16.0),
+                                    backgroundColor: Colors.blue,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12.0),
+                                    ),
+                                  ),
+                                  child: _isLoading
+                                      ? SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
+                                          ),
+                                        )
+                                      : Text(
+                                          "KONFIRMASI",
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-          SizedBox(width: 16.0),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: TextStyle(
-                color: valueColor ?? Colors.black87,
-                fontSize: 14.0,
-                fontWeight: valueWeight ?? FontWeight.w500,
+          if (_isLoading || _isSubmitting)
+            Container(
+              color: Colors.black54,
+              child: Center(
+                child: Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Mengirim permintaan service...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Mohon tunggu sebentar',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    required List<Widget> content,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              color: Colors.black87,
+              fontSize: 16.0,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 16.0),
+          ...content,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              color: Colors.grey[600],
+              fontSize: 14.0,
+            ),
+          ),
+          SizedBox(height: 4.0),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              color: Colors.black87,
+              fontSize: 15.0,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -216,357 +603,69 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (_isLoading) {
-          return false;
-        }
-
-        final shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: Text(
-              'Batalkan Service?',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            content: Text(
-              'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: Text(
-                  'TIDAK',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context, true); // Close dialog
-                  Navigator.pop(context); // Back to previous page
-                },
-                child: Text(
-                  'YA',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+  Widget _buildImagePreview({
+    required String label,
+    required String imagePath,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: Colors.grey[600],
+            fontSize: 14.0,
           ),
-        );
-        return shouldPop ?? false;
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () async {
-              if (_isLoading) return;
-
-              final shouldPop = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(
-                    'Batalkan Service?',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  content: Text(
-                    'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: Text(
-                        'TIDAK',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context, true); // Close dialog
-                        Navigator.pop(context); // Back to previous page
-                      },
-                      child: Text(
-                        'YA',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-              if (shouldPop ?? false) {
-                Navigator.pop(context);
-              }
-            },
-          ),
-          title: Text(
-            'Konfirmasi Service',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 20.0,
-              fontWeight: FontWeight.w600,
+        ),
+        SizedBox(height: 8.0),
+        Container(
+          height: 200,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            image: DecorationImage(
+              image: FileImage(File(imagePath)),
+              fit: BoxFit.cover,
             ),
           ),
         ),
-        body: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.0),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Data Diri',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 18.0,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 16.0),
-                        _buildDetailRow(
-                            'Nama Lengkap', widget.service.fullname),
-                        _buildDetailRow('WhatsApp', widget.service.whatsapp),
-                        _buildDetailRow('Alamat', widget.service.address),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 16.0),
-                  Container(
-                    padding: EdgeInsets.all(16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.0),
-                      border: Border.all(color: Colors.grey[300]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Detail Perangkat',
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 18.0,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 16.0),
-                        _buildDetailRow(
-                          'Perangkat',
-                          widget.service.device == 'iphone'
-                              ? 'iPhone'
-                              : widget.service.device == 'huawei'
-                                  ? 'Huawei'
-                                  : 'Android',
-                        ),
-                        _buildDetailRow('Model', widget.service.model),
-                        _buildDetailRow(
-                          'Masalah',
-                          DeviceProblems.getProblemName(widget.service.problem),
-                        ),
-                        _buildDetailRow(
-                            'Deskripsi', widget.service.description),
-                        _buildDetailRow(
-                          'Metode Pengiriman',
-                          widget.service.shippingMethod == 'Jemput'
-                              ? 'Dijemput'
-                              : 'Diantar',
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (widget.service.pictureDamage != null ||
-                      widget.service.pictureFront != null ||
-                      widget.service.pictureBack != null ||
-                      widget.service.video != null) ...[
-                    SizedBox(height: 16.0),
-                    Container(
-                      padding: EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16.0),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Dokumentasi',
-                            style: TextStyle(
-                              color: Colors.black87,
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: 16.0),
-                          if (widget.service.pictureDamage != null) ...[
-                            Text(
-                              'Foto Kerusakan:',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 8.0),
-                            Container(
-                              height: 200,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0),
-                                image: DecorationImage(
-                                  image: FileImage(
-                                      File(widget.service.pictureDamage!)),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ],
-                          if (widget.service.pictureFront != null) ...[
-                            SizedBox(height: 16.0),
-                            Text(
-                              'Foto Tampak Depan:',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 8.0),
-                            Container(
-                              height: 200,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0),
-                                image: DecorationImage(
-                                  image: FileImage(
-                                      File(widget.service.pictureFront!)),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ],
-                          if (widget.service.pictureBack != null) ...[
-                            SizedBox(height: 16.0),
-                            Text(
-                              'Foto Tampak Belakang:',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 8.0),
-                            Container(
-                              height: 200,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0),
-                                image: DecorationImage(
-                                  image: FileImage(
-                                      File(widget.service.pictureBack!)),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          ],
-                          if (widget.service.video != null) ...[
-                            SizedBox(height: 16.0),
-                            Text(
-                              'Video:',
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(height: 8.0),
-                            Container(
-                              height: 200,
-                              decoration: BoxDecoration(
-                                color: Colors.black,
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.play_circle_fill,
-                                  color: Colors.white,
-                                  size: 48.0,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ],
-                  SizedBox(height: 32.0),
-                  ElevatedButton(
-                    onPressed: _isLoading ? null : _submitService,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : Text(
-                            'Kirim Service',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                  ),
-                  SizedBox(height: 32.0),
-                ],
-              ),
-            ),
-          ],
+        SizedBox(height: 16.0),
+      ],
+    );
+  }
+
+  Widget _buildVideoPreview({
+    required String label,
+    required String videoPath,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: Colors.grey[600],
+            fontSize: 14.0,
+          ),
         ),
-      ),
+        SizedBox(height: 8.0),
+        Container(
+          height: 200,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.play_circle_fill,
+              color: Colors.white,
+              size: 48,
+            ),
+          ),
+        ),
+        SizedBox(height: 16.0),
+      ],
     );
   }
 }

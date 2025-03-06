@@ -3,8 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:servicehponline/data/models/device_problems.dart';
 import 'package:servicehponline/features/user/widgets/page_indicator_widget.dart';
+import 'package:servicehponline/core/mixins/gps_mixin.dart';
 
-class HomePageTwo extends StatelessWidget {
+class HomePageTwo extends StatefulWidget {
   final String selectedDevice;
   final Function(String) onProblemSelected;
   final VoidCallback prevPage;
@@ -18,80 +19,92 @@ class HomePageTwo extends StatelessWidget {
     required this.nextPage,
   }) : super(key: key);
 
+  @override
+  State<HomePageTwo> createState() => _HomePageTwoState();
+}
+
+class _HomePageTwoState extends State<HomePageTwo>
+    with WidgetsBindingObserver, GPSMixin {
   void _selectProblem(String problem) {
-    onProblemSelected(problem);
-    nextPage();
+    widget.onProblemSelected(problem);
+    widget.nextPage();
   }
 
   @override
   Widget build(BuildContext context) {
-    final deviceProblems = DeviceProblems.problems[selectedDevice] ?? [];
+    final deviceProblems = DeviceProblems.problems[widget.selectedDevice] ?? [];
     final problems =
         deviceProblems.expand((list) => list).expand((e) => [e]).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(vertical: 20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    PageIndicator(currentPage: 1, darkMode: false),
-                    SizedBox(height: 20.0),
-                    Text(
-                      "Pilih Masalah",
-                      style: TextStyle(
-                        color: Colors.black87,
-                        fontSize: 32.0,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
+        child: Opacity(
+          opacity: isGpsEnabled ? 1.0 : 0.5,
+          child: AbsorbPointer(
+            absorbing: !isGpsEnabled,
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        PageIndicator(currentPage: 1, darkMode: false),
+                        SizedBox(height: 20.0),
+                        Text(
+                          "Pilih Masalah",
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 32.0,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        SizedBox(height: 12.0),
+                        Text(
+                          "Silakan pilih masalah yang dialami perangkat Anda",
+                          style: TextStyle(
+                            color: Colors.black54,
+                            fontSize: 16.0,
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20.0),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24.0),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: ListView.separated(
+                        padding: EdgeInsets.all(16.0),
+                        itemCount: problems.length,
+                        separatorBuilder: (context, index) =>
+                            SizedBox(height: 16.0),
+                        itemBuilder: (context, index) {
+                          final problem = problems[index];
+                          return _buildProblemButton(
+                            context: context,
+                            icon: problem.icon,
+                            label: problem.name,
+                            info: problem.info,
+                            onTap: () => _selectProblem(problem.key),
+                          );
+                        },
                       ),
                     ),
-                    SizedBox(height: 12.0),
-                    Text(
-                      "Silakan pilih masalah yang dialami perangkat Anda",
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 16.0,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20.0),
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24.0),
-                    border: Border.all(color: Colors.grey[300]!),
                   ),
-                  child: ListView.separated(
-                    padding: EdgeInsets.all(16.0),
-                    itemCount: problems.length,
-                    separatorBuilder: (context, index) =>
-                        SizedBox(height: 16.0),
-                    itemBuilder: (context, index) {
-                      final problem = problems[index];
-                      return _buildProblemButton(
-                        context: context,
-                        icon: problem.icon,
-                        label: problem.name,
-                        info: problem.info,
-                        onTap: () => _selectProblem(problem.key),
-                      );
-                    },
-                  ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -22,7 +22,7 @@ dependencies:
   url_launcher: ^6.2.2
   firebase_auth: ^4.15.3
   google_sign_in: ^6.2.2
-  firebase_core: ^2.24.2
+  firebase_core: ^2.32.0
   image_picker: ^1.0.5
   http: ^1.1.2
   provider: ^6.1.1
@@ -44,6 +44,8 @@ dependencies:
   crypto: ^3.0.3
   google_maps_flutter: ^2.10.0
   video_player: ^2.9.2
+  awesome_notifications: ^0.8.2
+  pattern_lock: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +60,9 @@ flutter:
     - assets/images/
     - assets/svg/devices/
     - assets/svg/login/
+    - assets/svg/login/facebook.svg
+    - assets/svg/login/google.svg
+    - assets/svg/login/whatsapp_login.svg
     - .env
 
 flutter_launcher_icons:

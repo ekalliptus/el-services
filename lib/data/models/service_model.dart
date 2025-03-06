@@ -15,11 +15,14 @@ class ServiceModel {
   final String model;
   final String description;
   final String shippingMethod;
+  final String note;
   final double? latitude;
   final double? longitude;
   final DateTime? createdAt;
   final String? customerEmail;
   final String? status;
+  final String? devicePassword;
+  final String? devicePasswordType;
 
   ServiceModel({
     this.id,
@@ -33,6 +36,7 @@ class ServiceModel {
     required this.model,
     required this.description,
     required this.shippingMethod,
+    this.note = '',
     this.pictureDamage,
     this.pictureFront,
     this.pictureBack,
@@ -43,6 +47,8 @@ class ServiceModel {
     this.createdAt,
     this.customerEmail,
     this.status,
+    this.devicePassword,
+    this.devicePasswordType,
   });
 
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
@@ -73,6 +79,7 @@ class ServiceModel {
       model: json['model'] ?? '',
       description: json['description'] ?? '',
       shippingMethod: json['shipping_method'] ?? 'pickup',
+      note: json['note'] ?? '',
       pictureDamage: json['picture_damage_url'],
       pictureFront: json['picture_front_url'],
       pictureBack: json['picture_back_url'],
@@ -85,6 +92,8 @@ class ServiceModel {
           : null,
       customerEmail: json['customer_email'],
       status: json['status']?.toString().toUpperCase(),
+      devicePassword: json['device_password'],
+      devicePasswordType: json['device_password_type'],
     );
   }
 
@@ -101,6 +110,7 @@ class ServiceModel {
       'model': model,
       'description': description,
       'shipping_method': shippingMethod,
+      'note': note,
       'picture_damage_url': pictureDamage,
       'picture_front_url': pictureFront,
       'picture_back_url': pictureBack,
@@ -111,6 +121,8 @@ class ServiceModel {
       'created_at': createdAt?.toIso8601String(),
       'customer_email': customerEmail,
       'status': status,
+      'device_password': devicePassword,
+      'device_password_type': devicePasswordType,
     };
   }
 

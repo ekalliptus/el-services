@@ -23,7 +23,8 @@ class _HomeState extends State<Home> {
   final _authentication = Authentication();
   final _supabase = supabase.Supabase.instance.client;
   bool _isChecked = false;
-  bool _isLoading = false;
+  bool _isGoogleLoading = false;
+  bool _isWhatsappLoading = false;
   bool _isAdminLoading = false;
 
   // Controller untuk form login admin
@@ -49,7 +50,7 @@ class _HomeState extends State<Home> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() => _isGoogleLoading = true);
 
     try {
       final userCredential = await _authentication.signInWithGoogle();
@@ -88,7 +89,7 @@ class _HomeState extends State<Home> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _isGoogleLoading = false);
       }
     }
   }
@@ -354,7 +355,7 @@ class _HomeState extends State<Home> {
                         const SizedBox(height: 32),
                         // Google Sign In Button
                         InkWell(
-                          onTap: _isLoading ? null : _handleGoogleSignIn,
+                          onTap: _isGoogleLoading ? null : _handleGoogleSignIn,
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
@@ -367,7 +368,7 @@ class _HomeState extends State<Home> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                if (_isLoading)
+                                if (_isGoogleLoading)
                                   SizedBox(
                                     width: 24,
                                     height: 24,
@@ -389,7 +390,7 @@ class _HomeState extends State<Home> {
                                 const SizedBox(width: 12),
                                 Flexible(
                                   child: Text(
-                                    _isLoading
+                                    _isGoogleLoading
                                         ? 'Sedang Masuk...'
                                         : 'Masuk dengan Google',
                                     style: GoogleFonts.poppins(
@@ -407,18 +408,20 @@ class _HomeState extends State<Home> {
                         const SizedBox(height: 16),
                         // Phone Number Sign In Button
                         InkWell(
-                          onTap: () {
-                            if (!_isChecked) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Anda harus menyetujui Ketentuan Layanan dan Kebijakan Privasi terlebih dahulu'),
-                                ),
-                              );
-                              return;
-                            }
-                            // Implement Phone Sign In
-                          },
+                          onTap: _isWhatsappLoading
+                              ? null
+                              : () {
+                                  if (!_isChecked) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                            'Anda harus menyetujui Ketentuan Layanan dan Kebijakan Privasi terlebih dahulu'),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  // Implement Phone Sign In
+                                },
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
