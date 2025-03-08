@@ -21,6 +21,7 @@ class _ProfilePageState extends State<ProfilePage> {
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
+  late TextEditingController _addressNoteController;
   bool _isEditing = false;
   bool _isLoading = false;
   final _supabase = Supabase.instance.client;
@@ -28,11 +29,12 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.user.displayName);
+    _nameController = TextEditingController(text: '');
     _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController();
     _addressController = TextEditingController();
-    _loadWhatsappNumber();
+    _addressNoteController = TextEditingController();
+    _loadProfileData();
   }
 
   @override
@@ -41,6 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _addressNoteController.dispose();
     super.dispose();
   }
 
@@ -57,6 +60,20 @@ class _ProfilePageState extends State<ProfilePage> {
         whatsappNumber = '62${whatsappNumber.substring(1)}';
       }
 
+      // Persiapkan data untuk disimpan dengan explicit trim
+      String fullname = _nameController.text.trim();
+      String address = _addressController.text.trim();
+      String addressNote = _addressNoteController.text.trim();
+
+      // Log data yang akan disimpan untuk debugging
+      print('------------ SAVING PROFILE DATA ------------');
+      print('UID: ${widget.user.uid}');
+      print('Fullname: $fullname');
+      print('WhatsApp: $whatsappNumber');
+      print('Address: $address');
+      print('Address Note: $addressNote');
+      print('--------------------------------------------');
+
       // Check if profile exists
       try {
         final existingProfile = await _supabase
@@ -65,24 +82,31 @@ class _ProfilePageState extends State<ProfilePage> {
             .eq('id', widget.user.uid)
             .maybeSingle();
 
+        // Map data profile untuk update/insert
+        final profileData = {
+          'fullname': fullname,
+          'phoneNumber': whatsappNumber,
+          'address': address,
+          'address_note': addressNote,
+          'updated_at': DateTime.now().toIso8601String(),
+        };
+
         if (existingProfile != null) {
           // Update existing profile
-          await _supabase.from('profiles').update({
-            'whatsapp': whatsappNumber,
-            'address': _addressController.text.trim(),
-            'updated_at': DateTime.now().toIso8601String(),
-          }).eq('id', widget.user.uid);
-          print('Profile updated successfully');
+          final response = await _supabase
+              .from('profiles')
+              .update(profileData)
+              .eq('id', widget.user.uid);
+          print('Profile updated successfully: $response');
         } else {
-          // Create new profile
-          await _supabase.from('profiles').insert({
+          // Create new profile dengan explicit ID
+          final insertData = {
+            ...profileData,
             'id': widget.user.uid,
-            'whatsapp': whatsappNumber,
-            'address': _addressController.text.trim(),
             'created_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String()
-          });
-          print('New profile created successfully');
+          };
+          final response = await _supabase.from('profiles').insert(insertData);
+          print('New profile created successfully: $response');
         }
 
         // Format the WhatsApp number for display
@@ -98,6 +122,11 @@ class _ProfilePageState extends State<ProfilePage> {
             _isEditing = false;
           });
 
+          // Reload data untuk verifikasi bahwa semua berhasil disimpan
+          Future.delayed(Duration(milliseconds: 500), () {
+            _loadProfileData();
+          });
+
           AwesomeDialog(
             context: context,
             dialogType: DialogType.success,
@@ -110,7 +139,12 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       } catch (e) {
         print('Error updating Supabase profile: $e');
-        throw Exception('Gagal memperbarui data profil');
+        // Tampilkan error yang lebih detail
+        String errorMessage = 'Gagal memperbarui data profil';
+        if (e is PostgrestException) {
+          errorMessage += ': ${e.message}';
+        }
+        throw Exception(errorMessage);
       }
     } catch (e) {
       print('Error in _updateProfile: $e');
@@ -134,7 +168,8 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _loadWhatsappNumber() async {
+  Future<void> _loadProfileData() async {
+    setState(() => _isLoading = true);
     try {
       final profileData = await _supabase
           .from('profiles')
@@ -142,9 +177,25 @@ class _ProfilePageState extends State<ProfilePage> {
           .eq('id', widget.user.uid)
           .maybeSingle();
 
+      // Log data yang diambil untuk debugging
+      print('------------ LOADED PROFILE DATA ------------');
+      print('Profile data: $profileData');
       if (profileData != null) {
-        String whatsappNumber = profileData['whatsapp'] ?? '';
+        print('Fullname: ${profileData['fullname']}');
+        print('WhatsApp: ${profileData['phoneNumber']}');
+        print('Address: ${profileData['address']}');
+        print('Address Note: ${profileData['address_note']}');
+      } else {
+        print('Profile not found in database');
+      }
+      print('--------------------------------------------');
+
+      if (profileData != null) {
+        // Ambil fullname dari Supabase jika ada
+        String fullname = profileData['fullname'] ?? '';
+        String whatsappNumber = profileData['phoneNumber'] ?? '';
         String address = profileData['address'] ?? '';
+        String addressNote = profileData['address_note'] ?? '';
 
         if (whatsappNumber.startsWith('62')) {
           whatsappNumber = whatsappNumber.replaceAllMapped(
@@ -154,13 +205,35 @@ class _ProfilePageState extends State<ProfilePage> {
 
         if (mounted) {
           setState(() {
+            // Gunakan fullname dari Supabase jika ada, jika tidak ada gunakan dari Firebase
+            _nameController.text = fullname.isNotEmpty
+                ? fullname
+                : (widget.user.displayName ?? '');
             _phoneController.text = whatsappNumber;
             _addressController.text = address;
+            _addressNoteController.text = addressNote;
+          });
+        }
+      } else {
+        // Jika profil belum ada, gunakan data dari Firebase
+        if (mounted) {
+          setState(() {
+            _nameController.text = widget.user.displayName ?? '';
           });
         }
       }
     } catch (e) {
       print('Error loading profile data: $e');
+      // Jika gagal, gunakan data dari Firebase
+      if (mounted) {
+        setState(() {
+          _nameController.text = widget.user.displayName ?? '';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -205,7 +278,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ).show();
 
           if (shouldPop) {
-            _loadWhatsappNumber(); // Kembalikan data ke kondisi sebelumnya
+            _loadProfileData(); // Kembalikan data ke kondisi sebelumnya
           }
           return shouldPop;
         }
@@ -255,7 +328,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   btnOkText: 'Ya',
                   btnOkColor: Colors.blue,
                   btnOkOnPress: () {
-                    _loadWhatsappNumber(); // Kembalikan data ke kondisi sebelumnya
+                    _loadProfileData(); // Kembalikan data ke kondisi sebelumnya
                     Navigator.pop(context);
                   },
                   btnCancelText: 'Tidak',
@@ -386,7 +459,13 @@ class _ProfilePageState extends State<ProfilePage> {
                         controller: _nameController,
                         label: 'Nama Lengkap',
                         icon: Icons.person_outline,
-                        enabled: false,
+                        enabled: _isEditing,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Nama lengkap tidak boleh kosong';
+                          }
+                          return null;
+                        },
                       ),
                       SizedBox(height: 16),
                       _buildTextField(
@@ -435,6 +514,14 @@ class _ProfilePageState extends State<ProfilePage> {
                           return null;
                         },
                       ),
+                      SizedBox(height: 16),
+                      _buildTextField(
+                        controller: _addressNoteController,
+                        label: 'Catatan Alamat',
+                        icon: Icons.note_outlined,
+                        enabled: _isEditing,
+                        maxLines: 2,
+                      ),
                       SizedBox(height: 24),
                       if (_isEditing)
                         Row(
@@ -447,7 +534,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         setState(() {
                                           _isEditing = false;
                                           // Kembalikan data ke kondisi sebelumnya
-                                          _loadWhatsappNumber();
+                                          _loadProfileData();
                                         });
                                       },
                                 style: TextButton.styleFrom(

@@ -67,7 +67,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
       final serviceData = {
         'user_id': user.uid,
         'fullname': widget.service.fullname,
-        'whatsapp': widget.service.whatsapp,
+        'phoneNumber': widget.service.phoneNumber,
         'address': widget.service.address,
         'device': widget.service.device,
         'brand': widget.service.brand,
@@ -333,7 +333,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                                     ),
                                     _buildInfoRow(
                                       label: "WhatsApp",
-                                      value: widget.service.whatsapp,
+                                      value: widget.service.phoneNumber,
                                     ),
                                   ],
                                 ),
@@ -512,29 +512,8 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Mengirim permintaan service...',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Mohon tunggu sebentar',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
                   ),
                 ),
               ),

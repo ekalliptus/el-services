@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:servicehponline/features/user/widgets/mobile_map_picker_widget.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/services.dart';
+import 'package:servicehponline/core/services/authentication.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -165,14 +166,52 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Future<void> _handleLogout() async {
     try {
+      // Tampilkan loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Sedang keluar dari aplikasi...')
+              ],
+            ),
+          );
+        },
+      );
+
+      // Gunakan service Authentication untuk logout
+      final authService = Authentication();
+      await authService.signOut();
+
+      // Pastikan juga logout dari Supabase, karena admin menggunakan Supabase
       await _supabase.auth.signOut();
+
       if (!mounted) return;
+
+      // Tutup dialog loading
+      Navigator.of(context).pop();
+
+      // Kembali ke halaman login
       Navigator.of(context).pushReplacementNamed('/');
     } catch (e) {
+      print('Error during admin logout: $e');
       if (!mounted) return;
+
+      // Tutup dialog loading jika masih terbuka
+      try {
+        Navigator.of(context).pop();
+      } catch (e) {
+        // Dialog mungkin sudah ditutup
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal keluar dari aplikasi'),
+          content: Text('Gagal keluar dari aplikasi: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -213,8 +252,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-        title: Text(
-          'Update Biaya Service',
+          title: Text(
+            'Update Biaya Service',
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
             ),
@@ -224,14 +263,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               TextField(
                 controller: _costController,
-          keyboardType: TextInputType.number,
+                keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                 ],
-          decoration: InputDecoration(
-            labelText: 'Biaya Service',
-            prefixText: 'Rp ',
-            border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'Biaya Service',
+                  prefixText: 'Rp ',
+                  border: OutlineInputBorder(),
                   hintText: '100000',
                 ),
                 onChanged: (value) {
@@ -247,19 +286,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 },
               ),
             ],
-        ),
-        actions: [
-          TextButton(
+          ),
+          actions: [
+            TextButton(
               onPressed: _isSubmitting ? null : () => Navigator.pop(context),
-            child: Text(
-              'BATAL',
+              child: Text(
+                'BATAL',
                 style: GoogleFonts.poppins(
                   color: Colors.grey[600],
                   fontWeight: FontWeight.w500,
                 ),
+              ),
             ),
-          ),
-          TextButton(
+            TextButton(
               onPressed: _isSubmitting
                   ? null
                   : () async {
@@ -277,28 +316,28 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
                       try {
                         final cost = int.parse(_costController.text);
-                await _supabase.from('services').update({
-                  'service_cost': cost,
-                  'updated_at': DateTime.now().toIso8601String(),
+                        await _supabase.from('services').update({
+                          'service_cost': cost,
+                          'updated_at': DateTime.now().toIso8601String(),
                         }).eq('id', service['id']);
 
-                if (!mounted) return;
-                Navigator.pop(context);
+                        if (!mounted) return;
+                        Navigator.pop(context);
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
                             content: Text('Biaya service berhasil diupdate'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-              } catch (e) {
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } catch (e) {
                         print('Error updating service cost: $e');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
                             content: Text('Gagal update biaya service'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                            backgroundColor: Colors.red,
+                          ),
+                        );
                       } finally {
                         if (mounted) {
                           setState(() => _isSubmitting = false);
@@ -315,14 +354,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       ),
                     )
                   : Text(
-              'SIMPAN',
+                      'SIMPAN',
                       style: GoogleFonts.poppins(
                         color: Colors.blue,
                         fontWeight: FontWeight.w500,
                       ),
+                    ),
             ),
-          ),
-        ],
+          ],
         ),
       ),
     );
@@ -331,19 +370,19 @@ class _AdminDashboardState extends State<AdminDashboard> {
   void _showDocumentationPreview(String url, bool isVideo) async {
     if (isVideo) {
       showDialog(
-      context: context,
+        context: context,
         barrierDismissible: false,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
+        builder: (context) => Dialog(
+          backgroundColor: Colors.transparent,
           child: Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
                   'Mengunduh Video',
                   style: GoogleFonts.poppins(
@@ -393,37 +432,37 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 Container(
                   width: MediaQuery.of(context).size.width,
                   height: MediaQuery.of(context).size.height,
-                    color: Colors.black,
+                  color: Colors.black,
                   child: Center(
                     child: AspectRatio(
-                            aspectRatio: _videoController!.value.aspectRatio,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                VideoPlayer(_videoController!),
+                      aspectRatio: _videoController!.value.aspectRatio,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          VideoPlayer(_videoController!),
                           StatefulBuilder(
                             builder: (context, setState) => IconButton(
-                                  icon: Icon(
-                                    _videoController!.value.isPlaying
+                              icon: Icon(
+                                _videoController!.value.isPlaying
                                     ? Icons.pause_circle
                                     : Icons.play_circle,
                                 size: 64,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
                                   if (_videoController!.value.isPlaying) {
                                     _videoController!.pause();
                                   } else {
                                     _videoController!.play();
                                   }
-                                    });
-                                  },
-                                ),
-                                    ),
-                                  ],
-                                ),
+                                });
+                              },
+                            ),
                           ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -431,11 +470,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   right: 8,
                   child: IconButton(
                     icon: Icon(Icons.close, color: Colors.white),
-                  onPressed: () {
+                    onPressed: () {
                       _videoController?.pause();
                       _videoController?.dispose();
-                    Navigator.pop(context);
-                  },
+                      Navigator.pop(context);
+                    },
                   ),
                 ),
               ],
@@ -467,7 +506,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           insetPadding: EdgeInsets.zero,
           child: Stack(
             alignment: Alignment.center,
-          children: [
+            children: [
               Image.network(
                 url,
                 fit: BoxFit.contain,
@@ -487,11 +526,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   icon: Icon(Icons.close, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
     }
   }
 
@@ -546,16 +585,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     bool hasServiceDocs = serviceDocs.values.any((list) => list.isNotEmpty);
     if (!hasServiceDocs && complaintDocs.isEmpty) {
-          return Text(
-            'Belum ada dokumentasi',
-            style: GoogleFonts.poppins(
-              color: Colors.grey[600],
-              fontStyle: FontStyle.italic,
-            ),
-          );
-        }
+      return Text(
+        'Belum ada dokumentasi',
+        style: GoogleFonts.poppins(
+          color: Colors.grey[600],
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
 
-        return Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasServiceDocs) ...[
@@ -567,13 +606,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
               border: Border.all(color: Colors.grey[200]!),
             ),
             child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
                   'Dokumentasi Service',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                     color: Colors.blue,
                   ),
                 ),
@@ -585,9 +624,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
                       color: Colors.grey[700],
-              ),
-            ),
-            SizedBox(height: 8),
+                    ),
+                  ),
+                  SizedBox(height: 8),
                   _buildDocumentationGrid(serviceDocs['damage']!),
                 ],
                 if (serviceDocs['front']!.isNotEmpty) ...[
@@ -708,68 +747,68 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildDocumentationGrid(List<Map<String, dynamic>> docs) {
     return GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-              itemCount: docs.length,
-              itemBuilder: (context, index) {
-                final doc = docs[index];
-                final isVideo = doc['file_type'] == 'video';
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+      ),
+      itemCount: docs.length,
+      itemBuilder: (context, index) {
+        final doc = docs[index];
+        final isVideo = doc['file_type'] == 'video';
         final url = doc['file_url'];
         final createdAt = doc['created_at'];
 
-                return InkWell(
+        return InkWell(
           onTap: () => _showDocumentationPreview(url, isVideo),
-                  child: Container(
-                    decoration: BoxDecoration(
+          child: Container(
+            decoration: BoxDecoration(
               color: Colors.grey[100],
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+              borderRadius: BorderRadius.circular(8),
               image: !isVideo && url != null
-                          ? DecorationImage(
+                  ? DecorationImage(
                       image: NetworkImage(url),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (isVideo)
-                          Center(
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (isVideo)
+                  Center(
                     child: Container(
                       width: double.infinity,
                       height: double.infinity,
                       color: Colors.black87,
-                            child: Icon(
-                              Icons.play_circle_outline,
-                              size: 48,
-                              color: Colors.white,
+                      child: Icon(
+                        Icons.play_circle_outline,
+                        size: 48,
+                        color: Colors.white,
                       ),
-                            ),
-                          ),
-                        Positioned(
-                          bottom: 8,
-                          right: 8,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              isVideo ? 'Video' : 'Foto',
-                              style: GoogleFonts.poppins(
-                                color: Colors.white,
-                                fontSize: 12,
+                    ),
+                  ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      isVideo ? 'Video' : 'Foto',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 12,
                       ),
                     ),
                   ),
@@ -792,15 +831,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontSize: 10,
-                              ),
-                            ),
-                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                );
-              },
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -842,9 +881,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ),
             ],
-            ),
-          ],
-        );
+          ),
+        ],
+      );
     } else if (service['latitude'] != null && service['longitude'] != null) {
       final pickupPosition = Position(
         latitude: service['latitude'],
@@ -957,10 +996,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-          children: [
-            Container(
+              children: [
+                Container(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
+                  decoration: BoxDecoration(
                     color: _getStatusColor(displayStatus).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -978,17 +1017,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       SizedBox(width: 6),
                       Text(
                         _getStatusText(displayStatus),
-                style: GoogleFonts.poppins(
+                        style: GoogleFonts.poppins(
                           color: _getStatusColor(displayStatus),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                     ],
-            ),
+                  ),
                 ),
                 if (hasComplaint) ...[
-            SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Container(
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
@@ -1017,9 +1056,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
             SizedBox(height: 8),
             Text(
-                'Service #${service['id']}',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
+              'Service #${service['id']}',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
                 fontSize: 16,
               ),
             ),
@@ -1087,15 +1126,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildInfoSection(Map<String, dynamic> service) {
     return Container(
-            padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey[200]!),
       ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
             'Informasi Service',
             style: GoogleFonts.poppins(
@@ -1104,13 +1143,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
           SizedBox(height: 16),
-                _buildInfoRow('Nama', service['fullname']),
-                _buildInfoRow('WhatsApp', service['whatsapp']),
-                _buildInfoRow('Alamat', service['address']),
+          _buildInfoRow('Nama', service['fullname']),
+          _buildInfoRow('WhatsApp', service['phoneNumber']),
+          _buildInfoRow('Alamat', service['address']),
           _buildInfoRow('Masalah',
               DeviceProblems.getProblemName(service['problem'] ?? '')),
-                _buildInfoRow('Deskripsi', service['description']),
-                _buildInfoRow('Metode Pengiriman', service['shipping_method']),
+          _buildInfoRow('Deskripsi', service['description']),
+          _buildInfoRow('Metode Pengiriman', service['shipping_method']),
         ],
       ),
     );
@@ -1119,22 +1158,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildActionButtons(Map<String, dynamic> service) {
     return IntrinsicHeight(
       child: Row(
-                  children: [
+        children: [
           Expanded(
             child: SizedBox(
               height: 48,
               child: ElevatedButton.icon(
                 onPressed: () => _showUpdateCostDialog(service),
                 icon: Icon(Icons.attach_money, color: Colors.white),
-                      label: Text(
-                        'Update Biaya',
+                label: Text(
+                  'Update Biaya',
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontWeight: FontWeight.w500,
                   ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
                   padding: EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -1148,11 +1187,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             child: SizedBox(
               height: 48,
               child: PopupMenuButton<String>(
-                      onSelected: (value) =>
-                          _updateServiceStatus(service['id'].toString(), value),
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'PENDING',
+                onSelected: (value) =>
+                    _updateServiceStatus(service['id'].toString(), value),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'PENDING',
                     child: _buildStatusMenuItem(
                       'Menunggu Admin',
                       Colors.orange,
@@ -1164,30 +1203,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       'Belum Dibayar',
                       Colors.orange,
                     ),
-                        ),
-                        PopupMenuItem(
-                          value: 'PROCESSED',
+                  ),
+                  PopupMenuItem(
+                    value: 'PROCESSED',
                     child: _buildStatusMenuItem(
                       'Diproses',
                       Colors.blue,
                     ),
-                        ),
-                        PopupMenuItem(
-                          value: 'COMPLETED',
+                  ),
+                  PopupMenuItem(
+                    value: 'COMPLETED',
                     child: _buildStatusMenuItem(
                       'Selesai',
                       Colors.green,
-                        ),
-                        ),
-                        if (service['complain'] == true)
-                          PopupMenuItem(
-                            value: 'COMPLAINED',
+                    ),
+                  ),
+                  if (service['complain'] == true)
+                    PopupMenuItem(
+                      value: 'COMPLAINED',
                       child: _buildStatusMenuItem(
-                              'Komplain',
+                        'Komplain',
                         Colors.red,
-                            ),
-                          ),
-                      ],
+                      ),
+                    ),
+                ],
                 child: Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(vertical: 12),
@@ -1201,14 +1240,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       Icon(Icons.update, color: Colors.white),
                       SizedBox(width: 8),
                       Text(
-                          'Update Status',
+                        'Update Status',
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
                 ),
               ),
             ),

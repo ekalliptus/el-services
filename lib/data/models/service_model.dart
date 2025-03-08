@@ -2,7 +2,7 @@ class ServiceModel {
   dynamic id;
   final String userId;
   final String fullname;
-  final String whatsapp;
+  final String phoneNumber;
   final String address;
   final String device;
   final String problem;
@@ -28,7 +28,7 @@ class ServiceModel {
     this.id,
     required this.userId,
     required this.fullname,
-    required this.whatsapp,
+    required this.phoneNumber,
     required this.address,
     required this.device,
     required this.problem,
@@ -71,7 +71,7 @@ class ServiceModel {
       id: json['id'],
       userId: json['user_id'] ?? '',
       fullname: json['fullname'] ?? '',
-      whatsapp: json['whatsapp'] ?? '',
+      phoneNumber: json['phoneNumber'] ?? '',
       address: json['address'] ?? '',
       device: json['device'] ?? '',
       problem: json['problem'] ?? '',
@@ -102,7 +102,7 @@ class ServiceModel {
       'id': id,
       'user_id': userId,
       'fullname': fullname,
-      'whatsapp': whatsapp,
+      'phoneNumber': phoneNumber,
       'address': address,
       'device': device,
       'problem': problem,

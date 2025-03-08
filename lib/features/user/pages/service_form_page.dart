@@ -47,7 +47,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
       final service = ServiceModel(
         userId: '', // Akan diisi di payment_service.dart
         fullname: _fullnameController.text,
-        whatsapp: _whatsappController.text,
+        phoneNumber: _whatsappController.text,
         address: _addressController.text,
         device: widget.deviceType,
         problem: _selectedProblem!,

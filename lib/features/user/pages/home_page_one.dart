@@ -18,6 +18,7 @@ import 'package:servicehponline/features/auth/pages/login_page.dart';
 import 'package:servicehponline/features/testimonial/pages/all_testimonials_page.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:servicehponline/core/services/authentication.dart';
 
 class HomePageOne extends StatefulWidget {
   final Function() nextPage;
@@ -82,7 +83,7 @@ class _HomePageOneState extends State<HomePageOne>
 
   Future<void> _checkGPSAndCloseDialog() async {
     try {
-    bool isEnabled = await Geolocator.isLocationServiceEnabled();
+      bool isEnabled = await Geolocator.isLocationServiceEnabled();
       if (mounted) {
         setState(() {
           _isGpsEnabled = isEnabled;
@@ -90,10 +91,10 @@ class _HomePageOneState extends State<HomePageOne>
 
         if (isEnabled) {
           if (_dialogContext != null) {
-      Navigator.of(_dialogContext!).pop();
-      _dialogContext = null;
+            Navigator.of(_dialogContext!).pop();
+            _dialogContext = null;
           }
-      _getCurrentLocation();
+          _getCurrentLocation();
         }
       }
     } catch (e) {
@@ -134,10 +135,10 @@ class _HomePageOneState extends State<HomePageOne>
           await _checkGPSAndCloseDialog();
         } else if (status == ServiceStatus.disabled) {
           if (mounted) {
-          setState(() {
+            setState(() {
               _isGpsEnabled = false;
-            _currentAddress = 'Layanan lokasi tidak aktif';
-          });
+              _currentAddress = 'Layanan lokasi tidak aktif';
+            });
             _showGpsDialog();
           }
         }
@@ -161,8 +162,8 @@ class _HomePageOneState extends State<HomePageOne>
                 setState(() => _isGpsEnabled = true);
                 Navigator.of(dialogContext).pop();
                 _dialogContext = null;
-          _getCurrentLocation();
-        }
+                _getCurrentLocation();
+              }
               return false;
             }
             return true;
@@ -327,7 +328,7 @@ class _HomePageOneState extends State<HomePageOne>
 
     try {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
-        setState(() {
+      setState(() {
         _isGpsEnabled = serviceEnabled;
         if (!serviceEnabled) {
           _currentAddress = 'Layanan lokasi tidak aktif';
@@ -395,8 +396,32 @@ class _HomePageOneState extends State<HomePageOne>
 
   Future<void> _handleLogout() async {
     try {
-      await firebase_auth.FirebaseAuth.instance.signOut();
+      // Tampilkan loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Sedang keluar dari aplikasi...')
+              ],
+            ),
+          );
+        },
+      );
+
+      // Gunakan service Authentication untuk logout
+      final authService = Authentication();
+      await authService.signOut();
+
       if (!mounted) return;
+
+      // Tutup dialog loading
+      Navigator.of(context).pop();
 
       // Ubah navigasi ke Home page
       Navigator.of(context).pushAndRemoveUntil(
@@ -408,9 +433,17 @@ class _HomePageOneState extends State<HomePageOne>
     } catch (e) {
       print('Error during logout: $e');
       if (!mounted) return;
+
+      // Tutup dialog loading jika masih terbuka
+      try {
+        Navigator.of(context).pop();
+      } catch (e) {
+        // Dialog mungkin sudah ditutup
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal keluar dari aplikasi'),
+          content: Text('Gagal keluar dari aplikasi: ${e.toString()}'),
           backgroundColor: Colors.red,
         ),
       );
@@ -712,136 +745,136 @@ class _HomePageOneState extends State<HomePageOne>
                     child: RefreshIndicator(
                       key: _refreshIndicatorKey,
                       onRefresh: _refreshAllData,
-                    child: SingleChildScrollView(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Column(
-                          children: [
-                            // Device Grid
-                            Container(
-                              height: MediaQuery.of(context).size.width *
-                                  0.4, // Tinggi container disesuaikan dengan lebar layar
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  ...DeviceData.devices[0]
-                                      .map((device) => Expanded(
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 4.0),
-                                              child: ServiceCard(
-                                                device: device,
-                                                active: _active,
-                                                setActive: setActiveFunc,
-                                                nextPage: widget.nextPage,
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.0),
+                          child: Column(
+                            children: [
+                              // Device Grid
+                              Container(
+                                height: MediaQuery.of(context).size.width *
+                                    0.4, // Tinggi container disesuaikan dengan lebar layar
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    ...DeviceData.devices[0]
+                                        .map((device) => Expanded(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 4.0),
+                                                child: ServiceCard(
+                                                  device: device,
+                                                  active: _active,
+                                                  setActive: setActiveFunc,
+                                                  nextPage: widget.nextPage,
+                                                ),
                                               ),
-                                            ),
-                                          ))
-                                      .toList(),
-                                ],
+                                            ))
+                                        .toList(),
+                                  ],
+                                ),
                               ),
-                            ),
                               SizedBox(height: 12),
 
-                            // Recent History Section
-                            Row(
+                              // Recent History Section
+                              Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Riwayat Service Terakhir',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, '/history');
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size(50, 30),
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                    'Lihat Semua',
+                                children: [
+                                  Text(
+                                    'Riwayat Service Terakhir',
                                     style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.blue,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 12),
-                            if (_isLoadingHistory)
-                              Center(
-                                child: CircularProgressIndicator(),
-                              )
-                            else if (_recentServices.isEmpty)
-                              Container(
-                                padding: EdgeInsets.symmetric(vertical: 24),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    'Belum ada riwayat service',
-                                    style: GoogleFonts.poppins(
-                                      color: Colors.grey[600],
-                                      fontSize: 14,
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, '/history');
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size(50, 30),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      'Lihat Semua',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.blue,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              )
-                            else
-                              Column(
-                                children: _recentServices.map((service) {
-                                  return Container(
-                                    margin: EdgeInsets.only(bottom: 12),
-                                    padding: EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(16),
+                                ],
+                              ),
+                              SizedBox(height: 12),
+                              if (_isLoadingHistory)
+                                Center(
+                                  child: CircularProgressIndicator(),
+                                )
+                              else if (_recentServices.isEmpty)
+                                Container(
+                                  padding: EdgeInsets.symmetric(vertical: 24),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      'Belum ada riwayat service',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey[600],
+                                        fontSize: 14,
+                                      ),
                                     ),
+                                  ),
+                                )
+                              else
+                                Column(
+                                  children: _recentServices.map((service) {
+                                    return Container(
+                                      margin: EdgeInsets.only(bottom: 12),
+                                      padding: EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
                                       child: Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
                                           Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: Icon(
-                                                  service.device
-                                                          .contains('iphone')
-                                                ? Icons.phone_iphone
-                                                : Icons.phone_android,
-                                            color: Colors.blue,
-                                            size: 24,
-                                          ),
-                                        ),
-                                              SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Text(
+                                              Container(
+                                                padding: EdgeInsets.all(12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: Icon(
+                                                  service.device
+                                                          .contains('iphone')
+                                                      ? Icons.phone_iphone
+                                                      : Icons.phone_android,
+                                                  color: Colors.blue,
+                                                  size: 24,
+                                                ),
+                                              ),
+                                              SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
                                                       DeviceProblems
                                                           .formatDeviceName({
                                                         'device':
@@ -853,32 +886,32 @@ class _HomePageOneState extends State<HomePageOne>
                                                           GoogleFonts.poppins(
                                                         fontWeight:
                                                             FontWeight.w600,
-                                                  fontSize: 14,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
+                                                        fontSize: 14,
+                                                        color: Colors.black87,
+                                                      ),
+                                                    ),
+                                                    SizedBox(height: 4),
+                                                    Text(
                                                       DeviceProblems
                                                           .getProblemName(
-                                                    service.problem),
-                                                maxLines: 2,
+                                                              service.problem),
+                                                      maxLines: 2,
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                       style:
                                                           GoogleFonts.poppins(
-                                                  fontSize: 13,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
+                                                        fontSize: 13,
+                                                        color: Colors.grey[600],
+                                                      ),
+                                                    ),
                                                     SizedBox(height: 8),
-                                        Container(
+                                                    Container(
                                                       padding:
                                                           EdgeInsets.symmetric(
                                                         horizontal: 8,
                                                         vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
+                                                      ),
+                                                      decoration: BoxDecoration(
                                                         color: _getStatusColor(
                                                                 service.status,
                                                                 serviceCost: service.price !=
@@ -889,11 +922,11 @@ class _HomePageOneState extends State<HomePageOne>
                                                                         .price
                                                                     : null)
                                                             .withAlpha(26),
-                                            borderRadius:
+                                                        borderRadius:
                                                             BorderRadius
                                                                 .circular(20),
-                                          ),
-                                          child: Text(
+                                                      ),
+                                                      child: Text(
                                                         _getStatusText(
                                                             service.status,
                                                             serviceCost: service
@@ -905,10 +938,10 @@ class _HomePageOneState extends State<HomePageOne>
                                                                 : null),
                                                         style:
                                                             GoogleFonts.poppins(
-                                              fontSize: 12,
+                                                          fontSize: 12,
                                                           fontWeight:
                                                               FontWeight.w500,
-                                              color: _getStatusColor(
+                                                          color: _getStatusColor(
                                                               service.status,
                                                               serviceCost: service
                                                                               .price !=
@@ -925,160 +958,160 @@ class _HomePageOneState extends State<HomePageOne>
                                                 ),
                                               ),
                                             ],
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-
-                            // Testimonial Section
-                            SizedBox(height: 24),
-                            Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                    'Testimoni',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            AllTestimonialsPage(),
+                                          ),
+                                        ],
                                       ),
                                     );
-                                  },
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size(50, 30),
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  child: Text(
-                                    'Lihat Semua',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.blue,
-                                    ),
-                                  ),
+                                  }).toList(),
                                 ),
-                              ],
-                            ),
-                            SizedBox(height: 12),
-                            FutureBuilder<List<Map<String, dynamic>>>(
-                              future: _supabase
-                                  .from('testimonials')
-                                  .select()
-                                  .order('created_at', ascending: false)
-                                  .limit(5),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return Center(
-                                      child: CircularProgressIndicator());
-                                }
 
-                                if (snapshot.hasError) {
-                                  return Container(
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 24),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(16),
+                              // Testimonial Section
+                              SizedBox(height: 24),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Testimoni',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
                                     ),
-                                    child: Center(
-                                      child: Text(
-                                        'Gagal memuat testimoni',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.grey[600],
-                                          fontSize: 14,
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              AllTestimonialsPage(),
                                         ),
+                                      );
+                                    },
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size(50, 30),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: Text(
+                                      'Lihat Semua',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.blue,
                                       ),
                                     ),
-                                  );
-                                }
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 12),
+                              FutureBuilder<List<Map<String, dynamic>>>(
+                                future: _supabase
+                                    .from('testimonials')
+                                    .select()
+                                    .order('created_at', ascending: false)
+                                    .limit(5),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Center(
+                                        child: CircularProgressIndicator());
+                                  }
 
-                                final testimonials = snapshot.data ?? [];
-
-                                if (testimonials.isEmpty) {
-                                  return Container(
+                                  if (snapshot.hasError) {
+                                    return Container(
                                       padding:
                                           EdgeInsets.symmetric(vertical: 24),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[100],
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        'Belum ada testimoni',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.grey[600],
-                                          fontSize: 14,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'Gagal memuat testimoni',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  );
-                                }
+                                    );
+                                  }
 
-                                return SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
+                                  final testimonials = snapshot.data ?? [];
+
+                                  if (testimonials.isEmpty) {
+                                    return Container(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 24),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          'Belum ada testimoni',
+                                          style: GoogleFonts.poppins(
+                                            color: Colors.grey[600],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+
+                                  return SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
                                     physics: BouncingScrollPhysics(),
                                     padding: EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    children: testimonials.map((testimonial) {
-                                      return Container(
+                                    child: Row(
+                                      children: testimonials.map((testimonial) {
+                                        return Container(
                                           width: MediaQuery.of(context)
                                                   .size
                                                   .width *
                                               0.85,
-                                        margin: EdgeInsets.only(right: 12),
-                                        padding: EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[100],
-                                          borderRadius:
-                                              BorderRadius.circular(16),
+                                          margin: EdgeInsets.only(right: 12),
+                                          padding: EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            borderRadius:
+                                                BorderRadius.circular(16),
                                             border: Border.all(
                                               color: Colors.grey[200]!,
                                               width: 1,
                                             ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              children: [
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
                                                   _buildAvatar(testimonial),
-                                                SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
+                                                  SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
                                                           testimonial[
                                                               'fullname'],
                                                           style: GoogleFonts
                                                               .poppins(
-                                                          fontWeight:
-                                                              FontWeight.w600,
+                                                            fontWeight:
+                                                                FontWeight.w600,
                                                             fontSize: 16,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
                                                         ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                      Text(
+                                                        Text(
                                                           DeviceProblems
                                                               .formatDeviceName(
                                                                   testimonial),
@@ -1091,61 +1124,61 @@ class _HomePageOneState extends State<HomePageOne>
                                                           maxLines: 1,
                                                           overflow: TextOverflow
                                                               .ellipsis,
-                                                      ),
-                                                    ],
+                                                        ),
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
-                                            ),
+                                                ],
+                                              ),
                                               SizedBox(height: 16),
                                               Wrap(
                                                 spacing: 2,
-                                              children: List.generate(
-                                                5,
-                                                (index) => Icon(
-                                                  index <
-                                                          (testimonial[
-                                                                  'rating'] ??
-                                                              0)
-                                                      ? Icons.star
-                                                      : Icons.star_border,
-                                                  color: Colors.amber,
-                                                  size: 20,
+                                                children: List.generate(
+                                                  5,
+                                                  (index) => Icon(
+                                                    index <
+                                                            (testimonial[
+                                                                    'rating'] ??
+                                                                0)
+                                                        ? Icons.star
+                                                        : Icons.star_border,
+                                                    color: Colors.amber,
+                                                    size: 20,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
                                               SizedBox(height: 12),
-                                            Text(
-                                              testimonial['content'],
-                                              style: GoogleFonts.poppins(
-                                                fontSize: 14,
-                                                height: 1.5,
+                                              Text(
+                                                testimonial['content'],
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 14,
+                                                  height: 1.5,
                                                   color: Colors.black87,
+                                                ),
+                                                maxLines: 3,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
-                                              maxLines: 3,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
                                               SizedBox(height: 12),
-                                            Text(
+                                              Text(
                                                 DateFormat('dd MMMM yyyy')
                                                     .format(
                                                   DateTime.parse(testimonial[
                                                       'created_at']),
+                                                ),
+                                                style: GoogleFonts.poppins(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
                                               ),
-                                              style: GoogleFonts.poppins(
-                                                color: Colors.grey[600],
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       ),

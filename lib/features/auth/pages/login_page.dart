@@ -8,6 +8,9 @@ import 'package:servicehponline/blocs/auth/auth_state.dart';
 import 'package:servicehponline/core/services/authentication.dart';
 import 'package:servicehponline/features/user/widgets/request_service_flow_widget.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:servicehponline/features/auth/pages/onboarding_page.dart';
+import 'package:servicehponline/features/profile/pages/profile_setup_page.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -276,15 +279,130 @@ class _HomeState extends State<Home> {
             SnackBar(content: Text(state.message)),
           );
         } else if (state is AuthAuthenticated) {
-          print('User authenticated, navigating to RequestServiceFlow');
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => RequestServiceFlow(
-                username: state.user.displayName ?? 'User',
-              ),
-            ),
-            (route) => false,
-          );
+          print('AUTENTIKASI BERHASIL: ${state.user.uid}');
+          print('DisplayName: ${state.user.displayName}');
+          print('Email: ${state.user.email}');
+          print('Firebase PhoneNumber: ${state.user.phoneNumber}');
+
+          // LANGSUNG periksa data profil di Supabase tanpa memeriksa flag onboarding dulu
+          SharedPreferences.getInstance().then((prefs) {
+            print(
+                'Memeriksa profil Supabase untuk menentukan navigasi selanjutnya');
+            final supabaseClient = supabase.Supabase.instance.client;
+
+            print('Mencari profil untuk UID: ${state.user.uid}');
+            supabaseClient
+                .from('profiles')
+                .select()
+                .eq('id', state.user.uid)
+                .maybeSingle()
+                .then((profileData) {
+              if (profileData != null) {
+                print('PROFIL DITEMUKAN di Supabase:');
+                print('fullname: ${profileData['fullname']}');
+                print('phoneNumber: ${profileData['phoneNumber']}');
+                print('whatsapp: ${profileData['whatsapp']}');
+                print('address: ${profileData['address']}');
+
+                // Jika pengguna sudah memiliki profil di Supabase, anggap sudah pernah onboarding
+                prefs.setBool('has_completed_onboarding', true);
+
+                // Cek kelengkapan profil berdasarkan data Supabase
+                bool isProfileComplete = profileData['fullname'] != null &&
+                    profileData['phoneNumber'] != null &&
+                    profileData['address'] != null;
+
+                print(
+                    'Status kelengkapan profil (isProfileComplete): $isProfileComplete');
+                print('Detail pengecekan:');
+                print('fullname: ${profileData['fullname']}');
+                print('phoneNumber: ${profileData['phoneNumber']}');
+                print('address: ${profileData['address']}');
+
+                // Update flag
+                prefs.setBool('profile_complete', isProfileComplete);
+
+                if (isProfileComplete) {
+                  print('PROFIL LENGKAP - mengarahkan ke halaman utama');
+                  // Jika sudah lengkap, arahkan ke halaman utama
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => RequestServiceFlow(
+                        username: profileData['fullname'] ??
+                            state.user.displayName ??
+                            'User',
+                      ),
+                    ),
+                    (route) => false,
+                  );
+                } else {
+                  print(
+                      'PROFIL TIDAK LENGKAP - mengarahkan ke pengaturan profil');
+                  // Jika belum lengkap, arahkan ke setup profil
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ProfileSetupPage(isFirstTime: false),
+                    ),
+                    (route) => false,
+                  );
+                }
+              } else {
+                print('PROFIL TIDAK DITEMUKAN di Supabase');
+                // Cek apakah pengguna sudah pernah onboarding
+                bool hasCompletedOnboarding =
+                    prefs.getBool('has_completed_onboarding') ?? false;
+
+                if (!hasCompletedOnboarding) {
+                  print(
+                      'ONBOARDING BELUM SELESAI - mengarahkan ke halaman onboarding');
+                  // Jika belum onboarding, arahkan ke halaman onboarding
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                        builder: (context) => const OnboardingPage()),
+                    (route) => false,
+                  );
+                } else {
+                  print(
+                      'ONBOARDING SUDAH SELESAI, TAPI TIDAK ADA PROFIL - mengarahkan ke pengaturan profil');
+                  // Arahkan ke halaman pengaturan profil untuk membuat profil baru
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ProfileSetupPage(isFirstTime: true),
+                    ),
+                    (route) => false,
+                  );
+                }
+              }
+            }).catchError((e) {
+              print('ERROR memeriksa profil di Supabase: $e');
+
+              // Jika gagal memeriksa profil, gunakan fallback ke flow onboarding normal
+              bool hasCompletedOnboarding =
+                  prefs.getBool('has_completed_onboarding') ?? false;
+
+              if (!hasCompletedOnboarding) {
+                print(
+                    'FALLBACK: ONBOARDING BELUM SELESAI - mengarahkan ke halaman onboarding');
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                      builder: (context) => const OnboardingPage()),
+                  (route) => false,
+                );
+              } else {
+                print(
+                    'FALLBACK: ONBOARDING SUDAH SELESAI - mengarahkan ke pengaturan profil');
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        const ProfileSetupPage(isFirstTime: true),
+                  ),
+                  (route) => false,
+                );
+              }
+            });
+          });
         } else if (state is AuthTermsNotAccepted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

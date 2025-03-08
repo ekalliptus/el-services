@@ -69,7 +69,7 @@ class PaymentService {
       final Map<String, dynamic> serviceData = {
         'user_id': firebaseUser.uid,
         'fullname': service.fullname,
-        'whatsapp': service.whatsapp,
+        'phoneNumber': service.phoneNumber,
         'address': service.address,
         'device': service.device,
         'problem': service.problem,
@@ -184,7 +184,7 @@ class PaymentService {
         'external_id':
             'SERVICE-$serviceId-${DateTime.now().millisecondsSinceEpoch}',
         'amount': service['service_cost'],
-        'payer_email': service['whatsapp'] + '@servicehponline.com',
+        'payer_email': service['phoneNumber'] + '@servicehponline.com',
         'description':
             'Pembayaran Service HP Online - ${service['device']} ${service['brand']}',
         'success_redirect_url': 'servicehponline://payment/success',

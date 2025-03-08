@@ -130,7 +130,7 @@ class _HomePageThreeState extends State<HomePageThree>
         setState(() {
           _savedName = user.displayName;
           _savedAddress = profileData['address'];
-          _savedWhatsapp = profileData['whatsapp'];
+          _savedWhatsapp = profileData['phoneNumber'];
         });
       }
     } catch (e) {
@@ -446,7 +446,7 @@ class _HomePageThreeState extends State<HomePageThree>
         id: 0, // ID sementara
         userId: _firebaseAuth.currentUser?.uid ?? '',
         fullname: _nameController.text,
-        whatsapp: _whatsappController.text,
+        phoneNumber: _whatsappController.text,
         address: _addressController.text,
         device: widget.selectedDevice,
         brand: _selectedBrand ?? '',
