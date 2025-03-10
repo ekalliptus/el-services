@@ -379,25 +379,25 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                                       ),
                                   ],
                                 ),
-                                if (widget.service.devicePasswordType !=
-                                    null) ...[
-                                  SizedBox(height: 24.0),
-                                  _buildSection(
-                                    title: "Password Perangkat",
-                                    content: [
-                                      _buildInfoRow(
-                                        label: "Jenis Password",
-                                        value:
-                                            widget.service.devicePasswordType!,
-                                      ),
+                                SizedBox(height: 24.0),
+                                _buildSection(
+                                  title: "Password Perangkat",
+                                  content: [
+                                    _buildInfoRow(
+                                      label: "Jenis Password",
+                                      value:
+                                          widget.service.devicePasswordType ??
+                                              'Tidak Ada',
+                                    ),
+                                    if (widget.service.devicePasswordType !=
+                                        'Tidak Ada')
                                       _buildInfoRow(
                                         label: "Password",
                                         value: widget.service.devicePassword ??
                                             '-',
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                                 SizedBox(height: 24.0),
                                 _buildSection(
                                   title: "Dokumentasi",

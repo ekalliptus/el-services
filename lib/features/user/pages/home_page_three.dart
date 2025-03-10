@@ -454,11 +454,10 @@ class _HomePageThreeState extends State<HomePageThree>
         problem: widget.selectedProblem,
         description: _descriptionController.text,
         shippingMethod: _selectedShipping,
-        devicePassword: _selectedPasswordType != 'Tidak Ada'
-            ? _devicePasswordController.text
-            : null,
-        devicePasswordType:
-            _selectedPasswordType != 'Tidak Ada' ? _selectedPasswordType : null,
+        devicePassword: _selectedPasswordType == 'Tidak Ada'
+            ? null
+            : _devicePasswordController.text,
+        devicePasswordType: _selectedPasswordType ?? 'Tidak Ada',
         latitude:
             _selectedShipping == 'Jemput' ? _currentPosition?.latitude : null,
         longitude:
@@ -660,46 +659,60 @@ class _HomePageThreeState extends State<HomePageThree>
                                   ),
                                   SizedBox(height: 12.0),
                                 ],
-                                TextFormField(
-                                  controller: _modelController,
-                                  focusNode: _modelFocus,
-                                  decoration: InputDecoration(
-                                    labelText: 'Model/Tipe HP',
-                                    prefixIcon: Icon(Icons.phone_iphone),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Model/Tipe HP',
+                                          style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "(Wajib Diisi)",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w400,
+                                            color: Colors.red[700],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      borderSide:
-                                          BorderSide(color: Colors.grey[300]!),
+                                    SizedBox(height: 8),
+                                    TextFormField(
+                                      controller: _modelController,
+                                      focusNode: _modelFocus,
+                                      decoration: InputDecoration(
+                                        prefixIcon: Icon(Icons.phone_iphone),
+                                        border: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12.0),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12.0),
+                                          borderSide: BorderSide(
+                                              color: Colors.grey[300]!),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12.0),
+                                          borderSide:
+                                              BorderSide(color: Colors.blue),
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Model HP harus diisi';
+                                        }
+                                        return null;
+                                      },
                                     ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      borderSide:
-                                          BorderSide(color: Colors.blue),
-                                    ),
-                                    errorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      borderSide: BorderSide(color: Colors.red),
-                                    ),
-                                    focusedErrorBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      borderSide: BorderSide(
-                                          color: Colors.red, width: 2),
-                                    ),
-                                    hintText: widget.selectedDevice == 'iphone'
-                                        ? 'Contoh: iPhone 12 Pro Max'
-                                        : widget.selectedDevice == 'huawei'
-                                            ? 'Contoh: P40 Pro'
-                                            : 'Contoh: Galaxy S21 Ultra',
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Model/Tipe HP harus diisi';
-                                    }
-                                    return null;
-                                  },
+                                  ],
                                 ),
                               ],
                             ),
@@ -717,13 +730,26 @@ class _HomePageThreeState extends State<HomePageThree>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Keterangan Kerusakan',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Keterangan Kerusakan',
+                                      style: TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 18.0,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.0),
+                                    Text(
+                                      "(Opsional)",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.blue[700],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 SizedBox(height: 16.0),
                                 TextField(
@@ -872,13 +898,26 @@ class _HomePageThreeState extends State<HomePageThree>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Dokumentasi',
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 18.0,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Text(
+                'Dokumentasi',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(width: 8.0),
+              Text(
+                "(Opsional)",
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.blue[700],
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 16.0),
           // Foto Kerusakan
@@ -1297,6 +1336,7 @@ class _HomePageThreeState extends State<HomePageThree>
               return null;
             },
             savedValue: _savedName,
+            isRequired: true,
           ),
           SizedBox(height: 16),
           _buildTextField(
@@ -1312,6 +1352,7 @@ class _HomePageThreeState extends State<HomePageThree>
               return null;
             },
             savedValue: _savedWhatsapp,
+            isRequired: true,
           ),
           SizedBox(height: 16),
           _buildTextField(
@@ -1327,6 +1368,7 @@ class _HomePageThreeState extends State<HomePageThree>
               return null;
             },
             savedValue: _savedAddress,
+            isRequired: true,
           ),
         ],
       ),
@@ -1343,15 +1385,38 @@ class _HomePageThreeState extends State<HomePageThree>
     int maxLines = 1,
     String? savedValue,
     String? hintText,
+    bool isRequired = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            if (isRequired) ...[
+              SizedBox(width: 8),
+              Text(
+                "(Wajib Diisi)",
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.red[700],
+                ),
+              ),
+            ],
+          ],
+        ),
+        SizedBox(height: 8),
         TextFormField(
           controller: controller,
           focusNode: focusNode,
           decoration: InputDecoration(
-            labelText: label,
             prefixIcon: Icon(icon),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1629,6 +1694,9 @@ class _HomePageThreeState extends State<HomePageThree>
   }
 
   Widget _buildDevicePasswordSection() {
+    bool isPasswordRequired =
+        _selectedPasswordType != null && _selectedPasswordType != 'Tidak Ada';
+
     return Container(
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -1639,19 +1707,45 @@ class _HomePageThreeState extends State<HomePageThree>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Kata Sandi Perangkat',
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 18.0,
-              fontWeight: FontWeight.w500,
-            ),
+          Row(
+            children: [
+              Text(
+                'Kata Sandi Perangkat',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (isPasswordRequired) ...[
+                SizedBox(width: 8),
+                Text(
+                  "(Wajib Diisi)",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.red[700],
+                  ),
+                ),
+              ] else ...[
+                SizedBox(width: 8),
+                Text(
+                  "(Opsional)",
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ],
+            ],
           ),
           SizedBox(height: 16.0),
           DropdownButtonFormField<String>(
-            value: _selectedPasswordType ?? 'Tidak Ada',
+            value: _selectedPasswordType,
             decoration: InputDecoration(
               labelText: 'Jenis Kata Sandi',
+              hintText: 'Pilih Kata Sandi Perangkat',
               prefixIcon: Icon(Icons.lock_outline),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
@@ -1665,6 +1759,7 @@ class _HomePageThreeState extends State<HomePageThree>
                 borderSide: BorderSide(color: Colors.blue),
               ),
             ),
+            hint: Text('Pilih Kata Sandi Perangkat'),
             items: _passwordTypes.map((String type) {
               return DropdownMenuItem<String>(
                 value: type,

@@ -40,7 +40,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
   double _progress = 0.0;
   bool _isLoading = false;
   bool _isLocationLoading = false;
-  Position? _currentPosition;
   BuildContext? _gpsDialogContext;
   bool _isGpsEnabled = false;
   StreamSubscription<ServiceStatus>? _gpsStatusSubscription;
@@ -285,8 +284,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
   void _updateProgress() {
     double progress = 0.0;
     int filledFields = 0;
-    int totalRequiredFields =
-        3; // Total ada 3 field wajib: nama, phoneNumber, dan alamat detail
+// Total ada 3 field wajib: nama, phoneNumber, dan alamat detail
 
     if (_nameController.text.isNotEmpty) filledFields++;
     if (_whatsappController.text.isNotEmpty) filledFields++;
@@ -363,8 +361,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
-      setState(() => _currentPosition = position);
 
       // Dapatkan alamat dari koordinat dengan prioritas mendapatkan nama jalan
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -700,7 +696,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       if (user == null) throw Exception('User tidak terautentikasi');
 
       // Gunakan alamat detail sebagai alamat utama
-      String address = _addressController.text.trim();
+      _addressController.text.trim();
       String addressDetail = _addressDetailController.text.trim();
       // Pastikan catatan alamat tidak null
       String addressNote = _addressNoteController.text.trim();
@@ -1239,12 +1235,25 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
           SizedBox(height: 24),
 
           // Catatan Alamat
-          Text(
-            "Catatan Alamat (Opsional)",
-            style: GoogleFonts.poppins(
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
+          Row(
+            children: [
+              Text(
+                "Catatan Alamat",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(width: 8),
+              Text(
+                "(Opsional)",
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.blue[700],
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 8),
           TextFormField(
