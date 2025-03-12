@@ -79,6 +79,9 @@ class _ConfirmationPageState extends State<ConfirmationPage>
         'longitude': widget.service.longitude,
         'status': 'PENDING',
         'created_at': DateTime.now().toIso8601String(),
+        'device_password': widget.service.devicePassword,
+        'device_password_type': widget.service.devicePasswordType,
+        'address_note': widget.service.addressNote,
       };
 
       if (!mounted) {
@@ -347,14 +350,14 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                                     ),
                                   ],
                                 ),
-                                if (widget.service.note.isNotEmpty) ...[
+                                if (widget.service.addressNote.isNotEmpty) ...[
                                   SizedBox(height: 24.0),
                                   _buildSection(
                                     title: "Catatan Tambahan",
                                     content: [
                                       _buildInfoRow(
                                         label: "Catatan",
-                                        value: widget.service.note,
+                                        value: widget.service.addressNote,
                                       ),
                                     ],
                                   ),
@@ -380,6 +383,18 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                                   ],
                                 ),
                                 SizedBox(height: 24.0),
+                                if (widget.service.description.isNotEmpty) ...[
+                                  _buildSection(
+                                    title: "Keterangan Kerusakan",
+                                    content: [
+                                      _buildInfoRow(
+                                        label: "Deskripsi",
+                                        value: widget.service.description,
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 24.0),
+                                ],
                                 _buildSection(
                                   title: "Password Perangkat",
                                   content: [

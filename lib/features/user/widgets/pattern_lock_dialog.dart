@@ -71,6 +71,15 @@ class _PatternLockDialogState extends State<PatternLockDialog> {
                 fillPoints: true,
                 onInputComplete: (List<int> input) {
                   final pattern = input.join('-');
+
+                  // Validasi minimal 4 titik
+                  if (input.length < 4) {
+                    setState(() {
+                      _errorMessage = 'Minimal 4 titik diperlukan';
+                    });
+                    return;
+                  }
+
                   if (!_isConfirming) {
                     setState(() {
                       _pattern = pattern;

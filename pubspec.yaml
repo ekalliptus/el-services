@@ -46,6 +46,10 @@ dependencies:
   video_player: ^2.9.2
   awesome_notifications: ^0.8.2
   pattern_lock: ^2.0.0
+  cached_network_image: ^3.3.1
+  photo_view: ^0.14.0
+  chewie: ^1.7.5
+  path: ^1.8.3
 
 dev_dependencies:
   flutter_test:

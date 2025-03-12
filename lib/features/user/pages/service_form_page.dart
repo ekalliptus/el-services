@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/data/models/service_model.dart';
 import 'package:servicehponline/data/models/device_problems.dart';
 import 'package:servicehponline/features/user/pages/confirmation_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ServiceFormPage extends StatefulWidget {
   final String deviceType;
@@ -30,6 +32,67 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
   double? _longitude;
   String? _picturePath;
   String? _videoPath;
+  final _devicePasswordController = TextEditingController();
+  String? _selectedPasswordType;
+  final _addressNoteController = TextEditingController();
+  String? _savedAddressNote;
+  String? _savedName;
+  String? _savedWhatsapp;
+  String? _savedAddress;
+
+  // Inisialisasi client Supabase dan Firebase
+  final _supabase = Supabase.instance.client;
+  final _firebaseAuth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileData();
+  }
+
+  // Metode untuk mengambil data profil saat halaman diinisialisasi
+  Future<void> _loadProfileData() async {
+    final user = _firebaseAuth.currentUser;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Anda belum login')),
+        );
+      }
+      return;
+    }
+
+    try {
+      final response = await _supabase
+          .from('profiles')
+          .select('full_name, phone_number, address, address_note')
+          .eq('id', user.uid)
+          .single();
+
+      if (mounted) {
+        setState(() {
+          _savedName = response['full_name'];
+          _savedWhatsapp = response['phone_number'];
+          _savedAddress = response['address'];
+          _savedAddressNote = response['address_note'];
+        });
+
+        // Tampilkan notifikasi hanya jika fungsi dipanggil dari tombol (bukan initState)
+        if (ModalRoute.of(context)?.isCurrent == true) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Data berhasil diambil dari profil')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Gagal mengambil data profil: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -39,6 +102,8 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
     _brandController.dispose();
     _modelController.dispose();
     _descriptionController.dispose();
+    _devicePasswordController.dispose();
+    _addressNoteController.dispose();
     super.dispose();
   }
 
@@ -65,6 +130,9 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
         video: _videoPath,
         latitude: _selectedProblem == 'jemput' ? _latitude : null,
         longitude: _selectedProblem == 'jemput' ? _longitude : null,
+        devicePassword: _devicePasswordController.text,
+        devicePasswordType: _selectedPasswordType ?? 'Tidak Ada',
+        addressNote: _addressNoteController.text,
       );
 
       Navigator.push(
@@ -133,6 +201,17 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                   return null;
                 },
               ),
+              if (_savedName != null && _savedName!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _fullnameController.text = _savedName!;
+                    });
+                  },
+                ),
+              ],
               SizedBox(height: 16.0),
               TextFormField(
                 controller: _whatsappController,
@@ -149,6 +228,17 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                   return null;
                 },
               ),
+              if (_savedWhatsapp != null && _savedWhatsapp!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _whatsappController.text = _savedWhatsapp!;
+                    });
+                  },
+                ),
+              ],
               SizedBox(height: 16.0),
               TextFormField(
                 controller: _addressController,
@@ -164,6 +254,39 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                   return null;
                 },
               ),
+              if (_savedAddress != null && _savedAddress!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _addressController.text = _savedAddress!;
+                    });
+                  },
+                ),
+              ],
+              SizedBox(height: 16.0),
+              TextFormField(
+                controller: _addressNoteController,
+                decoration: InputDecoration(
+                  labelText: 'Catatan Alamat (Opsional)',
+                  border: OutlineInputBorder(),
+                  hintText:
+                      'Tambahkan catatan tentang alamat seperti patokan, warna rumah, dll',
+                ),
+              ),
+              if (_savedAddressNote != null &&
+                  _savedAddressNote!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _addressNoteController.text = _savedAddressNote!;
+                    });
+                  },
+                ),
+              ],
               SizedBox(height: 24.0),
               Text(
                 'Detail Perangkat',
@@ -252,6 +375,46 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
               ),
               SizedBox(height: 24.0),
               Text(
+                'Password Perangkat',
+                style: GoogleFonts.poppins(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 16.0),
+              DropdownButtonFormField<String>(
+                value: _selectedPasswordType,
+                decoration: InputDecoration(
+                  labelText: 'Jenis Password',
+                  border: OutlineInputBorder(),
+                ),
+                items: ['Tidak Ada', 'PIN', 'Pattern', 'Password']
+                    .map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPasswordType = value;
+                  });
+                },
+              ),
+              if (_selectedPasswordType != null &&
+                  _selectedPasswordType != 'Tidak Ada') ...[
+                SizedBox(height: 16.0),
+                TextFormField(
+                  controller: _devicePasswordController,
+                  decoration: InputDecoration(
+                    labelText: 'Password Perangkat',
+                    border: OutlineInputBorder(),
+                    hintText: 'Masukkan password perangkat',
+                  ),
+                ),
+              ],
+              SizedBox(height: 24.0),
+              Text(
                 'Metode Pengiriman',
                 style: GoogleFonts.poppins(
                   fontSize: 18.0,
@@ -309,6 +472,41 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
               SizedBox(height: 32.0),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Metode untuk membuat tombol saran (gunakan data tersimpan)
+  Widget _buildSuggestButton(
+      {required String title, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.history,
+              size: 16,
+              color: Colors.blue,
+            ),
+            SizedBox(width: 4),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.blue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

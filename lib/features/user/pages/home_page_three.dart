@@ -45,6 +45,8 @@ class _HomePageThreeState extends State<HomePageThree>
   final _modelController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _devicePasswordController = TextEditingController();
+  final _addressNoteController = TextEditingController();
+  String? _savedAddressNote;
 
   // FocusNode untuk setiap field
   final _nameFocus = FocusNode();
@@ -104,6 +106,7 @@ class _HomePageThreeState extends State<HomePageThree>
     _modelController.dispose();
     _descriptionController.dispose();
     _devicePasswordController.dispose();
+    _addressNoteController.dispose();
 
     // Dispose FocusNode
     _nameFocus.dispose();
@@ -131,6 +134,7 @@ class _HomePageThreeState extends State<HomePageThree>
           _savedName = user.displayName;
           _savedAddress = profileData['address'];
           _savedWhatsapp = profileData['phoneNumber'];
+          _savedAddressNote = profileData['address_note'];
         });
       }
     } catch (e) {
@@ -397,7 +401,14 @@ class _HomePageThreeState extends State<HomePageThree>
 
     try {
       // Reset validasi sebelumnya
-      _formKey.currentState?.validate();
+      final isFormValid = _formKey.currentState?.validate() ?? false;
+      if (!isFormValid) {
+        setState(() {
+          _isLoading = false;
+          _isSubmitting = false;
+        });
+        throw Exception("Mohon perbaiki kesalahan pada form");
+      }
 
       // Cek field kosong dan set fokus ke field pertama yang kosong
       bool isValid = true;
@@ -423,10 +434,17 @@ class _HomePageThreeState extends State<HomePageThree>
         firstEmptyFieldFocus = firstEmptyFieldFocus ?? _modelFocus;
       }
 
+      // Validasi kata sandi
       if (_selectedPasswordType != 'Tidak Ada' &&
-          _devicePasswordController.text.isEmpty) {
-        isValid = false;
-        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _devicePasswordFocus;
+          _selectedPasswordType != null) {
+        if (_devicePasswordController.text.isEmpty) {
+          isValid = false;
+          firstEmptyFieldFocus = firstEmptyFieldFocus ?? _devicePasswordFocus;
+        } else if (_devicePasswordController.text.length < 4) {
+          isValid = false;
+          firstEmptyFieldFocus = firstEmptyFieldFocus ?? _devicePasswordFocus;
+          throw Exception("${_selectedPasswordType} minimal harus 4 karakter");
+        }
       }
 
       if (!isValid) {
@@ -468,6 +486,7 @@ class _HomePageThreeState extends State<HomePageThree>
         pictureFront: _frontImages.isNotEmpty ? _frontImages.first : null,
         pictureBack: _backImages.isNotEmpty ? _backImages.first : null,
         video: _videoPath,
+        addressNote: _addressNoteController.text,
       );
 
       if (!mounted) return;
@@ -553,29 +572,7 @@ class _HomePageThreeState extends State<HomePageThree>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Container(
-                            padding: EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16.0),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Data Diri',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(height: 16.0),
-                                _buildForm(),
-                              ],
-                            ),
-                          ),
+                          _buildUserInfoSection(),
                           SizedBox(height: 20.0),
                           Container(
                             padding: EdgeInsets.all(16.0),
@@ -813,6 +810,317 @@ class _HomePageThreeState extends State<HomePageThree>
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserInfoSection() {
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Data Diri',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 18.0,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 16),
+          // Nama Lengkap
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Nama Lengkap',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "(Wajib Diisi)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                controller: _nameController,
+                focusNode: _nameFocus,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Nama lengkap harus diisi';
+                  }
+                  return null;
+                },
+              ),
+              if (_savedName != null && _savedName!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _nameController.text = _savedName!;
+                    });
+                  },
+                ),
+              ],
+            ],
+          ),
+          SizedBox(height: 16),
+          // Nomor WhatsApp
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Nomor WhatsApp',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "(Wajib Diisi)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                controller: _whatsappController,
+                focusNode: _whatsappFocus,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Nomor WhatsApp harus diisi';
+                  }
+                  return null;
+                },
+              ),
+              if (_savedWhatsapp != null && _savedWhatsapp!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _whatsappController.text = _savedWhatsapp!;
+                    });
+                  },
+                ),
+              ],
+            ],
+          ),
+          SizedBox(height: 16),
+          // Alamat
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Alamat',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "(Wajib Diisi)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                controller: _addressController,
+                focusNode: _addressFocus,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  prefixIcon: Icon(Icons.location_on),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.blue),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Alamat harus diisi';
+                  }
+                  return null;
+                },
+              ),
+              if (_savedAddress != null && _savedAddress!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _addressController.text = _savedAddress!;
+                    });
+                  },
+                ),
+              ],
+            ],
+          ),
+          SizedBox(height: 16),
+          // Catatan Alamat
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Catatan Alamat',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "(Opsional)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8),
+              TextFormField(
+                controller: _addressNoteController,
+                keyboardType: TextInputType.multiline,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText:
+                      'Tambahkan catatan tentang alamat seperti patokan, warna rumah, dll',
+                  prefixIcon: Icon(Icons.note_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.blue),
+                  ),
+                ),
+              ),
+              if (_savedAddressNote != null &&
+                  _savedAddressNote!.isNotEmpty) ...[
+                SizedBox(height: 8),
+                _buildSuggestButton(
+                  title: 'Gunakan data tersimpan',
+                  onTap: () {
+                    setState(() {
+                      _addressNoteController.text = _savedAddressNote!;
+                    });
+                  },
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestButton(
+      {required String title, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.history,
+              size: 16,
+              color: Colors.blue,
+            ),
+            SizedBox(width: 4),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.blue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1318,180 +1626,6 @@ class _HomePageThreeState extends State<HomePageThree>
     );
   }
 
-  Widget _buildForm() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTextField(
-            controller: _nameController,
-            focusNode: _nameFocus,
-            label: 'Nama Lengkap',
-            icon: Icons.person,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Nama lengkap harus diisi';
-              }
-              return null;
-            },
-            savedValue: _savedName,
-            isRequired: true,
-          ),
-          SizedBox(height: 16),
-          _buildTextField(
-            controller: _whatsappController,
-            focusNode: _whatsappFocus,
-            label: 'Nomor WhatsApp',
-            icon: Icons.phone,
-            keyboardType: TextInputType.phone,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Nomor WhatsApp harus diisi';
-              }
-              return null;
-            },
-            savedValue: _savedWhatsapp,
-            isRequired: true,
-          ),
-          SizedBox(height: 16),
-          _buildTextField(
-            controller: _addressController,
-            focusNode: _addressFocus,
-            label: 'Alamat',
-            icon: Icons.location_on,
-            maxLines: 3,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Alamat harus diisi';
-              }
-              return null;
-            },
-            savedValue: _savedAddress,
-            isRequired: true,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    FocusNode? focusNode,
-    String? Function(String?)? validator,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-    String? savedValue,
-    String? hintText,
-    bool isRequired = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
-            if (isRequired) ...[
-              SizedBox(width: 8),
-              Text(
-                "(Wajib Diisi)",
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.red[700],
-                ),
-              ),
-            ],
-          ],
-        ),
-        SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.blue),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.red),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.red, width: 2),
-            ),
-            hintText: hintText,
-          ),
-          validator: validator,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-        ),
-        if (savedValue != null && savedValue.isNotEmpty) ...[
-          SizedBox(height: 8),
-          _buildSuggestButton(
-            title: 'Gunakan data tersimpan',
-            onTap: () {
-              setState(() {
-                controller.text = savedValue;
-              });
-            },
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildSuggestButton(
-      {required String title, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blue.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.history,
-              size: 16,
-              color: Colors.blue,
-            ),
-            SizedBox(width: 4),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.blue,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildShippingSection() {
     // Koordinat Service Center
     final serviceCenterPosition = Position(
@@ -1730,11 +1864,11 @@ class _HomePageThreeState extends State<HomePageThree>
               ] else ...[
                 SizedBox(width: 8),
                 Text(
-                  "(Opsional)",
+                  "(Wajib Dipilih)",
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Colors.blue[700],
+                    color: Colors.orange[700],
                   ),
                 ),
               ],
@@ -1814,18 +1948,23 @@ class _HomePageThreeState extends State<HomePageThree>
                   borderSide: BorderSide(color: Colors.red, width: 2),
                 ),
                 hintText: _selectedPasswordType == 'PIN'
-                    ? 'Contoh: 123456'
-                    : 'Masukkan password perangkat',
+                    ? 'Contoh: 1234 (min. 4 digit)'
+                    : 'Masukkan password perangkat (min. 4 karakter)',
                 helperText: _selectedPasswordType == 'PIN'
-                    ? 'PIN terdiri dari angka saja'
+                    ? 'PIN terdiri dari minimal 4 angka'
                     : _selectedPasswordType == 'Password'
-                        ? 'Password bisa terdiri dari huruf, angka, dan simbol'
+                        ? 'Password minimal 4 karakter (huruf, angka, simbol)'
                         : null,
               ),
               validator: (value) {
                 if (_selectedPasswordType != 'Tidak Ada' &&
                     (value == null || value.isEmpty)) {
                   return '${_selectedPasswordType} harus diisi';
+                }
+                if (_selectedPasswordType != 'Tidak Ada' &&
+                    value != null &&
+                    value.length < 4) {
+                  return '${_selectedPasswordType} minimal 4 karakter';
                 }
                 return null;
               },

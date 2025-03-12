@@ -181,10 +181,13 @@ class _HomeState extends State<Home> {
                       if (_adminFormKey.currentState!.validate()) {
                         setState(() => _isAdminLoading = true);
                         try {
-                          // Login dengan Supabase
+                          // Login terlebih dahulu dengan Supabase
+                          final email = _adminEmailController.text.trim();
+                          print('Mencoba login dengan email: $email');
+
                           final response =
                               await _supabase.auth.signInWithPassword(
-                            email: _adminEmailController.text.trim(),
+                            email: email,
                             password: _adminPasswordController.text,
                           );
 
@@ -192,27 +195,45 @@ class _HomeState extends State<Home> {
 
                           if (response.user != null) {
                             try {
-                              // Cek role admin di profiles
-                              final userData = await _supabase
-                                  .from('profiles')
-                                  .select()
-                                  .match({'id': response.user!.id}).single();
+                              // Mendapatkan userId dari hasil login
+                              final userId = response.user!.id;
+                              print(
+                                  'Login berhasil, mendapatkan userId: $userId');
+                              print('Memeriksa apakah user adalah admin...');
 
-                              if (userData['role'] == 'admin') {
+                              // Cek di tabel admins berdasarkan ID
+                              final adminCheck = await _supabase
+                                  .from('admins')
+                                  .select('*')
+                                  .eq('id', userId)
+                                  .maybeSingle();
+
+                              print(
+                                  'Hasil pemeriksaan admin: ${adminCheck != null ? "Ditemukan" : "Tidak ditemukan"}');
+
+                              if (adminCheck != null &&
+                                  adminCheck['role'] == 'admin') {
+                                print(
+                                    'Verifikasi admin berhasil. Mengarahkan ke halaman admin.');
                                 Navigator.of(context).pop();
                                 Navigator.pushReplacementNamed(
                                     context, '/admin');
                               } else {
-                                // Jika bukan admin, logout dan tampilkan pesan error
+                                // Bukan admin, lakukan logout
+                                print('Bukan admin, melakukan logout');
                                 await _supabase.auth.signOut();
-                                throw Exception('Akses ditolak: Bukan admin');
+
+                                String errorMessage = adminCheck == null
+                                    ? 'Akun ini tidak terdaftar sebagai admin.'
+                                    : 'Akun ini tidak memiliki hak akses admin.';
+
+                                throw Exception(errorMessage);
                               }
                             } catch (e) {
-                              print('Error checking admin role: $e');
-                              // Logout jika gagal mengecek role
+                              print('Error saat verifikasi admin: $e');
+                              // Logout jika gagal verifikasi
                               await _supabase.auth.signOut();
-                              throw Exception(
-                                  'Gagal memverifikasi akses admin');
+                              throw e;
                             }
                           } else {
                             throw Exception(
@@ -227,10 +248,23 @@ class _HomeState extends State<Home> {
                               .toString()
                               .contains('Invalid login credentials')) {
                             errorMessage = 'Email atau password salah';
-                          } else if (e.toString().contains('Akses ditolak')) {
-                            errorMessage = 'Anda tidak memiliki akses admin';
+                          } else if (e.toString().contains(
+                              'Akun ini tidak terdaftar sebagai admin')) {
+                            errorMessage =
+                                'Akun ini tidak terdaftar sebagai admin';
+                          } else if (e.toString().contains(
+                              'Akun ini tidak memiliki hak akses admin')) {
+                            errorMessage =
+                                'Akun ini tidak memiliki hak akses admin';
                           } else if (e.toString().contains('network')) {
                             errorMessage = 'Gagal terhubung ke server';
+                          } else if (e.toString().contains('column')) {
+                            errorMessage =
+                                'Terjadi kesalahan database. Silakan hubungi developer.';
+                          } else {
+                            // Tambahkan detail error untuk membantu debugging
+                            errorMessage =
+                                'Gagal login admin: ${e.toString().substring(0, e.toString().length > 100 ? 100 : e.toString().length)}';
                           }
 
                           ScaffoldMessenger.of(context).showSnackBar(

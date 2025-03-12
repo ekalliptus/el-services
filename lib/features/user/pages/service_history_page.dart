@@ -16,6 +16,11 @@ import 'package:servicehponline/features/complaint/pages/complaint_page.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:servicehponline/core/services/realtime_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 
 class ServiceHistoryPage extends StatefulWidget {
   const ServiceHistoryPage({Key? key}) : super(key: key);
@@ -398,6 +403,24 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
               if (isExpanded) ...[
                 SizedBox(height: 16),
                 _buildLocationSection(service),
+
+                    // Tambahkan section dokumentasi kondisi awal jika ada
+                    if (service['pre_service_docs'] != null &&
+                        (service['pre_service_docs'] as List).isNotEmpty) ...[
+                      SizedBox(height: 16),
+                      Divider(color: Colors.grey[300]),
+                      SizedBox(height: 16),
+                      _buildPreServiceDocumentationSection(service),
+                    ],
+
+                    // Tambahkan section kata sandi dan catatan alamat jika ada
+                    if (service['device_password'] != null ||
+                        service['address_note'] != null) ...[
+                      SizedBox(height: 16),
+                      Divider(color: Colors.grey[300]),
+                      SizedBox(height: 16),
+                      _buildAdditionalInfoSection(service),
+                    ],
               ],
               SizedBox(height: 12),
               Row(
@@ -779,6 +802,303 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
         builder: (context) => ComplaintPage(service: service),
       ),
     );
+  }
+
+  Widget _buildPreServiceDocumentationSection(Map<String, dynamic> service) {
+    final preServiceDocs = service['pre_service_docs'] as List;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Dokumentasi Kondisi Awal',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        SizedBox(height: 12),
+        Container(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: preServiceDocs.length,
+            itemBuilder: (context, index) {
+              final doc = preServiceDocs[index];
+              final isVideo = doc['type'] == 'video';
+
+              return GestureDetector(
+                onTap: () =>
+                    _showMediaPreview(context, doc, preServiceDocs, index),
+                child: Container(
+                  width: 120,
+                  margin: EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: isVideo
+                        ? Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: doc['thumbnail_url'] ??
+                                    'https://via.placeholder.com/120',
+                                fit: BoxFit.cover,
+                                width: 120,
+                                height: 120,
+                                placeholder: (context, url) => Center(
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                errorWidget: (context, url, error) => Center(
+                                  child: Icon(Icons.error),
+                                ),
+                              ),
+                              Icon(
+                                Icons.play_circle_fill,
+                                color: Colors.white.withOpacity(0.8),
+                                size: 36,
+                              ),
+                            ],
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: doc['url'],
+                            fit: BoxFit.cover,
+                            width: 120,
+                            height: 120,
+                            placeholder: (context, url) => Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            errorWidget: (context, url, error) => Center(
+                              child: Icon(Icons.error),
+                            ),
+                          ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdditionalInfoSection(Map<String, dynamic> service) {
+    final devicePassword = service['device_password'];
+    final addressNotes = service['address_note'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Informasi Tambahan',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        SizedBox(height: 12),
+        if (devicePassword != null) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.password, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Kata Sandi Perangkat',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      devicePassword,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+        ],
+        if (addressNotes != null) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
+              SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Catatan Alamat',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    Text(
+                      addressNotes,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _showMediaPreview(BuildContext context, Map<String, dynamic> currentDoc,
+      List docs, int initialIndex) {
+    final isVideo = currentDoc['type'] == 'video';
+
+    if (isVideo) {
+      _showVideoPreview(context, currentDoc);
+    } else {
+      _showPhotoGallery(context, docs, initialIndex);
+    }
+  }
+
+  void _showPhotoGallery(BuildContext context, List docs, int initialIndex) {
+    // Filter hanya foto
+    final imageList = docs.where((doc) => doc['type'] == 'image').toList();
+    // Recalculate index jika perlu
+    int mappedIndex = 0;
+    for (int i = 0; i < initialIndex; i++) {
+      if (docs[i]['type'] == 'image') mappedIndex++;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: EdgeInsets.all(8),
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            PhotoViewGallery.builder(
+              itemCount: imageList.length,
+              builder: (context, index) {
+                return PhotoViewGalleryPageOptions(
+                  imageProvider: NetworkImage(imageList[index]['url']),
+                  minScale: PhotoViewComputedScale.contained,
+                  maxScale: PhotoViewComputedScale.covered * 2,
+                );
+              },
+              scrollPhysics: BouncingScrollPhysics(),
+              backgroundDecoration: BoxDecoration(
+                color: Colors.black,
+              ),
+              pageController: PageController(initialPage: mappedIndex),
+              loadingBuilder: (context, event) => Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: IconButton(
+                icon: Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 30,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showVideoPreview(BuildContext context, Map<String, dynamic> doc) {
+    VideoPlayerController videoController =
+        VideoPlayerController.network(doc['url']);
+
+    videoController.initialize().then((_) {
+      ChewieController chewieController = ChewieController(
+        videoPlayerController: videoController,
+        autoPlay: true,
+        looping: false,
+        allowMuting: true,
+        showControls: true,
+        showControlsOnInitialize: true,
+        controlsSafeAreaMinimum: EdgeInsets.all(8),
+        placeholder: Center(child: CircularProgressIndicator()),
+        materialProgressColors: ChewieProgressColors(
+          playedColor: Colors.blue,
+          handleColor: Colors.blue,
+          backgroundColor: Colors.grey[300]!,
+          bufferedColor: Colors.grey,
+        ),
+      );
+
+      showDialog(
+        context: context,
+        builder: (context) => Dialog(
+          insetPadding: EdgeInsets.zero,
+          backgroundColor: Colors.black,
+          child: OrientationBuilder(builder: (context, orientation) {
+            return Stack(
+              children: [
+                Container(
+                  height: orientation == Orientation.portrait
+                      ? MediaQuery.of(context).size.height * 0.4
+                      : MediaQuery.of(context).size.height,
+                  width: MediaQuery.of(context).size.width,
+                  child: Chewie(controller: chewieController),
+                ),
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      videoController.pause();
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ).then((_) {
+        videoController.dispose();
+        chewieController.dispose();
+      });
+    }).catchError((error) {
+      print('Error initializing video: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat video')),
+      );
+    });
   }
 
   @override

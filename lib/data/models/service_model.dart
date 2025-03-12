@@ -15,7 +15,7 @@ class ServiceModel {
   final String model;
   final String description;
   final String shippingMethod;
-  final String note;
+  final String addressNote;
   final double? latitude;
   final double? longitude;
   final DateTime? createdAt;
@@ -36,7 +36,7 @@ class ServiceModel {
     required this.model,
     required this.description,
     required this.shippingMethod,
-    this.note = '',
+    this.addressNote = '',
     this.pictureDamage,
     this.pictureFront,
     this.pictureBack,
@@ -79,7 +79,7 @@ class ServiceModel {
       model: json['model'] ?? '',
       description: json['description'] ?? '',
       shippingMethod: json['shipping_method'] ?? 'pickup',
-      note: json['note'] ?? '',
+      addressNote: json['address_note'] ?? '',
       pictureDamage: json['picture_damage_url'],
       pictureFront: json['picture_front_url'],
       pictureBack: json['picture_back_url'],
@@ -110,7 +110,7 @@ class ServiceModel {
       'model': model,
       'description': description,
       'shipping_method': shippingMethod,
-      'note': note,
+      'address_note': addressNote,
       'picture_damage_url': pictureDamage,
       'picture_front_url': pictureFront,
       'picture_back_url': pictureBack,

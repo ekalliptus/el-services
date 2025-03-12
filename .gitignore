@@ -45,3 +45,5 @@ app.*.map.json
 !.env.example
 
 debug.keystore
+
+supabase_migration.sql
