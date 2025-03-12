@@ -45,7 +45,6 @@ class _HomePageThreeState extends State<HomePageThree>
   final _modelController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _devicePasswordController = TextEditingController();
-  final _addressNoteController = TextEditingController();
   String? _savedAddressNote;
 
   // FocusNode untuk setiap field
@@ -106,7 +105,6 @@ class _HomePageThreeState extends State<HomePageThree>
     _modelController.dispose();
     _descriptionController.dispose();
     _devicePasswordController.dispose();
-    _addressNoteController.dispose();
 
     // Dispose FocusNode
     _nameFocus.dispose();
@@ -486,7 +484,7 @@ class _HomePageThreeState extends State<HomePageThree>
         pictureFront: _frontImages.isNotEmpty ? _frontImages.first : null,
         pictureBack: _backImages.isNotEmpty ? _backImages.first : null,
         video: _videoPath,
-        addressNote: _addressNoteController.text,
+        addressNote: '',
       );
 
       if (!mounted) return;
@@ -569,122 +567,52 @@ class _HomePageThreeState extends State<HomePageThree>
                   SizedBox(height: 20.0),
                   Expanded(
                     child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildUserInfoSection(),
-                          SizedBox(height: 20.0),
-                          Container(
-                            padding: EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16.0),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Detail Perangkat',
-                                  style: TextStyle(
-                                    color: Colors.black87,
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SizedBox(height: 16.0),
-                                _buildDetailItem(
-                                  'Perangkat',
-                                  widget.selectedDevice == 'iphone'
-                                      ? 'iPhone'
-                                      : widget.selectedDevice == 'huawei'
-                                          ? 'Huawei'
-                                          : 'Android',
-                                ),
-                                SizedBox(height: 12.0),
-                                _buildDetailItem(
-                                  'Masalah',
-                                  _deviceName,
-                                ),
-                                SizedBox(height: 12.0),
-                                if (widget.selectedDevice == 'android') ...[
-                                  DropdownButtonFormField<String>(
-                                    value: _selectedBrand,
-                                    decoration: InputDecoration(
-                                      labelText: 'Merk Perangkat/Ponsel',
-                                      prefixIcon: Icon(Icons.phone_android),
-                                      border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                        borderSide: BorderSide(
-                                            color: Colors.grey[300]!),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                        borderSide:
-                                            BorderSide(color: Colors.blue),
-                                      ),
-                                      errorBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                        borderSide:
-                                            BorderSide(color: Colors.red),
-                                      ),
-                                      focusedErrorBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                        borderSide: BorderSide(
-                                            color: Colors.red, width: 2),
-                                      ),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildUserInfoSection(),
+                            SizedBox(height: 20.0),
+                            Container(
+                              padding: EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16.0),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Detail Perangkat',
+                                    style: TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 18.0,
+                                      fontWeight: FontWeight.w500,
                                     ),
-                                    items: _availableBrands.map((String brand) {
-                                      return DropdownMenuItem<String>(
-                                        value: brand,
-                                        child: Text(brand),
-                                      );
-                                    }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        _selectedBrand = newValue;
-                                      });
-                                    },
+                                  ),
+                                  SizedBox(height: 16.0),
+                                  _buildDetailItem(
+                                    'Perangkat',
+                                    widget.selectedDevice == 'iphone'
+                                        ? 'iPhone'
+                                        : widget.selectedDevice == 'huawei'
+                                            ? 'Huawei'
+                                            : 'Android',
                                   ),
                                   SizedBox(height: 12.0),
-                                ],
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          'Model/Tipe HP',
-                                          style: GoogleFonts.poppins(
-                                            fontWeight: FontWeight.w500,
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          "(Wajib Diisi)",
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                            color: Colors.red[700],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 8),
-                                    TextFormField(
-                                      controller: _modelController,
-                                      focusNode: _modelFocus,
+                                  _buildDetailItem(
+                                    'Masalah',
+                                    _deviceName,
+                                  ),
+                                  SizedBox(height: 12.0),
+                                  if (widget.selectedDevice == 'android') ...[
+                                    DropdownButtonFormField<String>(
+                                      value: _selectedBrand,
                                       decoration: InputDecoration(
-                                        prefixIcon: Icon(Icons.phone_iphone),
+                                        labelText: 'Merk Perangkat/Ponsel',
+                                        prefixIcon: Icon(Icons.phone_android),
                                         border: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(12.0),
@@ -701,108 +629,186 @@ class _HomePageThreeState extends State<HomePageThree>
                                           borderSide:
                                               BorderSide(color: Colors.blue),
                                         ),
+                                        errorBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12.0),
+                                          borderSide:
+                                              BorderSide(color: Colors.red),
+                                        ),
+                                        focusedErrorBorder: OutlineInputBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12.0),
+                                          borderSide: BorderSide(
+                                              color: Colors.red, width: 2),
+                                        ),
                                       ),
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Model HP harus diisi';
-                                        }
-                                        return null;
+                                      items:
+                                          _availableBrands.map((String brand) {
+                                        return DropdownMenuItem<String>(
+                                          value: brand,
+                                          child: Text(brand),
+                                        );
+                                      }).toList(),
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          _selectedBrand = newValue;
+                                        });
                                       },
                                     ),
+                                    SizedBox(height: 12.0),
                                   ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20.0),
-                          _buildDocumentationSection(),
-                          SizedBox(height: 20.0),
-                          Container(
-                            padding: EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16.0),
-                              border: Border.all(color: Colors.grey[300]!),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Keterangan Kerusakan',
-                                      style: TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 18.0,
-                                        fontWeight: FontWeight.w500,
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Model/Tipe HP',
+                                            style: GoogleFonts.poppins(
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            "(Wajib Diisi)",
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w400,
+                                              color: Colors.red[700],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    SizedBox(width: 8.0),
-                                    Text(
-                                      "(Opsional)",
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w400,
-                                        color: Colors.blue[700],
+                                      SizedBox(height: 8),
+                                      TextFormField(
+                                        controller: _modelController,
+                                        focusNode: _modelFocus,
+                                        decoration: InputDecoration(
+                                          prefixIcon: Icon(Icons.phone_iphone),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12.0),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12.0),
+                                            borderSide: BorderSide(
+                                                color: Colors.grey[300]!),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12.0),
+                                            borderSide:
+                                                BorderSide(color: Colors.blue),
+                                          ),
+                                        ),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Model HP harus diisi';
+                                          }
+                                          return null;
+                                        },
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 16.0),
-                                TextField(
-                                  controller: _descriptionController,
-                                  maxLines: 3,
-                                  decoration: InputDecoration(
-                                    labelText:
-                                        'Jelaskan detail kerusakan perangkat Anda',
-                                    prefixIcon: Icon(Icons.description),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      borderSide:
-                                          BorderSide(color: Colors.grey[300]!),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      borderSide:
-                                          BorderSide(color: Colors.blue),
-                                    ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20.0),
-                          _buildShippingSection(),
-                          SizedBox(height: 20.0),
-                          _buildDevicePasswordSection(),
-                          SizedBox(height: 20.0),
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _createService,
-                            child: _isLoading
-                                ? SizedBox(
-                                    width: 24.0,
-                                    height: 24.0,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.0,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                    ),
-                                  )
-                                : Text('Lanjutkan'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 16.0),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.0),
+                                ],
                               ),
                             ),
-                          ),
-                          SizedBox(height: 20.0),
-                        ],
+                            SizedBox(height: 20.0),
+                            _buildDocumentationSection(),
+                            SizedBox(height: 20.0),
+                            Container(
+                              padding: EdgeInsets.all(16.0),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16.0),
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Keterangan Kerusakan',
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                          fontSize: 18.0,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8.0),
+                                      Text(
+                                        "(Opsional)",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w400,
+                                          color: Colors.blue[700],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 16.0),
+                                  TextField(
+                                    controller: _descriptionController,
+                                    maxLines: 3,
+                                    decoration: InputDecoration(
+                                      labelText:
+                                          'Jelaskan detail kerusakan perangkat Anda',
+                                      prefixIcon: Icon(Icons.description),
+                                      border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(12.0),
+                                        borderSide:
+                                            BorderSide(color: Colors.blue),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 20.0),
+                            _buildShippingSection(),
+                            SizedBox(height: 20.0),
+                            _buildDevicePasswordSection(),
+                            SizedBox(height: 20.0),
+                            ElevatedButton(
+                              onPressed: _isLoading ? null : _createService,
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: 24.0,
+                                      height: 24.0,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.0,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
+                                      ),
+                                    )
+                                  : Text('Lanjutkan'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1004,6 +1010,8 @@ class _HomePageThreeState extends State<HomePageThree>
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: Colors.blue),
                   ),
+                  hintText:
+                      'Masukkan alamat lengkap, termasuk patokan, warna rumah, dll',
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -1018,69 +1026,13 @@ class _HomePageThreeState extends State<HomePageThree>
                   title: 'Gunakan data tersimpan',
                   onTap: () {
                     setState(() {
-                      _addressController.text = _savedAddress!;
-                    });
-                  },
-                ),
-              ],
-            ],
-          ),
-          SizedBox(height: 16),
-          // Catatan Alamat
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Catatan Alamat',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    "(Opsional)",
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8),
-              TextFormField(
-                controller: _addressNoteController,
-                keyboardType: TextInputType.multiline,
-                maxLines: 2,
-                decoration: InputDecoration(
-                  hintText:
-                      'Tambahkan catatan tentang alamat seperti patokan, warna rumah, dll',
-                  prefixIcon: Icon(Icons.note_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: Colors.blue),
-                  ),
-                ),
-              ),
-              if (_savedAddressNote != null &&
-                  _savedAddressNote!.isNotEmpty) ...[
-                SizedBox(height: 8),
-                _buildSuggestButton(
-                  title: 'Gunakan data tersimpan',
-                  onTap: () {
-                    setState(() {
-                      _addressNoteController.text = _savedAddressNote!;
+                      String address = _savedAddress!;
+                      // Gabungkan address dan address_note jika tersedia
+                      if (_savedAddressNote != null &&
+                          _savedAddressNote!.isNotEmpty) {
+                        address += '\n\nCatatan: ${_savedAddressNote!}';
+                      }
+                      _addressController.text = address;
                     });
                   },
                 ),
@@ -1315,106 +1267,6 @@ class _HomePageThreeState extends State<HomePageThree>
                 onPressed: () => _showMediaSourceDialog('damage'),
                 icon: Icon(Icons.add_a_photo),
                 label: Text('Tambah Foto Kerusakan'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          // Foto Tampak Depan
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Foto Tampak Depan',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                ),
-              ),
-              SizedBox(height: 8),
-              if (_frontImages.isEmpty)
-                Center(
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.photo_library,
-                        size: 48.0,
-                        color: Colors.black54,
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        'Belum ada foto tampak depan',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                  ),
-                  itemCount: _frontImages.length,
-                  itemBuilder: (context, index) {
-                    return Stack(
-                      children: <Widget>[
-                        Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: FileImage(File(_frontImages[index])),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _frontImages.removeAt(index);
-                              });
-                            },
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.close,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: () => _showMediaSourceDialog('front'),
-                icon: Icon(Icons.add_a_photo),
-                label: Text('Tambah Foto Tampak Depan'),
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(
                     horizontal: 16.0,
@@ -1988,15 +1840,6 @@ class _HomePageThreeState extends State<HomePageThree>
                       'Pola telah diatur',
                       style: GoogleFonts.poppins(
                         color: Colors.grey[700],
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _showPatternLockDialog,
-                    child: Text(
-                      'Ubah',
-                      style: GoogleFonts.poppins(
-                        color: Colors.blue,
                       ),
                     ),
                   ),

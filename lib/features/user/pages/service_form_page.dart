@@ -78,14 +78,14 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
         });
 
         // Tampilkan notifikasi hanya jika fungsi dipanggil dari tombol (bukan initState)
-        if (ModalRoute.of(context)?.isCurrent == true) {
+        if (ModalRoute.of(context)?.isCurrent ?? false) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Data berhasil diambil dari profil')),
           );
         }
       }
     } catch (e) {
-      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+      if (mounted && ModalRoute.of(context)!.isCurrent) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text('Gagal mengambil data profil: ${e.toString()}')),
