@@ -329,12 +329,25 @@ class _ComplaintPageState extends State<ComplaintPage> {
 
   Future<void> _submitComplaint() async {
     if (_complaintController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Detail komplain wajib diisi'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
         animType: AnimType.scale,
         title: 'Peringatan',
-        desc: 'Mohon isi komplain Anda',
+        desc: 'Mohon isi detail komplain Anda',
         btnOkColor: Colors.red,
         btnOkText: 'OK',
         btnOkOnPress: () {},
@@ -666,12 +679,25 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 ),
               ),
               SizedBox(height: 24),
-              Text(
-                'Detail Komplain',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Detail Komplain',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "(Wajib Diisi)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.red[700],
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 8),
               Container(
@@ -708,12 +734,25 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 ),
               ),
               SizedBox(height: 24),
-              Text(
-                'Dokumentasi',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Dokumentasi',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "(Opsional)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 8),
               Row(

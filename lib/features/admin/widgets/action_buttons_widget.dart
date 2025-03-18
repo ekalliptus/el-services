@@ -15,6 +15,10 @@ class ActionButtonsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = service['status']?.toString().toUpperCase() ?? 'PENDING';
+    final hasServiceCost = service['service_cost'] != null;
+    final isPendingWithoutCost = status == 'PENDING' && !hasServiceCost;
+
     return IntrinsicHeight(
       child: Row(
         children: [
@@ -41,76 +45,78 @@ class ActionButtonsWidget extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(width: 12),
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: PopupMenuButton<String>(
-                onSelected: (value) =>
-                    onUpdateStatus(service['id'].toString(), value),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'PENDING',
-                    child: _buildStatusMenuItem(
-                      'Menunggu Admin',
-                      Colors.orange,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'WAITING_PAYMENT',
-                    child: _buildStatusMenuItem(
-                      'Belum Dibayar',
-                      Colors.orange,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'PROCESSED',
-                    child: _buildStatusMenuItem(
-                      'Diproses',
-                      Colors.blue,
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'COMPLETED',
-                    child: _buildStatusMenuItem(
-                      'Selesai',
-                      Colors.green,
-                    ),
-                  ),
-                  if (service['complain'] == true)
+          if (!isPendingWithoutCost) ...[
+            SizedBox(width: 12),
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: PopupMenuButton<String>(
+                  onSelected: (value) =>
+                      onUpdateStatus(service['id'].toString(), value),
+                  itemBuilder: (context) => [
                     PopupMenuItem(
-                      value: 'COMPLAINED',
+                      value: 'PENDING',
                       child: _buildStatusMenuItem(
-                        'Komplain',
-                        Colors.red,
+                        'Menunggu Admin',
+                        Colors.orange,
                       ),
                     ),
-                ],
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.update, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        'Update Status',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w500,
+                    PopupMenuItem(
+                      value: 'WAITING_PAYMENT',
+                      child: _buildStatusMenuItem(
+                        'Belum Dibayar',
+                        Colors.orange,
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'PROCESSED',
+                      child: _buildStatusMenuItem(
+                        'Diproses',
+                        Colors.blue,
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'COMPLETED',
+                      child: _buildStatusMenuItem(
+                        'Selesai',
+                        Colors.green,
+                      ),
+                    ),
+                    if (service['complain'] == true)
+                      PopupMenuItem(
+                        value: 'COMPLAINED',
+                        child: _buildStatusMenuItem(
+                          'Komplain',
+                          Colors.red,
                         ),
                       ),
-                    ],
+                  ],
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.update, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text(
+                          'Update Status',
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

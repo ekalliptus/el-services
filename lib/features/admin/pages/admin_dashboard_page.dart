@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:servicehponline/core/services/authentication.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:servicehponline/features/admin/widgets/service_card_widget.dart';
 import 'package:servicehponline/features/admin/widgets/search_bar_widget.dart';
 import 'package:servicehponline/features/admin/widgets/filter_widget.dart';
@@ -18,6 +18,8 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   final _supabase = Supabase.instance.client;
   bool _isLoading = false;
+  bool _isUploadingDoc = false; // Status upload dokumentasi
+  String _documentationActionText = 'Mengunggah dokumentasi...';
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _filteredServices = [];
   String _selectedFilter = 'all';
@@ -30,17 +32,70 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     symbol: 'Rp ',
     decimalDigits: 0,
   );
+  // Subscription untuk real-time update
+  late RealtimeChannel _servicesChannel;
+  RealtimeChannel? _docsChannel;
+  RealtimeChannel? _complaintsChannel;
 
   @override
   void initState() {
     super.initState();
+    _checkSession();
     _loadServices();
+    _loadFilterDates();
+    _subscribeToServiceChanges();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    // Batalkan semua subscription
+    _servicesChannel.unsubscribe();
+    _docsChannel?.unsubscribe();
+    _complaintsChannel?.unsubscribe();
     super.dispose();
+  }
+
+  // Metode untuk berlangganan perubahan data service secara real-time
+  void _subscribeToServiceChanges() {
+    // Buat channel untuk tabel services
+    _servicesChannel = _supabase.channel('services-channel');
+    _servicesChannel = _servicesChannel.onPostgresChanges(
+      schema: 'public',
+      table: 'services',
+      event: PostgresChangeEvent.all,
+      callback: (payload) {
+        print('Perubahan pada tabel services: ${payload.eventType}');
+        _loadServices();
+      },
+    );
+    _servicesChannel.subscribe();
+
+    // Subscription untuk tabel service_docs
+    _docsChannel = _supabase.channel('service-docs-channel');
+    _docsChannel = _docsChannel?.onPostgresChanges(
+      schema: 'public',
+      table: 'service_docs',
+      event: PostgresChangeEvent.all,
+      callback: (payload) {
+        print('Perubahan pada tabel service_docs: ${payload.eventType}');
+        _loadServices();
+      },
+    );
+    _docsChannel?.subscribe();
+
+    // Subscription untuk tabel complaints
+    _complaintsChannel = _supabase.channel('complaints-channel');
+    _complaintsChannel = _complaintsChannel?.onPostgresChanges(
+      schema: 'public',
+      table: 'complaints',
+      event: PostgresChangeEvent.all,
+      callback: (payload) {
+        print('Perubahan pada tabel complaints: ${payload.eventType}');
+        _loadServices();
+      },
+    );
+    _complaintsChannel?.subscribe();
   }
 
   void _filterServices() {
@@ -49,10 +104,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         bool matchesSearch = true;
         bool matchesDate = true;
 
-        // Filter berdasarkan pencarian nama
+        // Filter berdasarkan pencarian yang ditingkatkan
         if (_searchQuery.isNotEmpty) {
+          final searchLower = _searchQuery.toLowerCase();
+          // Pencarian di berbagai field
           final fullname = service['fullname']?.toString().toLowerCase() ?? '';
-          matchesSearch = fullname.contains(_searchQuery.toLowerCase());
+          final phone = service['phone_number']?.toString().toLowerCase() ?? '';
+          final model = service['model']?.toString().toLowerCase() ?? '';
+          final brand = service['brand']?.toString().toLowerCase() ?? '';
+          final problem = service['problem']?.toString().toLowerCase() ?? '';
+          final serviceId = service['id']?.toString().toLowerCase() ?? '';
+
+          // Cek apakah query ada di salah satu field
+          matchesSearch = fullname.contains(searchLower) ||
+              phone.contains(searchLower) ||
+              model.contains(searchLower) ||
+              brand.contains(searchLower) ||
+              problem.contains(searchLower) ||
+              serviceId.contains(searchLower);
         }
 
         // Filter berdasarkan tanggal
@@ -72,6 +141,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       context: context,
       firstDate: DateTime(2023),
       lastDate: DateTime.now(),
+      initialDateRange: _startDate != null && _endDate != null
+          ? DateTimeRange(start: _startDate!, end: _endDate!)
+          : null,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -89,6 +161,35 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         _endDate = picked.end;
         _filterServices();
       });
+
+      // Simpan filter tanggal
+      _saveFilterDates(picked.start, picked.end);
+    }
+  }
+
+  // Fungsi untuk menyimpan filter tanggal
+  Future<void> _saveFilterDates(DateTime start, DateTime end) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('admin_filter_start_date', start.toIso8601String());
+    await prefs.setString('admin_filter_end_date', end.toIso8601String());
+  }
+
+  // Fungsi untuk memuat filter tanggal
+  Future<void> _loadFilterDates() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final startDateStr = prefs.getString('admin_filter_start_date');
+      final endDateStr = prefs.getString('admin_filter_end_date');
+
+      if (startDateStr != null && endDateStr != null) {
+        setState(() {
+          _startDate = DateTime.parse(startDateStr);
+          _endDate = DateTime.parse(endDateStr);
+        });
+        _filterServices();
+      }
+    } catch (e) {
+      print('Error loading filter dates: $e');
     }
   }
 
@@ -98,6 +199,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _endDate = null;
       _filterServices();
     });
+
+    // Hapus filter tanggal dari SharedPreferences
+    _clearSavedFilterDates();
+  }
+
+  // Fungsi untuk menghapus filter tanggal tersimpan
+  Future<void> _clearSavedFilterDates() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('admin_filter_start_date');
+    await prefs.remove('admin_filter_end_date');
   }
 
   Future<void> _loadServices() async {
@@ -152,6 +263,35 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
   }
 
+  Future<void> _checkSession() async {
+    try {
+      final session = await _supabase.auth.currentSession;
+      if (session == null) {
+        // Tidak ada sesi aktif, kembali ke halaman login
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/');
+        }
+        return;
+      }
+
+      // Verifikasi bahwa user masih admin
+      final adminCheck = await _supabase
+          .from('admins')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+      if (adminCheck == null || adminCheck['role'] != 'admin') {
+        // Bukan admin lagi, logout
+        await _handleLogout();
+      }
+    } catch (e) {
+      print('Error checking session: $e');
+      // Jika ada error, amannya logout
+      await _handleLogout();
+    }
+  }
+
   Future<void> _handleLogout() async {
     try {
       // Tampilkan loading dialog
@@ -172,11 +312,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         },
       );
 
-      // Gunakan service Authentication untuk logout
-      final authService = Authentication();
-      await authService.signOut();
+      // Hapus sesi admin dari SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('admin_logged_in');
+      await prefs.remove('admin_session');
+      print('Admin session cleared from SharedPreferences');
 
-      // Pastikan juga logout dari Supabase, karena admin menggunakan Supabase
+      // Pastikan juga logout dari Supabase
       await _supabase.auth.signOut();
 
       if (!mounted) return;
@@ -231,132 +373,215 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
   }
 
-  Future<void> _handleUpdateCost(Map<String, dynamic> service) async {
+  Future<void> _showUpdateCostDialog(Map<String, dynamic> service) async {
     await showUpdateCostDialog(context, service);
     _loadServices();
   }
 
+  // Tambahkan setter untuk status upload dokumentasi
+  void setUploadingDoc(bool status) {
+    setState(() {
+      _isUploadingDoc = status;
+    });
+  }
+
+  // Update status loading dokumentasi dan teksnya
+  void _setDocumentationLoading(bool isLoading, {String action = 'upload'}) {
+    setState(() {
+      _isUploadingDoc = isLoading;
+      if (action == 'delete') {
+        _documentationActionText = 'Menghapus dokumentasi...';
+      } else {
+        _documentationActionText = 'Mengunggah dokumentasi...';
+      }
+    });
+  }
+
+  // Fungsi untuk logout
+  void _logout() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Konfirmasi'),
+        content: Text('Apakah Anda yakin ingin keluar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _handleLogout();
+            },
+            child: Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text(
-          'Dashboard Admin',
-          style: GoogleFonts.poppins(
-            color: Colors.black87,
-            fontWeight: FontWeight.w600,
+    return WillPopScope(
+      onWillPop: () async {
+        if (Navigator.of(context).userGestureInProgress) {
+          return false;
+        }
+        final shouldPop = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Konfirmasi'),
+                content: Text('Yakin ingin keluar dari halaman admin?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text('Tidak'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: Text('Ya'),
+                  ),
+                ],
+              ),
+            ) ??
+            false;
+        return shouldPop;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Admin Dashboard',
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+            ),
           ),
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: Icon(
+                Icons.refresh,
+                color: Colors.black,
+                size: 22,
+              ),
+              onPressed: _loadServices,
+              tooltip: 'Refresh Data',
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.logout,
+                color: Colors.black,
+                size: 22,
+              ),
+              onPressed: _logout,
+              tooltip: 'Logout',
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.calendar_today, color: Colors.blue),
-            onPressed: _showDateRangePicker,
-          ),
-          IconButton(
-            icon: Icon(Icons.logout, color: Colors.red),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(
-                    'Konfirmasi',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                  ),
-                  content: Text(
-                    'Apakah Anda yakin ingin keluar?',
-                    style: GoogleFonts.poppins(),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'BATAL',
-                        style: GoogleFonts.poppins(color: Colors.grey),
+        body: Stack(
+          children: [
+            Column(
+              children: [
+                // Search dan Filter
+                Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      SearchBarWidget(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                            _filterServices();
+                          });
+                        },
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _handleLogout();
-                      },
-                      child: Text(
-                        'KELUAR',
-                        style: GoogleFonts.poppins(color: Colors.red),
+                      SizedBox(height: 12),
+                      FilterWidget(
+                        selectedFilter: _selectedFilter,
+                        onFilterChanged: (value) {
+                          setState(() {
+                            _selectedFilter = value;
+                            _loadServices();
+                          });
+                        },
+                        startDate: _startDate,
+                        endDate: _endDate,
+                        onShowDateRangePicker: _showDateRangePicker,
+                        onClearDateRange: _clearDateRange,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search Bar
-          SearchBarWidget(
-            controller: _searchController,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-                _filterServices();
-              });
-            },
-          ),
 
-          // Filter Section
-          FilterWidget(
-            selectedFilter: _selectedFilter,
-            startDate: _startDate,
-            endDate: _endDate,
-            onFilterChanged: (filter) {
-              setState(() => _selectedFilter = filter);
-              _loadServices();
-            },
-            onShowDateRangePicker: _showDateRangePicker,
-            onClearDateRange: _clearDateRange,
-          ),
-
-          // Service List
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : (_searchQuery.isEmpty && _startDate == null)
-                    ? ListView.builder(
-                        padding: EdgeInsets.all(16),
-                        itemCount: _services.length,
-                        itemBuilder: (context, index) => ServiceCardWidget(
-                          service: _services[index],
-                          onUpdateStatus: _updateServiceStatus,
-                          onUpdateCost: _handleUpdateCost,
-                          currencyFormat: _currencyFormat,
-                        ),
-                      )
-                    : _filteredServices.isEmpty
-                        ? Center(
-                            child: Text(
-                              'Tidak ada data yang sesuai',
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                                fontSize: 16,
+                // Daftar service
+                Expanded(
+                  child: _isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : _filteredServices.isEmpty
+                          ? Center(
+                              child: Text(
+                                'Tidak ada data service',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: _loadServices,
+                              child: ListView.builder(
+                                padding: EdgeInsets.all(16),
+                                itemCount: _filteredServices.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: EdgeInsets.only(bottom: 16),
+                                    child: _buildServiceItem(_filteredServices[index], context),
+                                  );
+                                },
                               ),
                             ),
-                          )
-                        : ListView.builder(
-                            padding: EdgeInsets.all(16),
-                            itemCount: _filteredServices.length,
-                            itemBuilder: (context, index) => ServiceCardWidget(
-                              service: _filteredServices[index],
-                              onUpdateStatus: _updateServiceStatus,
-                              onUpdateCost: _handleUpdateCost,
-                              currencyFormat: _currencyFormat,
-                            ),
-                          ),
-          ),
-        ],
+                ),
+              ],
+            ),
+            // Indikator loading untuk upload dokumentasi
+            if (_isUploadingDoc)
+              Container(
+                color: Colors.black54,
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(color: Colors.white),
+                      SizedBox(height: 16),
+                      Text(
+                        _documentationActionText,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildServiceItem(Map<String, dynamic> service, BuildContext context) {
+    return ServiceCardWidget(
+      service: service,
+      onUpdateStatus: _updateServiceStatus,
+      onUpdateCost: _showUpdateCostDialog,
+      currencyFormat: _currencyFormat,
+      onUploadingDoc: (isLoading, {String action = 'upload'}) {
+        _setDocumentationLoading(isLoading, action: action);
+      },
     );
   }
 }

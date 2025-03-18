@@ -1,44 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
+import 'package:photo_view/photo_view.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'dart:async';
 
 /// Menampilkan preview dokumentasi (gambar atau video)
 void showDocumentationPreview(BuildContext context, String url, bool isVideo) {
-  if (isVideo) {
-    _showVideoPreview(context, url);
-  } else {
-    _showImagePreview(context, url);
-  }
-}
-
-/// Menampilkan preview gambar
-void _showImagePreview(BuildContext context, String url) {
   showDialog(
     context: context,
     builder: (context) => Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
+      insetPadding: EdgeInsets.all(16),
       child: Stack(
-        alignment: Alignment.center,
         children: [
-          Image.network(
-            url,
-            fit: BoxFit.contain,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
-              );
-            },
+          // Widget untuk menampilkan preview sesuai jenisnya
+          Container(
+            width: double.infinity,
+            height: MediaQuery.of(context).size.height * 0.8,
+            child: isVideo
+                ? VideoPreviewWidget(url: url)
+                : ImagePreviewWidget(url: url),
           ),
+          // Tombol close di pojok kanan atas
           Positioned(
             top: 8,
             right: 8,
-            child: IconButton(
-              icon: Icon(Icons.close, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
             ),
           ),
         ],
@@ -47,101 +50,319 @@ void _showImagePreview(BuildContext context, String url) {
   );
 }
 
-/// Menampilkan preview video
-void _showVideoPreview(BuildContext context, String url) {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (context) => VideoPreviewDialog(videoUrl: url),
-  );
-}
+/// Menampilkan preview gambar
+class ImagePreviewWidget extends StatelessWidget {
+  final String url;
 
-/// Dialog untuk preview video
-class VideoPreviewDialog extends StatefulWidget {
-  final String videoUrl;
-
-  const VideoPreviewDialog({
-    Key? key,
-    required this.videoUrl,
-  }) : super(key: key);
+  const ImagePreviewWidget({Key? key, required this.url}) : super(key: key);
 
   @override
-  State<VideoPreviewDialog> createState() => _VideoPreviewDialogState();
+  Widget build(BuildContext context) {
+    // Cek apakah URL adalah data base64
+    if (url.startsWith('data:image')) {
+      // Extract base64 data dari URL
+      final base64Data = url.split(',')[1];
+      // Decode base64 ke bytes
+      final imageBytes = base64Decode(base64Data);
+
+      // Gunakan PhotoView dengan ImageProvider.memory
+      return PhotoView(
+        imageProvider: MemoryImage(imageBytes),
+        backgroundDecoration: BoxDecoration(color: Colors.transparent),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.covered * 2,
+      );
+    } else {
+      // URL normal, gunakan PhotoView dengan NetworkImage
+      return PhotoView(
+        imageProvider: NetworkImage(url),
+        backgroundDecoration: BoxDecoration(color: Colors.transparent),
+        loadingBuilder: (context, event) => Center(
+          child: CircularProgressIndicator(
+            value: event == null
+                ? 0
+                : event.cumulativeBytesLoaded / (event.expectedTotalBytes ?? 1),
+          ),
+        ),
+        minScale: PhotoViewComputedScale.contained,
+        maxScale: PhotoViewComputedScale.covered * 2,
+      );
+    }
+  }
 }
 
-class _VideoPreviewDialogState extends State<VideoPreviewDialog> {
-  VideoPlayerController? _controller;
+/// Menampilkan preview video
+class VideoPreviewWidget extends StatefulWidget {
+  final String url;
+
+  const VideoPreviewWidget({Key? key, required this.url}) : super(key: key);
+
+  @override
+  _VideoPreviewWidgetState createState() => _VideoPreviewWidgetState();
+}
+
+class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
+  late VideoPlayerController _videoPlayerController;
+  ChewieController? _chewieController;
   bool _isInitialized = false;
-  bool _isLoading = true;
   String? _errorMessage;
+  File? _tempFile;
+  bool _isPlaying = false;
+  bool _isBuffering = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeVideo();
+    _initializePlayer();
   }
 
-  Future<void> _initializeVideo() async {
+  Future<void> _generateThumbnail() async {
     try {
-      final controller = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
-        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
-      );
+      if (_videoPlayerController.value.isInitialized) {
+        print('Menghasilkan thumbnail dari player video');
 
-      await controller.initialize();
-      
-      if (mounted) {
+        // Ambil frame pertama untuk ditampilkan sebagai thumbnail
+        await _videoPlayerController.setVolume(0);
+        await _videoPlayerController.seekTo(Duration.zero);
+        await _videoPlayerController.pause();
+
+        // Untuk menandai bahwa video sudah memiliki thumbnail
         setState(() {
-          _controller = controller;
-          _isInitialized = true;
-          _isLoading = false;
+          // Thumbnail sudah ada di controller, kita hanya perlu menandai untuk menampilkan
+          // frame pertama dari video
+// dummy data untuk menandai thumbnail ada
         });
+
+        print('Thumbnail berhasil diatur dari frame pertama video');
+      } else {
+        print(
+            'Video player belum diinisialisasi, tidak dapat menghasilkan thumbnail');
       }
     } catch (e) {
-      print('Error initializing video: $e');
-      if (mounted) {
+      print('Error menghasilkan thumbnail: $e');
+    }
+  }
+
+  void _addVideoListener() {
+    _videoPlayerController.addListener(() {
+      if (_videoPlayerController.value.isBuffering) {
         setState(() {
-          _errorMessage = 'Gagal memuat video';
-          _isLoading = false;
+          _isBuffering = true;
+        });
+      } else {
+        setState(() {
+          _isBuffering = false;
         });
       }
+    });
+  }
+
+  Future<void> _initializePlayer() async {
+    try {
+      setState(() {
+        _isInitialized = false;
+        _errorMessage = 'Memuat video... mohon tunggu sebentar';
+      });
+
+      if (widget.url.startsWith('data:video')) {
+        try {
+          final parts = widget.url.split(',');
+          if (parts.length != 2) {
+            throw Exception('Format base64 video tidak valid');
+          }
+
+          final base64Data = parts[1];
+          if (base64Data.isEmpty || base64Data.length < 100) {
+            throw Exception('Data video tidak valid atau terlalu kecil');
+          }
+
+          final bytes = base64Decode(base64Data);
+          if (bytes.length < 1000) {
+            throw Exception('Data video terlalu kecil atau rusak');
+          }
+
+          final tempDir = await getTemporaryDirectory();
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final filePath = '${tempDir.path}/temp_video_$timestamp.mp4';
+          _tempFile = File(filePath);
+
+          await _tempFile!.writeAsBytes(bytes, flush: true);
+          print(
+              'File video dibuat: ${_tempFile!.path}, ukuran: ${await _tempFile!.length()} bytes');
+
+          if (!await _tempFile!.exists() || await _tempFile!.length() < 1000) {
+            throw Exception('File video gagal dibuat atau tidak valid');
+          }
+
+          _videoPlayerController = VideoPlayerController.file(_tempFile!);
+
+          // Konfigurasi controller video
+          await _videoPlayerController.initialize().timeout(
+            Duration(seconds: 15),
+            onTimeout: () {
+              throw TimeoutException('Video initialization timed out');
+            },
+          );
+
+          // Generate thumbnail setelah video diinisialisasi
+          await _generateThumbnail();
+
+          await _videoPlayerController.setVolume(1.0);
+          await _videoPlayerController.setLooping(false);
+
+          if (_videoPlayerController.value.duration.inSeconds == 0) {
+            throw Exception('Video tidak valid atau format tidak didukung');
+          }
+
+          _addVideoListener();
+
+          _chewieController = ChewieController(
+            videoPlayerController: _videoPlayerController,
+            autoPlay: false,
+            looping: false,
+            allowMuting: true,
+            showOptions: false,
+            showControlsOnInitialize: false, // Jangan tampilkan kontrol dulu
+            materialProgressColors: ChewieProgressColors(
+              playedColor: Colors.blue,
+              handleColor: Colors.blue,
+              backgroundColor: Colors.grey,
+              bufferedColor: Colors.lightBlue,
+            ),
+            placeholder: Container(
+              color: Colors.black,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            errorBuilder: (context, errorMessage) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Error: $errorMessage',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              );
+            },
+          );
+
+          setState(() {
+            _isInitialized = true;
+            _errorMessage = null;
+          });
+        } catch (e) {
+          print('Error processing base64 video: $e');
+          setState(() {
+            _errorMessage = 'Gagal memproses video: ${e.toString()}';
+            _isInitialized = false;
+          });
+        }
+      } else {
+        try {
+          // Untuk URL video biasa
+          _videoPlayerController = VideoPlayerController.networkUrl(
+            Uri.parse(widget.url),
+            videoPlayerOptions: VideoPlayerOptions(
+              mixWithOthers: false,
+              allowBackgroundPlayback: false,
+            ),
+          );
+
+          await _videoPlayerController.initialize().timeout(
+            Duration(seconds: 15),
+            onTimeout: () {
+              throw TimeoutException('Video initialization timed out');
+            },
+          );
+
+          // Generate thumbnail setelah video diinisialisasi
+          await _generateThumbnail();
+
+          await _videoPlayerController.setVolume(1.0);
+          await _videoPlayerController.setLooping(false);
+
+          _addVideoListener();
+
+          _chewieController = ChewieController(
+            videoPlayerController: _videoPlayerController,
+            autoPlay: false,
+            looping: false,
+            allowMuting: true,
+            showOptions: false,
+            showControlsOnInitialize: false, // Jangan tampilkan kontrol dulu
+            materialProgressColors: ChewieProgressColors(
+              playedColor: Colors.blue,
+              handleColor: Colors.blue,
+              backgroundColor: Colors.grey,
+              bufferedColor: Colors.lightBlue,
+            ),
+            placeholder: Container(
+              color: Colors.black,
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            errorBuilder: (context, errorMessage) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'Error: $errorMessage',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              );
+            },
+          );
+
+          setState(() {
+            _isInitialized = true;
+            _errorMessage = null;
+          });
+        } catch (e) {
+          print('Error initializing URL video: $e');
+          setState(() {
+            _errorMessage = 'Tidak dapat memutar video: ${e.toString()}';
+            _isInitialized = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('General error in video player: $e');
+      setState(() {
+        _errorMessage = 'Terjadi kesalahan: ${e.toString()}';
+        _isInitialized = false;
+      });
     }
   }
 
   @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Dialog(
-        backgroundColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+    if (_errorMessage != null) {
+      return Center(
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(16),
+          color: Colors.black54,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Mengunduh Video',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+                _errorMessage!,
+                style: TextStyle(color: Colors.white),
+                textAlign: TextAlign.center,
               ),
               SizedBox(height: 16),
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Mohon tunggu...',
-                style: GoogleFonts.poppins(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _errorMessage = null;
+                  });
+                  _initializePlayer();
+                },
+                child: Text('Coba Lagi'),
               ),
             ],
           ),
@@ -149,57 +370,95 @@ class _VideoPreviewDialogState extends State<VideoPreviewDialog> {
       );
     }
 
-    if (_errorMessage != null) {
-      return AlertDialog(
-        title: Text('Error'),
-        content: Text(_errorMessage!),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('TUTUP'),
-          ),
-        ],
-      );
-    }
-
-    if (_isInitialized && _controller != null) {
-      return Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: EdgeInsets.zero,
-        child: Stack(
-          alignment: Alignment.center,
+    if (!_isInitialized) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height,
-              color: Colors.black,
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: _controller!.value.aspectRatio,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      VideoPlayer(_controller!),
-                      VideoControlsOverlay(controller: _controller!),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: Icon(Icons.close, color: Colors.white),
-                onPressed: () => Navigator.pop(context),
-              ),
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Mempersiapkan video...',
+              style: TextStyle(color: Colors.white),
             ),
           ],
         ),
       );
     }
 
-    return Container(); // Fallback empty container
+    return Stack(
+      children: [
+        // Background hitam
+        Container(
+          color: Colors.black,
+          width: double.infinity,
+          height: double.infinity,
+        ),
+
+        // Video player utama - selalu ada tapi dengan opacity berbeda
+        Center(
+          child: AspectRatio(
+            aspectRatio: _videoPlayerController.value.aspectRatio,
+            child: _isPlaying
+                ? Chewie(controller: _chewieController!)
+                : VideoPlayer(
+                    _videoPlayerController), // Gunakan VideoPlayer sebagai thumbnail
+          ),
+        ),
+
+        // Overlay untuk kontrol video
+        if (!_isPlaying)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () async {
+                setState(() {
+                  _isPlaying = true;
+                });
+                await _videoPlayerController.play();
+              },
+              child: Container(
+                color: Colors.black.withOpacity(0.3),
+                child: Center(
+                  child: Icon(
+                    Icons.play_circle_fill,
+                    size: 64,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+        // Overlay untuk menampilkan status buffering
+        if (_isBuffering)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.3),
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    _videoPlayerController.dispose();
+    _chewieController?.dispose();
+
+    if (_tempFile != null && _tempFile!.existsSync()) {
+      try {
+        _tempFile!.deleteSync();
+        print('File video sementara dihapus: ${_tempFile!.path}');
+      } catch (e) {
+        print('Gagal menghapus file sementara: $e');
+      }
+    }
+    super.dispose();
   }
 }
 

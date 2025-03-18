@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -33,6 +34,12 @@ class _HomeState extends State<Home> {
   // Controller untuk form login admin
   final _adminEmailController = TextEditingController();
   final _adminPasswordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingSession();
+  }
 
   @override
   void dispose() {
@@ -215,6 +222,13 @@ class _HomeState extends State<Home> {
                                   adminCheck['role'] == 'admin') {
                                 print(
                                     'Verifikasi admin berhasil. Mengarahkan ke halaman admin.');
+
+                                // Simpan sesi admin
+                                final session = response.session;
+                                if (session != null) {
+                                  await _saveAdminSession(session);
+                                }
+
                                 Navigator.of(context).pop();
                                 Navigator.pushReplacementNamed(
                                     context, '/admin');
@@ -301,6 +315,123 @@ class _HomeState extends State<Home> {
         );
       },
     );
+  }
+
+  // Simpan sesi admin
+  Future<void> _saveAdminSession(supabase.Session session) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('admin_logged_in', true);
+
+      // Simpan data sesi
+      final sessionData = {
+        'access_token': session.accessToken,
+        'refresh_token': session.refreshToken,
+        'expires_in': session.expiresIn,
+        'provider_token': session.providerToken,
+        'provider_refresh_token': session.providerRefreshToken,
+        'user': {
+          'id': session.user.id,
+          'email': session.user.email,
+        }
+      };
+
+      await prefs.setString('admin_session', jsonEncode(sessionData));
+      print('Admin session saved successfully');
+    } catch (e) {
+      print('Error saving admin session: $e');
+    }
+  }
+
+  // Cek apakah sudah ada sesi admin yang tersimpan
+  Future<void> _checkExistingSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isAdminLoggedIn = prefs.getBool('admin_logged_in') ?? false;
+      final adminSessionStr = prefs.getString('admin_session');
+
+      if (isAdminLoggedIn && adminSessionStr != null) {
+        print('Found existing admin session, attempting to restore...');
+
+        try {
+          // Parse session data
+          final sessionData = jsonDecode(adminSessionStr);
+
+          // Coba refresh session menggunakan refresh token
+          if (sessionData['refresh_token'] != null) {
+            try {
+              final response = await _supabase.auth.refreshSession();
+              final newSession = response.session;
+              if (newSession != null) {
+                // Simpan sesi baru
+                await _saveAdminSession(newSession);
+
+                // Verifikasi bahwa user masih admin
+                final adminCheck = await _supabase
+                    .from('admins')
+                    .select('*')
+                    .eq('id', newSession.user.id)
+                    .maybeSingle();
+
+                if (adminCheck != null && adminCheck['role'] == 'admin') {
+                  print('Admin session refreshed and verified successfully');
+                  if (mounted) {
+                    Navigator.pushReplacementNamed(context, '/admin');
+                    return;
+                  }
+                }
+              }
+            } catch (e) {
+              print('Error refreshing session: $e');
+            }
+          }
+
+          // Jika refresh gagal, coba set session dengan access token
+          await _supabase.auth.setSession(sessionData['access_token']);
+
+          // Verifikasi sesi
+          final currentSession = await _supabase.auth.currentSession;
+          if (currentSession != null) {
+            // Verifikasi bahwa user masih admin
+            final adminCheck = await _supabase
+                .from('admins')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .maybeSingle();
+
+            if (adminCheck != null && adminCheck['role'] == 'admin') {
+              print('Admin session restored successfully');
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/admin');
+                return;
+              }
+            }
+          }
+
+          // Jika sampai di sini berarti sesi tidak valid
+          print('Session invalid or user is not admin anymore');
+          await _clearAdminSession();
+        } catch (e) {
+          print('Error restoring admin session: $e');
+          await _clearAdminSession();
+        }
+      }
+    } catch (e) {
+      print('Error checking admin session: $e');
+    }
+  }
+
+  // Hapus sesi admin
+  Future<void> _clearAdminSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('admin_logged_in');
+      await prefs.remove('admin_session');
+      await _supabase.auth.signOut();
+      print('Admin session cleared successfully');
+    } catch (e) {
+      print('Error clearing admin session: $e');
+    }
   }
 
   @override

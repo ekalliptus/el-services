@@ -5,10 +5,12 @@ import 'package:servicehponline/features/admin/dialogs/documentation_preview_dia
 
 class DocumentationSectionWidget extends StatelessWidget {
   final Map<String, dynamic> service;
+  final Function(bool)? onUploadingDoc; // Callback untuk status upload
 
   const DocumentationSectionWidget({
     Key? key,
     required this.service,
+    this.onUploadingDoc,
   }) : super(key: key);
 
   @override

@@ -85,22 +85,21 @@ class FilterWidget extends StatelessWidget {
                           },
                         ),
                       )),
+                  // Tambahkan tombol filter tanggal
                   SizedBox(width: 8),
                   Padding(
                     padding: EdgeInsets.only(right: 16),
                     child: InkWell(
                       onTap: onShowDateRangePicker,
                       child: Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
                           color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.calendar_today,
-                                size: 16, color: Colors.blue),
+                            Icon(Icons.calendar_today, size: 16, color: Colors.blue),
                             SizedBox(width: 4),
                             Text(
                               'Tanggal',

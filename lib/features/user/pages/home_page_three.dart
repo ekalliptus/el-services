@@ -54,6 +54,20 @@ class _HomePageThreeState extends State<HomePageThree>
   final _modelFocus = FocusNode();
   final _devicePasswordFocus = FocusNode();
 
+  // ScrollController untuk mengontrol scrolling
+  final ScrollController _scrollController = ScrollController();
+
+  // GlobalKey untuk section kata sandi perangkat
+  final _passwordSectionKey = GlobalKey();
+
+  // GlobalKey untuk field model HP
+  final _modelFieldKey = GlobalKey();
+
+  // GlobalKey untuk field nama, whatsapp, dan alamat
+  final _nameFieldKey = GlobalKey();
+  final _whatsappFieldKey = GlobalKey();
+  final _addressFieldKey = GlobalKey();
+
   final _imagePicker = ImagePicker();
   final List<String> _damageImages = [];
   final List<String> _frontImages = [];
@@ -112,6 +126,9 @@ class _HomePageThreeState extends State<HomePageThree>
     _addressFocus.dispose();
     _modelFocus.dispose();
     _devicePasswordFocus.dispose();
+
+    // Dispose ScrollController
+    _scrollController.dispose();
 
     super.dispose();
   }
@@ -398,63 +415,106 @@ class _HomePageThreeState extends State<HomePageThree>
     });
 
     try {
-      // Reset validasi sebelumnya
-      final isFormValid = _formKey.currentState?.validate() ?? false;
-      if (!isFormValid) {
+      // Daftar untuk mengumpulkan semua field yang kosong
+      List<String> emptyFields = [];
+
+      // Variable untuk menyimpan field pertama yang kosong untuk di-scroll
+      GlobalKey? firstEmptyFieldToScrollTo;
+
+      // Validasi nama lengkap
+      if (_nameController.text.isEmpty) {
+        emptyFields.add("Nama Lengkap");
+        firstEmptyFieldToScrollTo ??= _nameFieldKey;
+        _nameFocus.requestFocus();
+      }
+
+      // Validasi nomor whatsapp
+      if (_whatsappController.text.isEmpty) {
+        emptyFields.add("Nomor WhatsApp");
+        firstEmptyFieldToScrollTo ??= _whatsappFieldKey;
+      }
+
+      // Validasi alamat
+      if (_addressController.text.isEmpty) {
+        emptyFields.add("Alamat");
+        firstEmptyFieldToScrollTo ??= _addressFieldKey;
+      }
+
+      // Validasi model HP
+      if (_modelController.text.isEmpty) {
+        emptyFields.add("Model HP");
+        firstEmptyFieldToScrollTo ??= _modelFieldKey;
+      }
+
+      // Validasi merk perangkat untuk perangkat Android
+      if (widget.selectedDevice == 'android' &&
+          (_selectedBrand == null || _selectedBrand!.isEmpty)) {
+        emptyFields.add("Merk Perangkat");
+      }
+
+      // Validasi bahwa kata sandi perangkat sudah dipilih
+      if (_selectedPasswordType == null) {
+        emptyFields.add("Jenis Kata Sandi");
+        firstEmptyFieldToScrollTo ??= _passwordSectionKey;
+      }
+
+      // Validasi kata sandi perangkat jika tipe bukan "Tidak Ada"
+      if (_selectedPasswordType != null &&
+          _selectedPasswordType != 'Tidak Ada' &&
+          _devicePasswordController.text.isEmpty) {
+        emptyFields.add("Kata Sandi Perangkat");
+        firstEmptyFieldToScrollTo ??= _passwordSectionKey;
+      }
+
+      if (emptyFields.isNotEmpty) {
+        // Reset loading state
         setState(() {
           _isLoading = false;
           _isSubmitting = false;
         });
-        throw Exception("Mohon perbaiki kesalahan pada form");
-      }
 
-      // Cek field kosong dan set fokus ke field pertama yang kosong
-      bool isValid = true;
-      FocusNode? firstEmptyFieldFocus;
-
-      if (_nameController.text.isEmpty) {
-        isValid = false;
-        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _nameFocus;
-      }
-
-      if (_whatsappController.text.isEmpty) {
-        isValid = false;
-        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _whatsappFocus;
-      }
-
-      if (_addressController.text.isEmpty) {
-        isValid = false;
-        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _addressFocus;
-      }
-
-      if (_modelController.text.isEmpty) {
-        isValid = false;
-        firstEmptyFieldFocus = firstEmptyFieldFocus ?? _modelFocus;
-      }
-
-      // Validasi kata sandi
-      if (_selectedPasswordType != 'Tidak Ada' &&
-          _selectedPasswordType != null) {
-        if (_devicePasswordController.text.isEmpty) {
-          isValid = false;
-          firstEmptyFieldFocus = firstEmptyFieldFocus ?? _devicePasswordFocus;
-        } else if (_devicePasswordController.text.length < 4) {
-          isValid = false;
-          firstEmptyFieldFocus = firstEmptyFieldFocus ?? _devicePasswordFocus;
-          throw Exception("${_selectedPasswordType} minimal harus 4 karakter");
-        }
-      }
-
-      if (!isValid) {
-        // Set fokus ke field kosong pertama
-        if (firstEmptyFieldFocus != null) {
-          firstEmptyFieldFocus.requestFocus();
+        // Buat pesan error yang lebih detail
+        String errorMessage;
+        if (emptyFields.length == 1) {
+          errorMessage = "${emptyFields[0]} wajib diisi";
+        } else {
+          // Format: "Field A, Field B, dan Field C wajib diisi"
+          String fieldList =
+              emptyFields.take(emptyFields.length - 1).join(", ");
+          fieldList += ", dan ${emptyFields.last}";
+          errorMessage = "$fieldList wajib diisi";
         }
 
-        // Trigger validasi ulang untuk menampilkan pesan error
+        // Trigger validasi di semua field untuk menampilkan border merah
         _formKey.currentState?.validate();
 
-        throw Exception("Mohon lengkapi semua kolom yang ditandai");
+        // Tampilkan snackbar dengan pesan error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: Duration(seconds: 5),
+          ),
+        );
+
+        // Scroll ke lokasi field yang kosong pertama
+        if (firstEmptyFieldToScrollTo != null) {
+          Future.delayed(Duration(milliseconds: 100), () {
+            Scrollable.ensureVisible(
+              firstEmptyFieldToScrollTo!.currentContext!,
+              duration: Duration(milliseconds: 800),
+              curve: Curves.easeInOut,
+              alignment: 0.15,
+            );
+          });
+        }
+
+        return;
       }
 
       // Buat ServiceModel tanpa mengirim ke Supabase
@@ -567,6 +627,7 @@ class _HomePageThreeState extends State<HomePageThree>
                   SizedBox(height: 20.0),
                   Expanded(
                     child: SingleChildScrollView(
+                      controller: _scrollController,
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -683,6 +744,7 @@ class _HomePageThreeState extends State<HomePageThree>
                                       ),
                                       SizedBox(height: 8),
                                       TextFormField(
+                                        key: _modelFieldKey,
                                         controller: _modelController,
                                         focusNode: _modelFocus,
                                         decoration: InputDecoration(
@@ -867,6 +929,7 @@ class _HomePageThreeState extends State<HomePageThree>
               ),
               SizedBox(height: 8),
               TextFormField(
+                key: _nameFieldKey,
                 controller: _nameController,
                 focusNode: _nameFocus,
                 decoration: InputDecoration(
@@ -930,6 +993,7 @@ class _HomePageThreeState extends State<HomePageThree>
               ),
               SizedBox(height: 8),
               TextFormField(
+                key: _whatsappFieldKey,
                 controller: _whatsappController,
                 focusNode: _whatsappFocus,
                 keyboardType: TextInputType.phone,
@@ -994,6 +1058,7 @@ class _HomePageThreeState extends State<HomePageThree>
               ),
               SizedBox(height: 8),
               TextFormField(
+                key: _addressFieldKey,
                 controller: _addressController,
                 focusNode: _addressFocus,
                 maxLines: 3,
@@ -1684,6 +1749,7 @@ class _HomePageThreeState extends State<HomePageThree>
         _selectedPasswordType != null && _selectedPasswordType != 'Tidak Ada';
 
     return Container(
+      key: _passwordSectionKey,
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
         color: Colors.white,

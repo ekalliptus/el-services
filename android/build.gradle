@@ -17,6 +17,14 @@ allprojects {
         google()
         mavenCentral()
     }
+    
+    plugins.withId('com.android.library') {
+        android {
+            if (!hasProperty('android.namespace')) {
+                namespace = findProperty('GROUP') ?: 'com.example.namespace'
+            }
+        }
+    }
 }
 
 rootProject.buildDir = '../build'
