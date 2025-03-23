@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:servicehponline/features/user/pages/service_history_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -455,13 +454,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
           btnOkColor: Colors.blue,
           btnOkText: 'OK',
           btnOkOnPress: () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ServiceHistoryPage(),
-              ),
-              (route) => false,
-            );
+            Navigator.pushReplacementNamed(context, '/home');
           },
         ).show();
       } catch (e) {
@@ -547,7 +540,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 TextButton(
                   onPressed: () {
                     Navigator.pop(context, true);
-                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, '/home');
                   },
                   child: Text(
                     'YA',
@@ -607,7 +600,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                       TextButton(
                         onPressed: () {
                           Navigator.pop(context, true);
-                          Navigator.pop(context);
+                          Navigator.pushReplacementNamed(context, '/home');
                         },
                         child: Text(
                           'YA',

@@ -68,6 +68,10 @@ class _HomePageThreeState extends State<HomePageThree>
   final _whatsappFieldKey = GlobalKey();
   final _addressFieldKey = GlobalKey();
 
+  // Tambahkan key untuk bidang merk
+  final _brandFieldKey = GlobalKey();
+  bool _brandFieldHighlighted = false;
+
   final _imagePicker = ImagePicker();
   final List<String> _damageImages = [];
   final List<String> _frontImages = [];
@@ -86,6 +90,14 @@ class _HomePageThreeState extends State<HomePageThree>
   String? _savedAddress;
   String? _selectedPasswordType;
   List<String> _passwordTypes = ['Tidak Ada', 'Pola', 'PIN', 'Password'];
+
+  bool _nameFieldHighlighted = false;
+  bool _whatsappFieldHighlighted = false;
+  bool _addressFieldHighlighted = false;
+  bool _modelFieldHighlighted = false;
+  bool _passwordFieldHighlighted = false;
+
+  final GlobalKey _passwordFieldKey = GlobalKey();
 
   List<String> get _availableBrands {
     switch (widget.selectedDevice) {
@@ -409,111 +421,17 @@ class _HomePageThreeState extends State<HomePageThree>
   Future<void> _createService() async {
     if (_isLoading || _isSubmitting) return;
 
+    // Hilangkan fokus dari semua field input saat tombol ditekan
+    FocusScope.of(context).unfocus();
+
     setState(() {
       _isLoading = true;
       _isSubmitting = true;
     });
 
     try {
-      // Daftar untuk mengumpulkan semua field yang kosong
-      List<String> emptyFields = [];
-
-      // Variable untuk menyimpan field pertama yang kosong untuk di-scroll
-      GlobalKey? firstEmptyFieldToScrollTo;
-
-      // Validasi nama lengkap
-      if (_nameController.text.isEmpty) {
-        emptyFields.add("Nama Lengkap");
-        firstEmptyFieldToScrollTo ??= _nameFieldKey;
-        _nameFocus.requestFocus();
-      }
-
-      // Validasi nomor whatsapp
-      if (_whatsappController.text.isEmpty) {
-        emptyFields.add("Nomor WhatsApp");
-        firstEmptyFieldToScrollTo ??= _whatsappFieldKey;
-      }
-
-      // Validasi alamat
-      if (_addressController.text.isEmpty) {
-        emptyFields.add("Alamat");
-        firstEmptyFieldToScrollTo ??= _addressFieldKey;
-      }
-
-      // Validasi model HP
-      if (_modelController.text.isEmpty) {
-        emptyFields.add("Model HP");
-        firstEmptyFieldToScrollTo ??= _modelFieldKey;
-      }
-
-      // Validasi merk perangkat untuk perangkat Android
-      if (widget.selectedDevice == 'android' &&
-          (_selectedBrand == null || _selectedBrand!.isEmpty)) {
-        emptyFields.add("Merk Perangkat");
-      }
-
-      // Validasi bahwa kata sandi perangkat sudah dipilih
-      if (_selectedPasswordType == null) {
-        emptyFields.add("Jenis Kata Sandi");
-        firstEmptyFieldToScrollTo ??= _passwordSectionKey;
-      }
-
-      // Validasi kata sandi perangkat jika tipe bukan "Tidak Ada"
-      if (_selectedPasswordType != null &&
-          _selectedPasswordType != 'Tidak Ada' &&
-          _devicePasswordController.text.isEmpty) {
-        emptyFields.add("Kata Sandi Perangkat");
-        firstEmptyFieldToScrollTo ??= _passwordSectionKey;
-      }
-
-      if (emptyFields.isNotEmpty) {
-        // Reset loading state
-        setState(() {
-          _isLoading = false;
-          _isSubmitting = false;
-        });
-
-        // Buat pesan error yang lebih detail
-        String errorMessage;
-        if (emptyFields.length == 1) {
-          errorMessage = "${emptyFields[0]} wajib diisi";
-        } else {
-          // Format: "Field A, Field B, dan Field C wajib diisi"
-          String fieldList =
-              emptyFields.take(emptyFields.length - 1).join(", ");
-          fieldList += ", dan ${emptyFields.last}";
-          errorMessage = "$fieldList wajib diisi";
-        }
-
-        // Trigger validasi di semua field untuk menampilkan border merah
-        _formKey.currentState?.validate();
-
-        // Tampilkan snackbar dengan pesan error
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.all(10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            duration: Duration(seconds: 5),
-          ),
-        );
-
-        // Scroll ke lokasi field yang kosong pertama
-        if (firstEmptyFieldToScrollTo != null) {
-          Future.delayed(Duration(milliseconds: 100), () {
-            Scrollable.ensureVisible(
-              firstEmptyFieldToScrollTo!.currentContext!,
-              duration: Duration(milliseconds: 800),
-              curve: Curves.easeInOut,
-              alignment: 0.15,
-            );
-          });
-        }
-
+      // Panggil _validateRequiredFields untuk validasi form
+      if (!_validateRequiredFields()) {
         return;
       }
 
@@ -670,6 +588,7 @@ class _HomePageThreeState extends State<HomePageThree>
                                   SizedBox(height: 12.0),
                                   if (widget.selectedDevice == 'android') ...[
                                     DropdownButtonFormField<String>(
+                                      key: _brandFieldKey,
                                       value: _selectedBrand,
                                       decoration: InputDecoration(
                                         labelText: 'Merk Perangkat/Ponsel',
@@ -682,7 +601,12 @@ class _HomePageThreeState extends State<HomePageThree>
                                           borderRadius:
                                               BorderRadius.circular(12.0),
                                           borderSide: BorderSide(
-                                              color: Colors.grey[300]!),
+                                              color: _brandFieldHighlighted
+                                                  ? Colors.red
+                                                  : Colors.grey[300]!,
+                                              width: _brandFieldHighlighted
+                                                  ? 2.0
+                                                  : 1.0),
                                         ),
                                         focusedBorder: OutlineInputBorder(
                                           borderRadius:
@@ -748,7 +672,8 @@ class _HomePageThreeState extends State<HomePageThree>
                                         controller: _modelController,
                                         focusNode: _modelFocus,
                                         decoration: InputDecoration(
-                                          prefixIcon: Icon(Icons.phone_iphone),
+                                          labelText: 'Model/Tipe HP',
+                                          prefixIcon: Icon(Icons.phone_android),
                                           border: OutlineInputBorder(
                                             borderRadius:
                                                 BorderRadius.circular(12.0),
@@ -757,13 +682,31 @@ class _HomePageThreeState extends State<HomePageThree>
                                             borderRadius:
                                                 BorderRadius.circular(12.0),
                                             borderSide: BorderSide(
-                                                color: Colors.grey[300]!),
+                                                color: _modelFieldHighlighted
+                                                    ? Colors.red
+                                                    : Colors.grey[300]!,
+                                                width: _modelFieldHighlighted
+                                                    ? 2.0
+                                                    : 1.0),
                                           ),
                                           focusedBorder: OutlineInputBorder(
                                             borderRadius:
                                                 BorderRadius.circular(12.0),
                                             borderSide:
                                                 BorderSide(color: Colors.blue),
+                                          ),
+                                          errorBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12.0),
+                                            borderSide:
+                                                BorderSide(color: Colors.red),
+                                          ),
+                                          focusedErrorBorder:
+                                              OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12.0),
+                                            borderSide: BorderSide(
+                                                color: Colors.red, width: 2),
                                           ),
                                         ),
                                         validator: (value) {
@@ -934,16 +877,17 @@ class _HomePageThreeState extends State<HomePageThree>
                 focusNode: _nameFocus,
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.person),
+                  labelText: 'Nama Lengkap',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.blue),
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(
+                        color: _nameFieldHighlighted
+                            ? Colors.red
+                            : Colors.grey[300]!,
+                        width: _nameFieldHighlighted ? 2.0 : 1.0),
                   ),
                 ),
                 validator: (value) {
@@ -1004,7 +948,11 @@ class _HomePageThreeState extends State<HomePageThree>
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: BorderSide(
+                        color: _whatsappFieldHighlighted
+                            ? Colors.red
+                            : Colors.grey[300]!,
+                        width: _whatsappFieldHighlighted ? 2.0 : 1.0),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1064,19 +1012,30 @@ class _HomePageThreeState extends State<HomePageThree>
                 maxLines: 3,
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.location_on),
+                  labelText: 'Alamat Lengkap',
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(
+                        color: _addressFieldHighlighted
+                            ? Colors.red
+                            : Colors.grey[300]!,
+                        width: _addressFieldHighlighted ? 2.0 : 1.0),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(color: Colors.blue),
                   ),
-                  hintText:
-                      'Masukkan alamat lengkap, termasuk patokan, warna rumah, dll',
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.red),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.0),
+                    borderSide: BorderSide(color: Colors.red, width: 2),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -1794,21 +1753,33 @@ class _HomePageThreeState extends State<HomePageThree>
           ),
           SizedBox(height: 16.0),
           DropdownButtonFormField<String>(
+            key: _passwordFieldKey,
             value: _selectedPasswordType,
             decoration: InputDecoration(
-              labelText: 'Jenis Kata Sandi',
-              hintText: 'Pilih Kata Sandi Perangkat',
-              prefixIcon: Icon(Icons.lock_outline),
+              labelText: 'Jenis Kata Sandi Perangkat',
+              prefixIcon: Icon(Icons.lock),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
-                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderSide: BorderSide(
+                    color: _passwordFieldHighlighted
+                        ? Colors.red
+                        : Colors.grey[300]!,
+                    width: _passwordFieldHighlighted ? 2.0 : 1.0),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
                 borderSide: BorderSide(color: Colors.blue),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide(color: Colors.red),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.0),
+                borderSide: BorderSide(color: Colors.red, width: 2),
               ),
             ),
             hint: Text('Pilih Kata Sandi Perangkat'),
@@ -2031,5 +2002,126 @@ class _HomePageThreeState extends State<HomePageThree>
       default:
         return Icon(Icons.lock_outline);
     }
+  }
+
+  // Ketika validasi, cek apakah brand kosong dan scroll ke sana jika perlu
+  bool _validateRequiredFields() {
+    // Daftar untuk mengumpulkan semua field yang kosong
+    List<String> emptyFields = [];
+
+    // Set state untuk highlight semua field yang kosong
+    setState(() {
+      _nameFieldHighlighted = _nameController.text.isEmpty;
+      _whatsappFieldHighlighted = _whatsappController.text.isEmpty;
+      _addressFieldHighlighted = _addressController.text.isEmpty;
+      _modelFieldHighlighted = _modelController.text.isEmpty;
+      _brandFieldHighlighted = widget.selectedDevice == 'android' &&
+          (_selectedBrand == null || _selectedBrand!.isEmpty);
+      _passwordFieldHighlighted = _selectedPasswordType == null;
+    });
+
+    // Mengumpulkan field yang kosong
+    if (_nameController.text.isEmpty) {
+      emptyFields.add("Nama Lengkap");
+    }
+
+    if (_whatsappController.text.isEmpty) {
+      emptyFields.add("Nomor WhatsApp");
+    }
+
+    if (_addressController.text.isEmpty) {
+      emptyFields.add("Alamat");
+    }
+
+    if (widget.selectedDevice == 'android' &&
+        (_selectedBrand == null || _selectedBrand!.isEmpty)) {
+      emptyFields.add("Merk Perangkat");
+    }
+
+    if (_modelController.text.isEmpty) {
+      emptyFields.add("Model HP");
+    }
+
+    if (_selectedPasswordType == null) {
+      emptyFields.add("Jenis Kata Sandi");
+    } else if (_selectedPasswordType != 'Tidak Ada' &&
+        _devicePasswordController.text.isEmpty) {
+      emptyFields.add("Kata Sandi Perangkat");
+    }
+
+    // Tentukan field pertama yang kosong untuk di-scroll
+    GlobalKey? firstEmptyFieldToScrollTo;
+    if (_nameController.text.isEmpty) {
+      firstEmptyFieldToScrollTo = _nameFieldKey;
+    } else if (_whatsappController.text.isEmpty) {
+      firstEmptyFieldToScrollTo = _whatsappFieldKey;
+    } else if (_addressController.text.isEmpty) {
+      firstEmptyFieldToScrollTo = _addressFieldKey;
+    } else if (widget.selectedDevice == 'android' &&
+        (_selectedBrand == null || _selectedBrand!.isEmpty)) {
+      firstEmptyFieldToScrollTo = _brandFieldKey;
+    } else if (_modelController.text.isEmpty) {
+      firstEmptyFieldToScrollTo = _modelFieldKey;
+    } else if (_selectedPasswordType == null) {
+      firstEmptyFieldToScrollTo = _passwordFieldKey;
+    } else if (_selectedPasswordType != 'Tidak Ada' &&
+        _devicePasswordController.text.isEmpty) {
+      firstEmptyFieldToScrollTo = _passwordSectionKey;
+    }
+
+    // Validasi utama - PENTING: deskripsi tidak divalidasi karena bersifat opsional
+    if (emptyFields.isNotEmpty) {
+      setState(() {
+        _isLoading = false;
+        _isSubmitting = false;
+      });
+
+      // Membuat pesan error yang lebih detail
+      String errorMessage;
+      if (emptyFields.length == 1) {
+        errorMessage = "${emptyFields[0]} wajib diisi";
+      } else {
+        // Format: "Field A, Field B, dan Field C wajib diisi"
+        String fieldList = emptyFields.take(emptyFields.length - 1).join(", ");
+        fieldList += ", dan ${emptyFields.last}";
+        errorMessage = "$fieldList wajib diisi";
+      }
+
+      // Tampilkan pesan error
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.white),
+              SizedBox(width: 10),
+              Expanded(child: Text(errorMessage)),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+
+      // Scroll ke lokasi field kosong pertama
+      if (firstEmptyFieldToScrollTo != null) {
+        Future.delayed(Duration(milliseconds: 100), () {
+          Scrollable.ensureVisible(
+            firstEmptyFieldToScrollTo!.currentContext!,
+            duration: Duration(milliseconds: 800),
+            curve: Curves.easeInOut,
+            alignment: 0.15,
+          );
+        });
+      }
+
+      return false;
+    }
+
+    return true;
   }
 }

@@ -261,19 +261,67 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
         }
       } else {
         try {
+          // URL sanitasi untuk memastikan format yang benar
+          String videoUrl = widget.url;
+
+          // Menambahkan log untuk debugging
+          print('Mencoba memutar video dari URL: $videoUrl');
+
+          // Cek apakah URL valid dan memiliki skema
+          if (!videoUrl.startsWith('http://') &&
+              !videoUrl.startsWith('https://')) {
+            // Tambahkan protokol jika tidak ada
+            videoUrl = 'https://$videoUrl';
+            print('URL ditambahkan protokol: $videoUrl');
+          }
+
+          // Cek apakah URL berakhiran format video umum
+          final validVideoExtensions = [
+            '.mp4',
+            '.mov',
+            '.avi',
+            '.mkv',
+            '.webm'
+          ];
+          bool hasValidExtension = validVideoExtensions
+              .any((ext) => videoUrl.toLowerCase().endsWith(ext));
+
+          // Jika tidak ada ekstensi video yang valid, coba tambahkan format fallback (supabase sering menghilangkan ekstensi)
+          if (!hasValidExtension && !videoUrl.contains('?')) {
+            videoUrl = '$videoUrl.mp4';
+            print('Menambahkan ekstensi fallback .mp4: $videoUrl');
+          }
+
+          // Tambahkan parameter cache buster untuk memaksa reload video
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          if (videoUrl.contains('?')) {
+            videoUrl = '$videoUrl&_cb=$timestamp';
+          } else {
+            videoUrl = '$videoUrl?_cb=$timestamp';
+          }
+
+          print('URL final untuk pemutaran video: $videoUrl');
+
           // Untuk URL video biasa
           _videoPlayerController = VideoPlayerController.networkUrl(
-            Uri.parse(widget.url),
+            Uri.parse(videoUrl),
             videoPlayerOptions: VideoPlayerOptions(
               mixWithOthers: false,
               allowBackgroundPlayback: false,
             ),
+            httpHeaders: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
           );
 
+          // Menambahkan timeout yang lebih lama untuk inisialisasi video
           await _videoPlayerController.initialize().timeout(
-            Duration(seconds: 15),
+            Duration(seconds: 30),
             onTimeout: () {
-              throw TimeoutException('Video initialization timed out');
+              throw TimeoutException(
+                  'Video initialization timed out after 30 seconds');
             },
           );
 

@@ -50,6 +50,10 @@ class ServiceCardWidget extends StatelessWidget {
     // Jika ada komplain, status ditampilkan sebagai "COMPLAINED", jadi tidak perlu label terpisah
     final isComplainedStatus = displayStatus == 'COMPLAINED';
 
+    // Status processed dan completed untuk menentukan tampilan dokumentasi awal
+    final isCompletedStatus = displayStatus == 'COMPLETED';
+    final isProcessedStatus = displayStatus == 'PROCESSED';
+
     return Card(
       margin: EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
@@ -194,9 +198,12 @@ class ServiceCardWidget extends StatelessWidget {
               LocationSectionWidget(service: service),
               SizedBox(height: 24),
 
-              // Bagian dokumentasi foto dan video sebelum service
-              _buildPreServiceDocSection(context, service),
-              SizedBox(height: 24),
+              // Bagian dokumentasi foto dan video sebelum service - hanya tampilkan jika status PROCESSED atau COMPLETED
+              if (isProcessedStatus || isCompletedStatus) ...[
+                _buildPreServiceDocSection(context, service,
+                    isReadOnly: isCompletedStatus),
+                SizedBox(height: 24),
+              ],
 
               DocumentationSectionWidget(service: service),
               SizedBox(height: 24),
@@ -264,7 +271,8 @@ class ServiceCardWidget extends StatelessWidget {
 
   // Widget untuk menampilkan dokumentasi sebelum service dan opsi untuk menambahkan
   Widget _buildPreServiceDocSection(
-      BuildContext context, Map<String, dynamic> service) {
+      BuildContext context, Map<String, dynamic> service,
+      {bool isReadOnly = false}) {
     final serviceId = service['id'].toString();
 
     // Gunakan StatefulBuilder untuk memungkinkan rebuild lokal tanpa rebuild seluruh widget
@@ -281,55 +289,64 @@ class ServiceCardWidget extends StatelessWidget {
               color: Colors.black87,
             ),
           ),
-          // Tambahkan tombol di bawah judul
+          // Tampilkan tombol hanya jika tidak dalam mode read-only (COMPLETED)
           SizedBox(height: 12),
-          Row(
-            children: [
-              ElevatedButton.icon(
-                onPressed: () => _showDocumentationOptions(context, serviceId),
-                icon: Icon(Icons.add_a_photo, size: 16),
-                label: Text('Tambah'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  textStyle: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+          if (!isReadOnly)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () =>
+                          _showDocumentationOptions(context, serviceId),
+                      icon: Icon(Icons.add_a_photo, size: 16),
+                      label: Text('Tambah'),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        textStyle: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    // Tombol refresh dengan StatefulBuilder
+                    ElevatedButton.icon(
+                      onPressed: () => _refreshServiceDataWithState(
+                          context, serviceId, setState),
+                      icon: Icon(Icons.refresh, size: 16),
+                      label: Text('Refresh'),
+                      style: ElevatedButton.styleFrom(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        textStyle: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        backgroundColor: Colors.grey[200],
+                        foregroundColor: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                // Informasi refresh
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
+                  child: Text(
+                    'Note: Jika gambar/video tidak hilang/muncul otomatis, silahkan tekan tombol refresh setelah proses upload/hapus telah selesai',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey[600],
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(width: 8),
-              // Tombol refresh dengan StatefulBuilder
-              ElevatedButton.icon(
-                onPressed: () =>
-                    _refreshServiceDataWithState(context, serviceId, setState),
-                icon: Icon(Icons.refresh, size: 16),
-                label: Text('Refresh'),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  textStyle: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  backgroundColor: Colors.grey[200],
-                  foregroundColor: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          // Informasi refresh
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0, bottom: 8.0),
-            child: Text(
-              'Note: Jika gambar/video tidak hilang/muncul otomatis, silahkan tekan tombol refresh setelah proses upload/hapus telah selesai',
-              style: GoogleFonts.poppins(
-                fontSize: 11,
-                fontStyle: FontStyle.italic,
-                color: Colors.grey[600],
-              ),
+              ],
             ),
-          ),
           // Selalu gunakan _buildPreServiceDocList yang akan menghandle list kosong
-          _buildPreServiceDocList(context, service),
+          _buildPreServiceDocList(context, service, isReadOnly: isReadOnly),
         ],
       );
     });
@@ -427,7 +444,8 @@ class ServiceCardWidget extends StatelessWidget {
 
   // Widget untuk menampilkan daftar dokumentasi sebelum service
   Widget _buildPreServiceDocList(
-      BuildContext context, Map<String, dynamic> service) {
+      BuildContext context, Map<String, dynamic> service,
+      {bool isReadOnly = false}) {
     final preServiceDocs = service['pre_service_docs'] as List;
 
     // Check jika list kosong
@@ -459,7 +477,7 @@ class ServiceCardWidget extends StatelessWidget {
         itemCount: preServiceDocs.length,
         itemBuilder: (context, index) {
           final doc = preServiceDocs[index];
-          return _buildDocItem(context, doc);
+          return _buildDocItem(context, doc, isReadOnly: isReadOnly);
         },
       ),
     );
@@ -936,8 +954,8 @@ class ServiceCardWidget extends StatelessWidget {
                 .getPublicUrl(thumbnailPath);
           } catch (e) {
             print('Error generating thumbnail: $e');
-            newDoc['thumbnail_url'] =
-                'https://via.placeholder.com/120?text=Video';
+            // Hapus placeholder, gunakan null untuk memicu fallback di UI
+            newDoc['thumbnail_url'] = null;
           }
         }
 
@@ -1000,8 +1018,8 @@ class ServiceCardWidget extends StatelessWidget {
 
         // Jika video, buat thumbnail dummy
         if (type == 'video') {
-          newDoc['thumbnail_url'] =
-              'https://via.placeholder.com/120?text=Video';
+          // Hapus placeholder, gunakan null untuk memicu fallback di UI
+          newDoc['thumbnail_url'] = null;
         }
 
         // Tambahkan dokumen baru ke array
@@ -1076,7 +1094,8 @@ class ServiceCardWidget extends StatelessWidget {
   }
 
   // Metode untuk menampilkan dokumentasi lokal atau dari URL
-  Widget _buildDocItem(BuildContext context, Map<String, dynamic> doc) {
+  Widget _buildDocItem(BuildContext context, Map<String, dynamic> doc,
+      {bool isReadOnly = false}) {
     final isVideo = doc['type'] == 'video';
     final isLocal = doc['is_local'] == true;
 
@@ -1090,12 +1109,43 @@ class ServiceCardWidget extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Image.network(
-                doc['thumbnail_url'] ?? 'https://via.placeholder.com/120',
-                fit: BoxFit.cover,
-                width: 120,
-                height: 120,
-              ),
+              // Ganti placeholder dengan Container untuk video thumbnail
+              doc['thumbnail_url'] != null &&
+                      !doc['thumbnail_url']
+                          .toString()
+                          .contains('placeholder.com')
+                  ? Image.network(
+                      doc['thumbnail_url'],
+                      fit: BoxFit.cover,
+                      width: 120,
+                      height: 120,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 120,
+                          height: 120,
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: Icon(
+                              Icons.movie,
+                              size: 32,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      width: 120,
+                      height: 120,
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: Icon(
+                          Icons.movie,
+                          size: 32,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
               Icon(
                 Icons.play_circle_fill,
                 color: Colors.white.withAlpha(204),
@@ -1115,14 +1165,34 @@ class ServiceCardWidget extends StatelessWidget {
               fit: BoxFit.cover,
               width: 120,
               height: 120,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 120,
+                  height: 120,
+                  color: Colors.grey[300],
+                  child: Center(
+                    child: Icon(
+                      Icons.image,
+                      size: 32,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                );
+              },
             ),
           );
         } else {
-          content = Image.network(
-            'https://via.placeholder.com/120?text=Error',
-            fit: BoxFit.cover,
+          content = Container(
             width: 120,
             height: 120,
+            color: Colors.grey[300],
+            child: Center(
+              child: Icon(
+                Icons.broken_image,
+                size: 32,
+                color: Colors.grey[600],
+              ),
+            ),
           );
         }
       }
@@ -1134,12 +1204,43 @@ class ServiceCardWidget extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Image.network(
-                doc['thumbnail_url'] ?? 'https://via.placeholder.com/120',
-                fit: BoxFit.cover,
-                width: 120,
-                height: 120,
-              ),
+              // Ganti placeholder dengan Container untuk video thumbnail
+              doc['thumbnail_url'] != null &&
+                      !doc['thumbnail_url']
+                          .toString()
+                          .contains('placeholder.com')
+                  ? Image.network(
+                      doc['thumbnail_url'],
+                      fit: BoxFit.cover,
+                      width: 120,
+                      height: 120,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 120,
+                          height: 120,
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: Icon(
+                              Icons.movie,
+                              size: 32,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      width: 120,
+                      height: 120,
+                      color: Colors.grey[300],
+                      child: Center(
+                        child: Icon(
+                          Icons.movie,
+                          size: 32,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
               Icon(
                 Icons.play_circle_fill,
                 color: Colors.white.withAlpha(204),
@@ -1156,6 +1257,20 @@ class ServiceCardWidget extends StatelessWidget {
             fit: BoxFit.cover,
             width: 120,
             height: 120,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 120,
+                height: 120,
+                color: Colors.grey[300],
+                child: Center(
+                  child: Icon(
+                    Icons.image,
+                    size: 32,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              );
+            },
           ),
         );
       }
@@ -1174,26 +1289,28 @@ class ServiceCardWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: content,
           ),
-          Positioned(
-            top: 4,
-            right: 4,
-            child: InkWell(
-              onTap: () => _confirmDeleteDoc(
-                  context, service['id'].toString(), doc['id']),
-              child: Container(
-                padding: EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(128),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 12,
+          // Tampilkan tombol hapus hanya jika tidak dalam mode read-only (COMPLETED)
+          if (!isReadOnly)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: InkWell(
+                onTap: () => _confirmDeleteDoc(
+                    context, service['id'].toString(), doc['id']),
+                child: Container(
+                  padding: EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withAlpha(128),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 12,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

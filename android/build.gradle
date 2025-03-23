@@ -16,6 +16,10 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url "https://www.jitpack.io"
+            credentials { username "jp_0mfc85filda9a7qg0q6g0oef1h" }
+        }
     }
     
     plugins.withId('com.android.library') {

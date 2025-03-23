@@ -106,22 +106,45 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
         // Filter berdasarkan pencarian yang ditingkatkan
         if (_searchQuery.isNotEmpty) {
-          final searchLower = _searchQuery.toLowerCase();
-          // Pencarian di berbagai field
-          final fullname = service['fullname']?.toString().toLowerCase() ?? '';
-          final phone = service['phone_number']?.toString().toLowerCase() ?? '';
-          final model = service['model']?.toString().toLowerCase() ?? '';
-          final brand = service['brand']?.toString().toLowerCase() ?? '';
-          final problem = service['problem']?.toString().toLowerCase() ?? '';
-          final serviceId = service['id']?.toString().toLowerCase() ?? '';
+          // Normalisasi query pencarian
+          final searchLower = _searchQuery.toLowerCase().trim();
 
-          // Cek apakah query ada di salah satu field
-          matchesSearch = fullname.contains(searchLower) ||
-              phone.contains(searchLower) ||
-              model.contains(searchLower) ||
-              brand.contains(searchLower) ||
-              problem.contains(searchLower) ||
-              serviceId.contains(searchLower);
+          // Split query menjadi kata kunci terpisah untuk pencarian lebih akurat
+          final searchKeywords = searchLower
+              .split(' ')
+              .where((keyword) => keyword.isNotEmpty)
+              .toList();
+
+          // Normalisasi field pencarian
+          final fullname =
+              service['fullname']?.toString().toLowerCase().trim() ?? '';
+          final phone =
+              service['phone_number']?.toString().toLowerCase().trim() ?? '';
+          final model = service['model']?.toString().toLowerCase().trim() ?? '';
+          final brand = service['brand']?.toString().toLowerCase().trim() ?? '';
+          final problem =
+              service['problem']?.toString().toLowerCase().trim() ?? '';
+          final serviceId =
+              service['id']?.toString().toLowerCase().trim() ?? '';
+
+          // Gabungkan semua field pencarian untuk pencocokan menyeluruh
+          final allFields =
+              '$fullname $phone $model $brand $problem $serviceId';
+
+          // Pencarian berdasarkan keyword terpisah
+          if (searchKeywords.length > 1) {
+            // Pencarian multi-keyword - semua keyword harus ada
+            matchesSearch = searchKeywords.every((keyword) =>
+                fullname.contains(keyword) ||
+                phone.contains(keyword) ||
+                model.contains(keyword) ||
+                brand.contains(keyword) ||
+                problem.contains(keyword) ||
+                serviceId.contains(keyword));
+          } else {
+            // Pencarian single-keyword
+            matchesSearch = allFields.contains(searchLower);
+          }
         }
 
         // Filter berdasarkan tanggal
@@ -537,7 +560,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 itemBuilder: (context, index) {
                                   return Padding(
                                     padding: EdgeInsets.only(bottom: 16),
-                                    child: _buildServiceItem(_filteredServices[index], context),
+                                    child: _buildServiceItem(
+                                        _filteredServices[index], context),
                                   );
                                 },
                               ),
