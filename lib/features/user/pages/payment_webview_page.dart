@@ -7,11 +7,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class PaymentWebViewPage extends StatefulWidget {
   final String paymentUrl;
   final String serviceId;
+  final bool isAdditionalPayment;
+  final String? additionalCostId;
 
   const PaymentWebViewPage({
     Key? key,
     required this.paymentUrl,
     required this.serviceId,
+    this.isAdditionalPayment = false,
+    this.additionalCostId,
   }) : super(key: key);
 
   @override
@@ -25,10 +29,25 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
 
   Future<void> _updatePaymentStatus(String status) async {
     try {
-      await _supabase.from('services').update({
-        'status': status,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', widget.serviceId);
+      if (widget.isAdditionalPayment && widget.additionalCostId != null) {
+        // Update status biaya tambahan
+        await _supabase.from('additional_costs').update({
+          'status': 'PAID',
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', widget.additionalCostId!);
+
+        // Update status service menjadi PROCESSED
+        await _supabase.from('services').update({
+          'status': 'PROCESSED',
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', widget.serviceId);
+      } else {
+        // Update status service biasa
+        await _supabase.from('services').update({
+          'status': status,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', widget.serviceId);
+      }
     } catch (e) {
       print('Error updating payment status: $e');
     }
@@ -50,7 +69,7 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
           onNavigationRequest: (NavigationRequest request) {
             if (request.url.startsWith('servicehponline://payment/')) {
               if (request.url.contains('success')) {
-                _updatePaymentStatus('PAID').then((_) {
+                _updatePaymentStatus('PROCESSED').then((_) {
                   AwesomeDialog(
                     context: context,
                     dialogType: DialogType.success,

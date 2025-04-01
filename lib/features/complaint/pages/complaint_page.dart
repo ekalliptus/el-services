@@ -25,9 +25,37 @@ class _ComplaintPageState extends State<ComplaintPage> {
   final _complaintController = TextEditingController();
   final _imagePicker = ImagePicker();
   bool _isSubmitting = false;
+  bool _hasUnsavedChanges = false;
   File? _selectedImage;
   File? _selectedVideo;
   VideoPlayerController? _videoController;
+
+  @override
+  void initState() {
+    super.initState();
+    _complaintController.addListener(_updateUnsavedChangesState);
+  }
+
+  @override
+  void dispose() {
+    _complaintController.removeListener(_updateUnsavedChangesState);
+    _complaintController.dispose();
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  void _updateUnsavedChangesState() {
+    final hasText = _complaintController.text.isNotEmpty;
+    final hasMedia = _selectedImage != null || _selectedVideo != null;
+
+    final newHasUnsavedChanges = hasText || hasMedia;
+
+    if (newHasUnsavedChanges != _hasUnsavedChanges) {
+      setState(() {
+        _hasUnsavedChanges = newHasUnsavedChanges;
+      });
+    }
+  }
 
   Widget _buildAvatar(Map<String, dynamic> service, firebase_auth.User? user) {
     return Container(
@@ -319,13 +347,6 @@ class _ComplaintPageState extends State<ComplaintPage> {
     }
   }
 
-  @override
-  void dispose() {
-    _complaintController.dispose();
-    _videoController?.dispose();
-    super.dispose();
-  }
-
   Future<void> _submitComplaint() async {
     if (_complaintController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -452,9 +473,20 @@ class _ComplaintPageState extends State<ComplaintPage> {
           desc:
               'Komplain Anda telah dikirim. Admin akan segera menindaklanjuti.',
           btnOkColor: Colors.blue,
-          btnOkText: 'OK',
+          btnOkText: 'Ke Beranda',
           btnOkOnPress: () {
-            Navigator.pushReplacementNamed(context, '/home');
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/',
+              (route) => false,
+            );
+          },
+          btnCancelText: 'Ke Riwayat',
+          btnCancelColor: Colors.green,
+          btnCancelOnPress: () {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/history',
+              (route) => false,
+            );
           },
         ).show();
       } catch (e) {
@@ -500,16 +532,29 @@ class _ComplaintPageState extends State<ComplaintPage> {
   Widget build(BuildContext context) {
     final currentUser = _auth.currentUser;
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: !_isSubmitting && !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
         if (_isSubmitting) {
-          return false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Mohon tunggu, komplain sedang diproses...',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          return;
         }
 
-        if (_complaintController.text.isNotEmpty ||
-            _selectedImage != null ||
-            _selectedVideo != null) {
-          final shouldPop = await showDialog<bool>(
+        if (_hasUnsavedChanges) {
+          bool shouldPop = false;
+
+          await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
               title: Text(
@@ -539,8 +584,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.pop(context, true);
-                    Navigator.pushReplacementNamed(context, '/home');
+                    shouldPop = true;
+                    Navigator.pop(context);
                   },
                   child: Text(
                     'YA',
@@ -553,9 +598,11 @@ class _ComplaintPageState extends State<ComplaintPage> {
               ],
             ),
           );
-          return shouldPop ?? false;
+
+          if (shouldPop) {
+            Navigator.of(context).pop();
+          }
         }
-        return true;
       },
       child: Scaffold(
         appBar: AppBar(

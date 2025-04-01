@@ -99,6 +99,9 @@ class _HomePageThreeState extends State<HomePageThree>
 
   final GlobalKey _passwordFieldKey = GlobalKey();
 
+  Map<String, String> _formErrors = {};
+  String? _passwordError;
+
   List<String> get _availableBrands {
     switch (widget.selectedDevice) {
       case 'iphone':
@@ -189,16 +192,17 @@ class _HomePageThreeState extends State<HomePageThree>
       }
 
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+        desiredAccuracy: LocationAccuracy.high,
+      );
 
       setState(() {
         _currentPosition = position;
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -485,10 +489,7 @@ class _HomePageThreeState extends State<HomePageThree>
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) {
@@ -581,10 +582,7 @@ class _HomePageThreeState extends State<HomePageThree>
                                             : 'Android',
                                   ),
                                   SizedBox(height: 12.0),
-                                  _buildDetailItem(
-                                    'Masalah',
-                                    _deviceName,
-                                  ),
+                                  _buildDetailItem('Masalah', _deviceName),
                                   SizedBox(height: 12.0),
                                   if (widget.selectedDevice == 'android') ...[
                                     DropdownButtonFormField<String>(
@@ -594,37 +592,47 @@ class _HomePageThreeState extends State<HomePageThree>
                                         labelText: 'Merk Perangkat/Ponsel',
                                         prefixIcon: Icon(Icons.phone_android),
                                         border: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
+                                          borderRadius: BorderRadius.circular(
+                                            12.0,
+                                          ),
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
+                                          borderRadius: BorderRadius.circular(
+                                            12.0,
+                                          ),
                                           borderSide: BorderSide(
-                                              color: _brandFieldHighlighted
-                                                  ? Colors.red
-                                                  : Colors.grey[300]!,
-                                              width: _brandFieldHighlighted
-                                                  ? 2.0
-                                                  : 1.0),
+                                            color: _brandFieldHighlighted
+                                                ? Colors.red
+                                                : Colors.grey[300]!,
+                                            width: _brandFieldHighlighted
+                                                ? 2.0
+                                                : 1.0,
+                                          ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
-                                          borderSide:
-                                              BorderSide(color: Colors.blue),
+                                          borderRadius: BorderRadius.circular(
+                                            12.0,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.blue,
+                                          ),
                                         ),
                                         errorBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
-                                          borderSide:
-                                              BorderSide(color: Colors.red),
+                                          borderRadius: BorderRadius.circular(
+                                            12.0,
+                                          ),
+                                          borderSide: BorderSide(
+                                            color: Colors.red,
+                                          ),
                                         ),
                                         focusedErrorBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12.0),
+                                          borderRadius: BorderRadius.circular(
+                                            12.0,
+                                          ),
                                           borderSide: BorderSide(
-                                              color: Colors.red, width: 2),
+                                            color: Colors.red,
+                                            width: 2,
+                                          ),
                                         ),
                                       ),
                                       items:
@@ -675,38 +683,47 @@ class _HomePageThreeState extends State<HomePageThree>
                                           labelText: 'Model/Tipe HP',
                                           prefixIcon: Icon(Icons.phone_android),
                                           border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12.0),
+                                            borderRadius: BorderRadius.circular(
+                                              12.0,
+                                            ),
                                           ),
                                           enabledBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12.0),
+                                            borderRadius: BorderRadius.circular(
+                                              12.0,
+                                            ),
                                             borderSide: BorderSide(
-                                                color: _modelFieldHighlighted
-                                                    ? Colors.red
-                                                    : Colors.grey[300]!,
-                                                width: _modelFieldHighlighted
-                                                    ? 2.0
-                                                    : 1.0),
+                                              color: _modelFieldHighlighted
+                                                  ? Colors.red
+                                                  : Colors.grey[300]!,
+                                              width: _modelFieldHighlighted
+                                                  ? 2.0
+                                                  : 1.0,
+                                            ),
                                           ),
                                           focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12.0),
-                                            borderSide:
-                                                BorderSide(color: Colors.blue),
+                                            borderRadius: BorderRadius.circular(
+                                              12.0,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Colors.blue,
+                                            ),
                                           ),
                                           errorBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12.0),
-                                            borderSide:
-                                                BorderSide(color: Colors.red),
+                                            borderRadius: BorderRadius.circular(
+                                              12.0,
+                                            ),
+                                            borderSide: BorderSide(
+                                              color: Colors.red,
+                                            ),
                                           ),
                                           focusedErrorBorder:
                                               OutlineInputBorder(
                                             borderRadius:
                                                 BorderRadius.circular(12.0),
                                             borderSide: BorderSide(
-                                                color: Colors.red, width: 2),
+                                              color: Colors.red,
+                                              width: 2,
+                                            ),
                                           ),
                                         ),
                                         validator: (value) {
@@ -764,20 +781,25 @@ class _HomePageThreeState extends State<HomePageThree>
                                           'Jelaskan detail kerusakan perangkat Anda',
                                       prefixIcon: Icon(Icons.description),
                                       border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
+                                        borderRadius: BorderRadius.circular(
+                                          12.0,
+                                        ),
                                       ),
                                       enabledBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
+                                        borderRadius: BorderRadius.circular(
+                                          12.0,
+                                        ),
                                         borderSide: BorderSide(
-                                            color: Colors.grey[300]!),
+                                          color: Colors.grey[300]!,
+                                        ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(12.0),
-                                        borderSide:
-                                            BorderSide(color: Colors.blue),
+                                        borderRadius: BorderRadius.circular(
+                                          12.0,
+                                        ),
+                                        borderSide: BorderSide(
+                                          color: Colors.blue,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -799,7 +821,8 @@ class _HomePageThreeState extends State<HomePageThree>
                                         strokeWidth: 2.0,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                                Colors.white),
+                                          Colors.white,
+                                        ),
                                       ),
                                     )
                                   : Text('Lanjutkan'),
@@ -884,10 +907,11 @@ class _HomePageThreeState extends State<HomePageThree>
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
-                        color: _nameFieldHighlighted
-                            ? Colors.red
-                            : Colors.grey[300]!,
-                        width: _nameFieldHighlighted ? 2.0 : 1.0),
+                      color: _nameFieldHighlighted
+                          ? Colors.red
+                          : Colors.grey[300]!,
+                      width: _nameFieldHighlighted ? 2.0 : 1.0,
+                    ),
                   ),
                 ),
                 validator: (value) {
@@ -949,10 +973,11 @@ class _HomePageThreeState extends State<HomePageThree>
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                        color: _whatsappFieldHighlighted
-                            ? Colors.red
-                            : Colors.grey[300]!,
-                        width: _whatsappFieldHighlighted ? 2.0 : 1.0),
+                      color: _whatsappFieldHighlighted
+                          ? Colors.red
+                          : Colors.grey[300]!,
+                      width: _whatsappFieldHighlighted ? 2.0 : 1.0,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1019,10 +1044,11 @@ class _HomePageThreeState extends State<HomePageThree>
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
-                        color: _addressFieldHighlighted
-                            ? Colors.red
-                            : Colors.grey[300]!,
-                        width: _addressFieldHighlighted ? 2.0 : 1.0),
+                      color: _addressFieldHighlighted
+                          ? Colors.red
+                          : Colors.grey[300]!,
+                      width: _addressFieldHighlighted ? 2.0 : 1.0,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
@@ -1068,8 +1094,10 @@ class _HomePageThreeState extends State<HomePageThree>
     );
   }
 
-  Widget _buildSuggestButton(
-      {required String title, required VoidCallback onTap}) {
+  Widget _buildSuggestButton({
+    required String title,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -1082,11 +1110,7 @@ class _HomePageThreeState extends State<HomePageThree>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.history,
-              size: 16,
-              color: Colors.blue,
-            ),
+            Icon(Icons.history, size: 16, color: Colors.blue),
             SizedBox(width: 4),
             Text(
               title,
@@ -1106,13 +1130,7 @@ class _HomePageThreeState extends State<HomePageThree>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.black54,
-            fontSize: 14.0,
-          ),
-        ),
+        Text(label, style: TextStyle(color: Colors.black54, fontSize: 14.0)),
         SizedBox(height: 4.0),
         Text(
           value,
@@ -1229,10 +1247,7 @@ class _HomePageThreeState extends State<HomePageThree>
                       SizedBox(height: 8.0),
                       Text(
                         'Belum ada foto kerusakan',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
+                        style: TextStyle(color: Colors.black54, fontSize: 16.0),
                       ),
                     ],
                   ),
@@ -1329,10 +1344,7 @@ class _HomePageThreeState extends State<HomePageThree>
                       SizedBox(height: 8.0),
                       Text(
                         'Belum ada foto tampak belakang',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
+                        style: TextStyle(color: Colors.black54, fontSize: 16.0),
                       ),
                     ],
                   ),
@@ -1421,18 +1433,11 @@ class _HomePageThreeState extends State<HomePageThree>
                 Center(
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.videocam,
-                        size: 48.0,
-                        color: Colors.black54,
-                      ),
+                      Icon(Icons.videocam, size: 48.0, color: Colors.black54),
                       SizedBox(height: 8.0),
                       Text(
                         'Belum ada video',
-                        style: TextStyle(
-                          color: Colors.black54,
-                          fontSize: 16.0,
-                        ),
+                        style: TextStyle(color: Colors.black54, fontSize: 16.0),
                       ),
                     ],
                   ),
@@ -1610,10 +1615,7 @@ class _HomePageThreeState extends State<HomePageThree>
               SizedBox(height: 8.0),
               Text(
                 'Koordinat: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}',
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 12.0,
-                ),
+                style: TextStyle(color: Colors.black54, fontSize: 12.0),
               ),
             ],
           ],
@@ -1627,19 +1629,12 @@ class _HomePageThreeState extends State<HomePageThree>
               ),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Colors.blue,
-                    size: 24.0,
-                  ),
+                  Icon(Icons.info_outline, color: Colors.blue, size: 24.0),
                   SizedBox(width: 12.0),
                   Expanded(
                     child: Text(
                       'Silakan antar perangkat Anda ke alamat service center kami',
-                      style: TextStyle(
-                        color: Colors.blue,
-                        fontSize: 14.0,
-                      ),
+                      style: TextStyle(color: Colors.blue, fontSize: 14.0),
                     ),
                   ),
                 ],
@@ -1663,19 +1658,12 @@ class _HomePageThreeState extends State<HomePageThree>
             SizedBox(height: 8.0),
             Row(
               children: [
-                Icon(
-                  Icons.location_on,
-                  size: 16,
-                  color: Colors.red,
-                ),
+                Icon(Icons.location_on, size: 16, color: Colors.red),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Jl. Manunggal Juang II No.40, RT./rw/RW.06, Sukapura, Kec. Cilincing, Jkt Utara, Daerah Khusus Ibukota Jakarta 14140',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 12.0,
-                    ),
+                    style: TextStyle(color: Colors.black54, fontSize: 12.0),
                   ),
                 ),
               ],
@@ -1688,10 +1676,7 @@ class _HomePageThreeState extends State<HomePageThree>
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 12.0,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),
                 ),
@@ -1764,10 +1749,11 @@ class _HomePageThreeState extends State<HomePageThree>
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
                 borderSide: BorderSide(
-                    color: _passwordFieldHighlighted
-                        ? Colors.red
-                        : Colors.grey[300]!,
-                    width: _passwordFieldHighlighted ? 2.0 : 1.0),
+                  color: _passwordFieldHighlighted
+                      ? Colors.red
+                      : Colors.grey[300]!,
+                  width: _passwordFieldHighlighted ? 2.0 : 1.0,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
@@ -1844,6 +1830,7 @@ class _HomePageThreeState extends State<HomePageThree>
                     : _selectedPasswordType == 'Password'
                         ? 'Password minimal 4 karakter (huruf, angka, simbol)'
                         : null,
+                errorText: _passwordError,
               ),
               validator: (value) {
                 if (_selectedPasswordType != 'Tidak Ada' &&
@@ -1875,9 +1862,7 @@ class _HomePageThreeState extends State<HomePageThree>
                   Expanded(
                     child: Text(
                       'Pola telah diatur',
-                      style: GoogleFonts.poppins(
-                        color: Colors.grey[700],
-                      ),
+                      style: GoogleFonts.poppins(color: Colors.grey[700]),
                     ),
                   ),
                 ],
@@ -1935,10 +1920,7 @@ class _HomePageThreeState extends State<HomePageThree>
             SizedBox(width: 8),
             Text(
               "Tidak Ada",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
             ),
           ],
         );
@@ -1946,18 +1928,11 @@ class _HomePageThreeState extends State<HomePageThree>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.grid_3x3,
-              color: Colors.orange[700],
-              size: 20,
-            ),
+            Icon(Icons.grid_3x3, color: Colors.orange[700], size: 20),
             SizedBox(width: 8),
             Text(
               "Pola",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.orange[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.orange[700]),
             ),
           ],
         );
@@ -1965,18 +1940,11 @@ class _HomePageThreeState extends State<HomePageThree>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.dialpad,
-              color: Colors.blue[700],
-              size: 20,
-            ),
+            Icon(Icons.dialpad, color: Colors.blue[700], size: 20),
             SizedBox(width: 8),
             Text(
               "PIN",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.blue[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.blue[700]),
             ),
           ],
         );
@@ -1984,18 +1952,11 @@ class _HomePageThreeState extends State<HomePageThree>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.password_outlined,
-              color: Colors.purple[700],
-              size: 20,
-            ),
+            Icon(Icons.password_outlined, color: Colors.purple[700], size: 20),
             SizedBox(width: 8),
             Text(
               "Password",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.purple[700],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.purple[700]),
             ),
           ],
         );
@@ -2004,101 +1965,98 @@ class _HomePageThreeState extends State<HomePageThree>
     }
   }
 
-  // Ketika validasi, cek apakah brand kosong dan scroll ke sana jika perlu
+  // Validasi input sebelum submit
   bool _validateRequiredFields() {
-    // Daftar untuk mengumpulkan semua field yang kosong
-    List<String> emptyFields = [];
-
-    // Set state untuk highlight semua field yang kosong
     setState(() {
-      _nameFieldHighlighted = _nameController.text.isEmpty;
-      _whatsappFieldHighlighted = _whatsappController.text.isEmpty;
-      _addressFieldHighlighted = _addressController.text.isEmpty;
-      _modelFieldHighlighted = _modelController.text.isEmpty;
-      _brandFieldHighlighted = widget.selectedDevice == 'android' &&
-          (_selectedBrand == null || _selectedBrand!.isEmpty);
-      _passwordFieldHighlighted = _selectedPasswordType == null;
+      _formErrors.clear();
+      _passwordError = null;
     });
 
-    // Mengumpulkan field yang kosong
+    bool isValid = true;
+    List<GlobalKey> errorFields = [];
+    GlobalKey? firstErrorField;
+
+    // Cek field nama
     if (_nameController.text.isEmpty) {
-      emptyFields.add("Nama Lengkap");
+      isValid = false;
+      errorFields.add(_nameFieldKey);
+      firstErrorField = _nameFieldKey;
     }
 
+    // Cek field whatsapp
     if (_whatsappController.text.isEmpty) {
-      emptyFields.add("Nomor WhatsApp");
+      isValid = false;
+      errorFields.add(_whatsappFieldKey);
+      if (firstErrorField == null) firstErrorField = _whatsappFieldKey;
     }
 
+    // Cek field alamat
     if (_addressController.text.isEmpty) {
-      emptyFields.add("Alamat");
+      isValid = false;
+      errorFields.add(_addressFieldKey);
+      if (firstErrorField == null) firstErrorField = _addressFieldKey;
     }
 
+    // Cek field brand untuk Android
     if (widget.selectedDevice == 'android' &&
         (_selectedBrand == null || _selectedBrand!.isEmpty)) {
-      emptyFields.add("Merk Perangkat");
-    }
-
-    if (_modelController.text.isEmpty) {
-      emptyFields.add("Model HP");
-    }
-
-    if (_selectedPasswordType == null) {
-      emptyFields.add("Jenis Kata Sandi");
-    } else if (_selectedPasswordType != 'Tidak Ada' &&
-        _devicePasswordController.text.isEmpty) {
-      emptyFields.add("Kata Sandi Perangkat");
-    }
-
-    // Tentukan field pertama yang kosong untuk di-scroll
-    GlobalKey? firstEmptyFieldToScrollTo;
-    if (_nameController.text.isEmpty) {
-      firstEmptyFieldToScrollTo = _nameFieldKey;
-    } else if (_whatsappController.text.isEmpty) {
-      firstEmptyFieldToScrollTo = _whatsappFieldKey;
-    } else if (_addressController.text.isEmpty) {
-      firstEmptyFieldToScrollTo = _addressFieldKey;
-    } else if (widget.selectedDevice == 'android' &&
-        (_selectedBrand == null || _selectedBrand!.isEmpty)) {
-      firstEmptyFieldToScrollTo = _brandFieldKey;
-    } else if (_modelController.text.isEmpty) {
-      firstEmptyFieldToScrollTo = _modelFieldKey;
-    } else if (_selectedPasswordType == null) {
-      firstEmptyFieldToScrollTo = _passwordFieldKey;
-    } else if (_selectedPasswordType != 'Tidak Ada' &&
-        _devicePasswordController.text.isEmpty) {
-      firstEmptyFieldToScrollTo = _passwordSectionKey;
-    }
-
-    // Validasi utama - PENTING: deskripsi tidak divalidasi karena bersifat opsional
-    if (emptyFields.isNotEmpty) {
+      isValid = false;
+      errorFields.add(_brandFieldKey);
+      if (firstErrorField == null) firstErrorField = _brandFieldKey;
+      // Aktifkan highlight pada field brand
       setState(() {
-        _isLoading = false;
-        _isSubmitting = false;
+        _brandFieldHighlighted = true;
       });
+    } else if (widget.selectedDevice == 'android') {
+      // Reset highlight jika valid
+      setState(() {
+        _brandFieldHighlighted = false;
+      });
+    }
 
-      // Membuat pesan error yang lebih detail
-      String errorMessage;
-      if (emptyFields.length == 1) {
-        errorMessage = "${emptyFields[0]} wajib diisi";
-      } else {
-        // Format: "Field A, Field B, dan Field C wajib diisi"
-        String fieldList = emptyFields.take(emptyFields.length - 1).join(", ");
-        fieldList += ", dan ${emptyFields.last}";
-        errorMessage = "$fieldList wajib diisi";
+    // Cek field model
+    if (_modelController.text.isEmpty) {
+      isValid = false;
+      errorFields.add(_modelFieldKey);
+      if (firstErrorField == null) firstErrorField = _modelFieldKey;
+    }
+
+    // Validasi form dasar menggunakan FormState
+    if (!_formKey.currentState!.validate()) {
+      isValid = false;
+    }
+
+    // Validasi password jika diperlukan
+    if (!_validatePassword()) {
+      isValid = false;
+      // Selalu atur firstErrorField ke _passwordFieldKey jika belum ada error lain
+      // dan password type belum dipilih
+      if (firstErrorField == null) {
+        firstErrorField = _passwordFieldKey;
       }
+    }
 
-      // Tampilkan pesan error
+    // Jika ada error, scroll ke field pertama yang error
+    if (!isValid && firstErrorField != null) {
+      _scrollToField(firstErrorField);
+
+      // Tampilkan snackbar dengan pesan error yang jelas
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               Icon(Icons.warning_amber_rounded, color: Colors.white),
               SizedBox(width: 10),
-              Expanded(child: Text(errorMessage)),
+              Expanded(
+                child: Text(
+                  'Mohon lengkapi semua kolom yang wajib diisi',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                ),
+              ),
             ],
           ),
           backgroundColor: Colors.red,
-          duration: Duration(seconds: 5),
+          duration: Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.all(10),
           shape: RoundedRectangleBorder(
@@ -2106,22 +2064,64 @@ class _HomePageThreeState extends State<HomePageThree>
           ),
         ),
       );
-
-      // Scroll ke lokasi field kosong pertama
-      if (firstEmptyFieldToScrollTo != null) {
-        Future.delayed(Duration(milliseconds: 100), () {
-          Scrollable.ensureVisible(
-            firstEmptyFieldToScrollTo!.currentContext!,
-            duration: Duration(milliseconds: 800),
-            curve: Curves.easeInOut,
-            alignment: 0.15,
-          );
-        });
-      }
-
-      return false;
     }
 
-    return true;
+    return isValid;
+  }
+
+  // Fungsi untuk scroll ke field tertentu
+  void _scrollToField(GlobalKey fieldKey) {
+    if (fieldKey.currentContext != null) {
+      Scrollable.ensureVisible(
+        fieldKey.currentContext!,
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.2, // Sedikit di atas tengah
+      );
+    }
+  }
+
+  // Validasi khusus untuk password
+  bool _validatePassword() {
+    bool isValid = true;
+
+    // Validasi jenis password sudah dipilih
+    if (_selectedPasswordType == null) {
+      setState(() {
+        _formErrors['password_type'] = 'Jenis password harus dipilih';
+        _passwordFieldHighlighted = true;
+      });
+      isValid = false;
+
+      // Pastikan snackbar akan muncul dengan mengembalikan false
+      return false;
+    } else {
+      setState(() {
+        _passwordFieldHighlighted = false;
+      });
+    }
+
+    // Validasi password jika tipe selain 'Tidak Ada' dan 'Pola' (yang dihandle terpisah)
+    if (_selectedPasswordType != null &&
+        _selectedPasswordType != 'Tidak Ada' &&
+        _selectedPasswordType != 'Pola') {
+      if (_devicePasswordController.text.isEmpty) {
+        setState(() {
+          _passwordError = '${_selectedPasswordType} tidak boleh kosong';
+        });
+        isValid = false;
+      } else if (_devicePasswordController.text.length < 4) {
+        setState(() {
+          _passwordError = '${_selectedPasswordType} minimal 4 karakter';
+        });
+        isValid = false;
+      } else {
+        setState(() {
+          _passwordError = null;
+        });
+      }
+    }
+
+    return isValid;
   }
 }

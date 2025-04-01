@@ -43,6 +43,11 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
   bool _isLoading = true;
   StreamSubscription? _realtimeSubscription;
 
+  // Cache untuk data service
+  Map<String, Map<String, dynamic>> _serviceCache = {};
+  // Tambahkan timer untuk debounce
+  Timer? _debounceTimer;
+
   // Koordinat Service Center
   final serviceCenterPosition = Position(
     latitude: -6.151882179907883,
@@ -56,6 +61,31 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     speed: 0,
     speedAccuracy: 0,
   );
+
+  // Variabel pagination
+  int _currentPage = 0;
+  final int _pageSize = 10;
+  bool _hasMoreData = true;
+  bool _isLoadingMore = false;
+
+  // Kolom yang akan diambil dalam query
+  final List<String> _requiredColumns = [
+    'id',
+    'service_cost',
+    'status',
+    'device',
+    'brand',
+    'model',
+    'problem',
+    'created_at',
+    'complain',
+    'device_password',
+    'device_password_type',
+    'shipping_method',
+    'latitude',
+    'longitude',
+    'address_note'
+  ];
 
   @override
   void initState() {
@@ -73,18 +103,155 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
         context.read<RealtimeService>().stream.listen((event) {
       if (event['type'] == 'service_update') {
         print('Received service update: ${event['data']}');
-        // Reload services ketika ada perubahan
-        _loadServices();
+
+        // Jika ada ID layanan yang diperbarui, update hanya item tersebut
+        if (event['data'] != null && event['data']['id'] != null) {
+          _updateSpecificService(event['data']['id'].toString());
+        } else {
+          // Jika tidak ada ID spesifik, refresh semua data
+          _loadServices();
+        }
+      } else if (event['type'] == 'additional_cost_update') {
+        // Khusus untuk update biaya tambahan
+        if (event['data'] != null && event['data']['service_id'] != null) {
+          _updateSpecificService(event['data']['service_id'].toString());
+        }
+      }
+    });
+
+    // Setup direct Supabase channel subscription
+    final serviceChannel = _supabase.channel('service_changes');
+
+    // Subscribe ke perubahan tabel services
+    serviceChannel.subscribe((status, error) {
+      if (status == 'SUBSCRIBED') {
+        print('Successfully subscribed to service changes channel');
+      } else {
+        print('Failed to subscribe to service changes: $status, $error');
+      }
+    });
+
+    // Set up timer untuk polling updates dalam interval tertentu
+    // (solusi alternatif yang lebih andal daripada mengandalkan realtime saja)
+    Timer.periodic(Duration(seconds: 30), (timer) {
+      if (mounted) {
+        print('Polling for service updates');
+        _refreshServicesInBackground();
+      } else {
+        // Batalkan timer jika widget sudah tidak mounted
+        timer.cancel();
       }
     });
 
     print('Realtime subscription setup completed for user: ${currentUser.uid}');
   }
 
+  // Refresh service dalam background tanpa menampilkan loading indicator
+  Future<void> _refreshServicesInBackground() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) return;
+
+      final response = await _supabase
+          .from('services')
+          .select(_getRequiredColumns())
+          .eq('user_id', user.uid)
+          .order('created_at', ascending: false)
+          .limit(_services.length > 0 ? _services.length : _pageSize);
+
+      if (!mounted) return;
+
+      final newServices = List<Map<String, dynamic>>.from(response);
+
+      // Perbarui cache dan update daftar jika ada perubahan
+      bool hasChanges = false;
+
+      if (newServices.length != _services.length) {
+        hasChanges = true;
+      } else {
+        // Periksa apakah ada perubahan data
+        for (var i = 0; i < newServices.length; i++) {
+          if (i >= _services.length ||
+              newServices[i]['updated_at'] != _services[i]['updated_at'] ||
+              newServices[i]['status'] != _services[i]['status']) {
+            hasChanges = true;
+            break;
+          }
+        }
+      }
+
+      if (hasChanges) {
+        print('Detected changes in services, updating UI');
+        // Update cache
+        for (var service in newServices) {
+          _serviceCache[service['id'].toString()] = service;
+        }
+
+        setState(() {
+          _services = newServices;
+        });
+      }
+    } catch (e) {
+      print('Error refreshing services in background: $e');
+    }
+  }
+
+  // Periksa apakah service dengan ID tertentu ada dalam daftar
+  bool _isServiceInList(String serviceId) {
+    return _services.any((service) => service['id'].toString() == serviceId);
+  }
+
+  // Metode untuk mendapatkan kolom yang diperlukan
+  String _getRequiredColumns() {
+    return _requiredColumns.join(', ');
+  }
+
+  // Update layanan spesifik tanpa memperbarui seluruh daftar
+  Future<void> _updateSpecificService(String serviceId) async {
+    print('Updating specific service with ID: $serviceId');
+
+    // Cek apakah service dalam daftar
+    if (!_isServiceInList(serviceId)) {
+      print('Service not in current list, reloading all data');
+      _loadServices();
+      return;
+    }
+
+    try {
+      // Fetch data terbaru untuk service tersebut
+      final updatedService = await _supabase
+          .from('services')
+          .select(_getRequiredColumns())
+          .eq('id', serviceId)
+          .single();
+
+      if (!mounted) return;
+
+      setState(() {
+        // Perbarui layanan dalam daftar
+        final index = _services
+            .indexWhere((service) => service['id'].toString() == serviceId);
+        if (index >= 0) {
+          _services[index] = updatedService;
+
+          // Update juga cache
+          _serviceCache[serviceId] = updatedService;
+        }
+      });
+
+      print('Service with ID $serviceId updated successfully');
+    } catch (e) {
+      print('Error updating specific service: $e');
+    }
+  }
+
   Future<void> _loadServices() async {
     if (!mounted) return;
 
     setState(() => _isLoading = true);
+    // Reset pagination
+    _currentPage = 0;
+    _hasMoreData = true;
 
     try {
       final user = _firebaseAuth.currentUser;
@@ -92,17 +259,30 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
         throw Exception('User not logged in');
       }
 
+      // Hanya ambil kolom yang diperlukan
       final response = await _supabase
           .from('services')
-          .select(
-              '*, service_cost, status, device, brand, model, problem, created_at, complain')
+          .select(_getRequiredColumns())
           .eq('user_id', user.uid)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .range(_currentPage * _pageSize, (_currentPage + 1) * _pageSize - 1)
+          .limit(_pageSize);
+
+      // Cek apakah masih ada data selanjutnya
+      _hasMoreData = response.length == _pageSize;
+      _currentPage++;
 
       if (!mounted) return;
 
+      final services = List<Map<String, dynamic>>.from(response);
+
+      // Update cache
+      for (var service in services) {
+        _serviceCache[service['id'].toString()] = service;
+      }
+
       setState(() {
-        _services = List<Map<String, dynamic>>.from(response);
+        _services = services;
         _isLoading = false;
       });
 
@@ -125,9 +305,100 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     }
   }
 
+  // Fungsi untuk load more data (pagination) dengan debounce
+  Future<void> _loadMoreServices() async {
+    if (!_hasMoreData || _isLoadingMore || !mounted) return;
+
+    // Batalkan timer debounce sebelumnya
+    _debounceTimer?.cancel();
+
+    // Atur timer debounce baru
+    _debounceTimer = Timer(Duration(milliseconds: 300), () async {
+      setState(() => _isLoadingMore = true);
+
+      try {
+        final user = _firebaseAuth.currentUser;
+        if (user == null) {
+          throw Exception('User not logged in');
+        }
+
+        final response = await _supabase
+            .from('services')
+            .select(_getRequiredColumns())
+            .eq('user_id', user.uid)
+            .order('created_at', ascending: false)
+            .range(_currentPage * _pageSize, (_currentPage + 1) * _pageSize - 1)
+            .limit(_pageSize);
+
+        // Cek apakah masih ada data selanjutnya
+        _hasMoreData = response.length == _pageSize;
+        _currentPage++;
+
+        if (!mounted) return;
+
+        if (response.isNotEmpty) {
+          final newServices = List<Map<String, dynamic>>.from(response);
+
+          // Update cache
+          for (var service in newServices) {
+            _serviceCache[service['id'].toString()] = service;
+          }
+
+          setState(() {
+            _services.addAll(newServices);
+          });
+        }
+      } catch (e) {
+        print('Error loading more services: $e');
+      } finally {
+        if (mounted) {
+          setState(() => _isLoadingMore = false);
+        }
+      }
+    });
+  }
+
+  // Fungsi untuk mendapatkan data biaya tambahan dengan cache
+  Future<Map<String, dynamic>?> _getAdditionalCost(String serviceId) async {
+    try {
+      final additionalCost = await _supabase
+          .from('additional_costs')
+          .select()
+          .eq('service_id', serviceId)
+          .eq('status', 'PENDING')
+          .order('created_at', ascending: false)
+          .maybeSingle();
+
+      return additionalCost;
+    } catch (e) {
+      print('Error getting additional cost: $e');
+      return null;
+    }
+  }
+
+  // Fungsi untuk mendapatkan semua data biaya tambahan terkait dengan layanan
+  Future<List<Map<String, dynamic>>> _getAdditionalCosts(
+      String serviceId) async {
+    try {
+      final additionalCosts = await _supabase
+          .from('additional_costs')
+          .select()
+          .eq('service_id', serviceId)
+          .order('created_at', ascending: false);
+
+      return List<Map<String, dynamic>>.from(additionalCosts);
+    } catch (e) {
+      print('Error getting all additional costs: $e');
+      return [];
+    }
+  }
+
   @override
   void dispose() {
     _realtimeSubscription?.cancel();
+    _debounceTimer?.cancel();
+    // Membersihkan subscription yang mungkin masih aktif
+    _supabase.removeAllChannels();
     super.dispose();
   }
 
@@ -151,6 +422,10 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
         return 'Kadaluarsa';
       case 'COMPLAINED':
         return 'Dikomplain';
+      case 'ADDITIONAL_PAYMENT':
+        return 'Biaya Tambahan';
+      case 'UNPAID':
+        return 'Belum Dibayar';
       default:
         return status;
     }
@@ -170,6 +445,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
         return Colors.red;
       case 'COMPLAINED':
         return Colors.red;
+      case 'ADDITIONAL_PAYMENT':
+        return Colors.orangeAccent;
       default:
         return Colors.grey;
     }
@@ -321,10 +598,12 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
   Widget _buildServiceCard(Map<String, dynamic> service) {
     final hasPayment = service['service_cost'] != null;
     final status = service['status']?.toString().toUpperCase() ?? '';
-    final needsPayment = hasPayment && status == 'PENDING';
+    final needsPayment =
+        hasPayment && (status == 'PENDING' || status == 'UNPAID');
     final isExpanded = _expandedCards[service['id'].toString()] ?? false;
     final canGiveFeedback = status == 'COMPLETED';
     final serviceCost = service['service_cost'];
+    final hasAdditionalPayment = status == 'ADDITIONAL_PAYMENT';
 
     return FutureBuilder<Map<String, dynamic>?>(
       future: _supabase
@@ -404,6 +683,10 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                     SizedBox(height: 16),
                     _buildLocationSection(service),
 
+                    // Tambahkan section biaya tambahan jika status ADDITIONAL_PAYMENT
+                    if (hasAdditionalPayment)
+                      _buildAdditionalCostSection(service),
+
                     // Tambahkan section dokumentasi kondisi awal jika ada
                     if (service['pre_service_docs'] != null &&
                         (service['pre_service_docs'] as List).isNotEmpty) ...[
@@ -447,6 +730,48 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                               color:
                                   hasPayment ? Colors.green : Colors.grey[400],
                             ),
+                          ),
+
+                          // Tambahkan FutureBuilder untuk mengecek dan menampilkan biaya tambahan
+                          FutureBuilder<Map<String, dynamic>?>(
+                            future:
+                                _getAdditionalCost(service['id'].toString()),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData || snapshot.data == null) {
+                                return SizedBox.shrink();
+                              }
+
+                              final additionalCost = snapshot.data!;
+                              if (additionalCost['amount'] == null ||
+                                  additionalCost['amount'] <= 0) {
+                                return SizedBox.shrink();
+                              }
+
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 4.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Biaya Service Tambahan',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.orange[700],
+                                      ),
+                                    ),
+                                    Text(
+                                      _currencyFormat
+                                          .format(additionalCost['amount']),
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orange[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -1070,6 +1395,272 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     });
   }
 
+  // Widget untuk menampilkan biaya tambahan
+  Widget _buildAdditionalCostSection(Map<String, dynamic> service) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getAdditionalCosts(service['id'].toString()),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator(strokeWidth: 2));
+        }
+
+        if (!snapshot.hasData ||
+            snapshot.data == null ||
+            snapshot.data!.isEmpty) {
+          return SizedBox.shrink();
+        }
+
+        final additionalCosts = snapshot.data!;
+
+        // Filter untuk biaya tambahan yang perlu dibayar
+        final pendingCosts = additionalCosts
+            .where((cost) => cost['status'] == 'PENDING')
+            .toList();
+
+        // Filter untuk biaya tambahan yang sudah dibayar
+        final paidCosts =
+            additionalCosts.where((cost) => cost['status'] == 'PAID').toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 16),
+            Divider(color: Colors.grey[300]),
+            SizedBox(height: 16),
+
+            // Judul bagian
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Text(
+                'Riwayat Biaya Tambahan',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+
+            // Tampilkan biaya tambahan yang perlu dibayar terlebih dahulu
+            if (pendingCosts.isNotEmpty) ...[
+              for (var additionalCost in pendingCosts)
+                Container(
+                  margin: EdgeInsets.only(bottom: 16),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.warning_amber_outlined,
+                              color: Colors.orange, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Biaya Tambahan (Perlu Dibayar)',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: Colors.orange[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Ditambahkan: ${_formatDate(additionalCost['created_at'])}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        additionalCost['note'] ??
+                            'Biaya tambahan untuk perbaikan',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Jumlah:',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              Text(
+                                _currencyFormat
+                                    .format(additionalCost['amount'] ?? 0),
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _createAdditionalPayment(
+                              service['id'].toString(),
+                              additionalCost['id'].toString(),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              'Bayar Sekarang',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+
+            // Tampilkan biaya tambahan yang sudah dibayar
+            if (paidCosts.isNotEmpty) ...[
+              for (var additionalCost in paidCosts)
+                Container(
+                  margin: EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.check_circle_outline,
+                              color: Colors.green, size: 20),
+                          SizedBox(width: 8),
+                          Text(
+                            'Biaya Tambahan (Sudah Dibayar)',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
+                              color: Colors.green[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Ditambahkan: ${_formatDate(additionalCost['created_at'])}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      if (additionalCost['updated_at'] != null) ...[
+                        Text(
+                          'Dibayar: ${_formatDate(additionalCost['updated_at'])}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: 12),
+                      Text(
+                        additionalCost['note'] ??
+                            'Biaya tambahan untuk perbaikan',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Text(
+                            'Jumlah:',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            _currencyFormat
+                                .format(additionalCost['amount'] ?? 0),
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.green[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  // Fungsi untuk membayar biaya tambahan
+  Future<void> _createAdditionalPayment(
+      String serviceId, String additionalCostId) async {
+    try {
+      final result = await _paymentService.createAdditionalPayment(
+          serviceId, additionalCostId);
+      if (!mounted) return;
+
+      if (result['paymentUrl'] != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentWebViewPage(
+              paymentUrl: result['paymentUrl'],
+              serviceId: serviceId,
+              isAdditionalPayment: true,
+              additionalCostId: additionalCostId,
+            ),
+          ),
+        );
+      } else {
+        throw Exception('URL pembayaran tidak valid');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1077,9 +1668,34 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
         title: Text('Riwayat Service'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
-          onPressed: () =>
-              Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/');
+            }
+          },
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            tooltip: 'Refresh',
+            onPressed: () {
+              // Clear cache dan muat ulang data
+              _serviceCache.clear();
+              _loadServices();
+
+              // Tampilkan indikator refresh
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Memperbarui data...'),
+                  duration: Duration(seconds: 1),
+                  backgroundColor: Colors.blue,
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -1094,14 +1710,39 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: _loadServices,
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(16),
-                    itemCount: _services.length,
-                    itemBuilder: (context, index) {
-                      final service = _services[index];
-                      return _buildServiceCard(service);
+                  onRefresh: () async {
+                    // Clear cache saat pull-to-refresh
+                    _serviceCache.clear();
+                    await _loadServices();
+                  },
+                  child: NotificationListener<ScrollNotification>(
+                    onNotification: (ScrollNotification scrollInfo) {
+                      if (!_isLoadingMore &&
+                          scrollInfo.metrics.pixels >=
+                              scrollInfo.metrics.maxScrollExtent - 200 &&
+                          _hasMoreData) {
+                        _loadMoreServices();
+                      }
+                      return true;
                     },
+                    child: ListView.builder(
+                      padding: EdgeInsets.all(16),
+                      itemCount: _services.length + (_hasMoreData ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _services.length) {
+                          return _isLoadingMore
+                              ? Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : SizedBox.shrink();
+                        }
+                        final service = _services[index];
+                        return _buildServiceCard(service);
+                      },
+                    ),
                   ),
                 ),
     );

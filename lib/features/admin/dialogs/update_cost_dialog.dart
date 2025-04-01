@@ -5,10 +5,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Menampilkan dialog untuk memperbarui biaya service
 Future<void> showUpdateCostDialog(
-    BuildContext context, Map<String, dynamic> service) async {
+    BuildContext context, Map<String, dynamic> service,
+    {String title = 'Update Biaya Service'}) async {
   final _costController = TextEditingController();
   bool _isSubmitting = false;
   final _supabase = Supabase.instance.client;
+  final isComplaint =
+      service['status']?.toString().toUpperCase() == 'COMPLAINED';
+
+  if (service['service_cost'] != null) {
+    _costController.text = service['service_cost'].toString();
+  }
 
   return showDialog(
     context: context,
@@ -16,7 +23,7 @@ Future<void> showUpdateCostDialog(
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
         title: Text(
-          'Update Biaya Service',
+          title + (isComplaint ? ' (Komplain)' : ''),
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
           ),
@@ -24,6 +31,28 @@ Future<void> showUpdateCostDialog(
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isComplaint)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  'Perbarui biaya service untuk penanganan komplain ini. Status akan otomatis diubah menjadi "Belum Dibayar".',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.red[700],
+                  ),
+                ),
+              ),
+            if (title == 'Biaya Service Tambahan')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Text(
+                  'Menambahkan biaya service tambahan akan mengubah status menjadi "Belum Dibayar" sehingga pelanggan perlu melakukan pembayaran tambahan.',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ),
             TextField(
               controller: _costController,
               keyboardType: TextInputType.number,
@@ -79,8 +108,22 @@ Future<void> showUpdateCostDialog(
 
                     try {
                       final cost = int.parse(_costController.text);
+                      // Ubah status menjadi UNPAID jika sebelumnya PENDING, COMPLAINED atau PROCESSED
+                      final currentStatus =
+                          service['status']?.toString().toUpperCase() ??
+                              'PENDING';
+                      String newStatus = currentStatus;
+
+                      if (currentStatus == 'PENDING' ||
+                          currentStatus == 'COMPLAINED' ||
+                          currentStatus == 'PROCESSED' ||
+                          title == 'Biaya Service Tambahan') {
+                        newStatus = 'UNPAID';
+                      }
+
                       await _supabase.from('services').update({
                         'service_cost': cost,
+                        'status': newStatus,
                         'updated_at': DateTime.now().toIso8601String(),
                       }).eq('id', service['id']);
 
@@ -88,9 +131,14 @@ Future<void> showUpdateCostDialog(
                       Navigator.pop(
                           context, true); // Return true to indicate success
 
+                      String message = 'Biaya service berhasil diupdate';
+                      if (currentStatus != newStatus) {
+                        message += ' dan status diubah menjadi "Belum Dibayar"';
+                      }
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Biaya service berhasil diupdate'),
+                          content: Text(message),
                           backgroundColor: Colors.green,
                         ),
                       );

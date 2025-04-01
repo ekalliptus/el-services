@@ -24,18 +24,26 @@ class ServiceFilterModel {
       ServiceFilterModel(
         filterKey: 'pending',
         displayName: 'Menunggu Admin',
+        selectedColor: Colors.blue[100],
+        textColor: Colors.blue,
       ),
       ServiceFilterModel(
-        filterKey: 'waiting_payment',
+        filterKey: 'unpaid',
         displayName: 'Belum Dibayar',
+        selectedColor: Colors.orange[100],
+        textColor: Colors.orange,
       ),
       ServiceFilterModel(
         filterKey: 'processed',
         displayName: 'Diproses',
+        selectedColor: Colors.blue[100],
+        textColor: Colors.blue,
       ),
       ServiceFilterModel(
         filterKey: 'completed',
         displayName: 'Selesai',
+        selectedColor: Colors.green[100],
+        textColor: Colors.green,
       ),
       ServiceFilterModel(
         filterKey: 'complained',

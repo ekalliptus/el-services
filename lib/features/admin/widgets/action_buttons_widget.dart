@@ -17,202 +17,138 @@ class ActionButtonsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = service['status']?.toString().toUpperCase() ?? 'PENDING';
     final hasServiceCost = service['service_cost'] != null;
-    final isPendingWithoutCost = status == 'PENDING' && !hasServiceCost;
-    final isComplainedStatus = status == 'COMPLAINED';
     final isProcessedStatus = status == 'PROCESSED';
-    final isCompletedStatus = status == 'COMPLETED';
-    final isWaitingPaymentStatus = status == 'WAITING_PAYMENT';
+    final isComplainedStatus = status == 'COMPLAINED';
+    final isUnpaidStatus = status == 'UNPAID' || status == 'WAITING_PAYMENT';
 
-    // Jika status sudah selesai, nonaktifkan semua tombol
-    if (isCompletedStatus) {
-      return IntrinsicHeight(
-        child: Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: null, // Dinonaktifkan
-                  icon: Icon(Icons.attach_money, color: Colors.white70),
-                  label: Text(
-                    'Update Biaya',
-                    style: GoogleFonts.poppins(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.withOpacity(0.6),
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.update, color: Colors.white70),
-                      SizedBox(width: 8),
-                      Text(
-                        'Update Status',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        // Tombol update status untuk semua status
+        _buildStatusButton(
+          context,
+          status: status,
+          isProcessedStatus: isProcessedStatus,
+          isComplainedStatus: isComplainedStatus,
+          isUnpaidStatus: isUnpaidStatus,
         ),
-      );
+
+        // Tombol update biaya hanya untuk PENDING tanpa biaya
+        if (status == 'PENDING' && !hasServiceCost)
+          _buildCostButton(context, 'Tetapkan Biaya'),
+
+        // Tombol tambah biaya service untuk status PROCESSED
+        if (isProcessedStatus)
+          _buildCostButton(context, 'Tambah Biaya Service'),
+      ],
+    );
+  }
+
+  Widget _buildStatusButton(
+    BuildContext context, {
+    required String status,
+    required bool isProcessedStatus,
+    required bool isComplainedStatus,
+    required bool isUnpaidStatus,
+  }) {
+    // Jika status sudah COMPLETED (Selesai), jangan tampilkan tombol Update Status
+    if (status == 'COMPLETED') {
+      return SizedBox.shrink(); // Tidak menampilkan tombol
     }
 
-    return IntrinsicHeight(
-      child: Row(
-        children: [
-          Expanded(
-            child: SizedBox(
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: () => onUpdateCost(service),
-                icon: Icon(Icons.attach_money, color: Colors.white),
-                label: Text(
-                  'Update Biaya',
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: PopupMenuButton<String>(
+        onSelected: (value) => onUpdateStatus(service['id'].toString(), value),
+        itemBuilder: (context) {
+          final List<PopupMenuItem<String>> items = [];
+
+          // Pilihan status berdasarkan status saat ini
+          if (status == 'PENDING' || isUnpaidStatus || isComplainedStatus) {
+            // Dari Menunggu Admin, Belum Dibayar, atau Komplain -> Diproses
+            items.add(
+              PopupMenuItem(
+                value: 'PROCESSED',
+                child: _buildStatusMenuItem(
+                  'Diproses',
+                  Colors.blue,
                 ),
               ),
-            ),
+            );
+            // Dari status apapun -> Selesai
+            items.add(
+              PopupMenuItem(
+                value: 'COMPLETED',
+                child: _buildStatusMenuItem(
+                  'Selesai',
+                  Colors.green,
+                ),
+              ),
+            );
+          } else if (isProcessedStatus) {
+            // Dari Diproses -> Selesai
+            items.add(
+              PopupMenuItem(
+                value: 'COMPLETED',
+                child: _buildStatusMenuItem(
+                  'Selesai',
+                  Colors.green,
+                ),
+              ),
+            );
+          }
+
+          return items;
+        },
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.blue,
+            borderRadius: BorderRadius.circular(8),
           ),
-          if (!isPendingWithoutCost) ...[
-            SizedBox(width: 12),
-            Expanded(
-              child: SizedBox(
-                height: 48,
-                child: PopupMenuButton<String>(
-                  onSelected: (value) =>
-                      onUpdateStatus(service['id'].toString(), value),
-                  itemBuilder: (context) {
-                    List<PopupMenuItem<String>> items = [];
-
-                    // Pilihan status berdasarkan status saat ini
-                    if (status == 'PENDING') {
-                      // Status PENDING: bisa ke semua status
-                      items.add(
-                        PopupMenuItem(
-                          value: 'WAITING_PAYMENT',
-                          child: _buildStatusMenuItem(
-                            'Belum Dibayar',
-                            Colors.orange,
-                          ),
-                        ),
-                      );
-                      items.add(
-                        PopupMenuItem(
-                          value: 'PROCESSED',
-                          child: _buildStatusMenuItem(
-                            'Diproses',
-                            Colors.blue,
-                          ),
-                        ),
-                      );
-                      items.add(
-                        PopupMenuItem(
-                          value: 'COMPLETED',
-                          child: _buildStatusMenuItem(
-                            'Selesai',
-                            Colors.green,
-                          ),
-                        ),
-                      );
-                    } else if (isWaitingPaymentStatus || isComplainedStatus) {
-                      // Belum Dibayar atau Komplen: hanya bisa ke DiProses atau Selesai
-                      items.add(
-                        PopupMenuItem(
-                          value: 'PROCESSED',
-                          child: _buildStatusMenuItem(
-                            'Diproses',
-                            Colors.blue,
-                          ),
-                        ),
-                      );
-                      items.add(
-                        PopupMenuItem(
-                          value: 'COMPLETED',
-                          child: _buildStatusMenuItem(
-                            'Selesai',
-                            Colors.green,
-                          ),
-                        ),
-                      );
-                    } else if (isProcessedStatus) {
-                      // DiProses: hanya bisa ke Selesai
-                      items.add(
-                        PopupMenuItem(
-                          value: 'COMPLETED',
-                          child: _buildStatusMenuItem(
-                            'Selesai',
-                            Colors.green,
-                          ),
-                        ),
-                      );
-                    }
-
-                    return items;
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.update, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'Update Status',
-                          style: GoogleFonts.poppins(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.update, color: Colors.white),
+              SizedBox(width: 8),
+              Text(
+                'Update Status',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ),
-          ],
-        ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCostButton(BuildContext context, String label) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton.icon(
+        onPressed: () => onUpdateCost(service),
+        icon: Icon(Icons.attach_money, color: Colors.white),
+        label: Text(
+          label,
+          style: GoogleFonts.poppins(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.green,
+          padding: EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
       ),
     );
   }

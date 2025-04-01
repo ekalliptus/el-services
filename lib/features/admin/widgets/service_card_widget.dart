@@ -20,6 +20,7 @@ class ServiceCardWidget extends StatelessWidget {
   final Map<String, dynamic> service;
   final Function(String, String) onUpdateStatus;
   final Function(Map<String, dynamic>) onUpdateCost;
+  final Function(Map<String, dynamic>) onAdditionalCost;
   final NumberFormat currencyFormat;
   final Function(bool, {String action})? onUploadingDoc;
 
@@ -28,11 +29,12 @@ class ServiceCardWidget extends StatelessWidget {
   static const int MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50 MB
   static const Duration MAX_VIDEO_DURATION = Duration(minutes: 1);
 
-  ServiceCardWidget({
+  const ServiceCardWidget({
     Key? key,
     required this.service,
     required this.onUpdateStatus,
     required this.onUpdateCost,
+    required this.onAdditionalCost,
     required this.currencyFormat,
     this.onUploadingDoc,
   }) : super(key: key);
@@ -173,13 +175,114 @@ class ServiceCardWidget extends StatelessWidget {
             ),
             if (hasPayment) ...[
               SizedBox(height: 4),
-              Text(
-                currencyFormat.format(service['service_cost']),
-                style: GoogleFonts.poppins(
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+              // Selalu tampilkan biaya service sebagai "Biaya Awal:"
+              Row(
+                children: [
+                  Text(
+                    'Biaya Awal: ',
+                    style: GoogleFonts.poppins(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    currencyFormat.format(service['service_cost']),
+                    style: GoogleFonts.poppins(
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+
+              // Selalu cek additional cost dari database dengan FutureBuilder
+              FutureBuilder<List<Map<String, dynamic>>>(
+                future: _getAllAdditionalCosts(service['id'].toString()),
+                builder: (context, snapshot) {
+                  // Tampilkan loading indicator selama cek data
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return SizedBox(
+                      height: 14,
+                      width: 14,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    );
+                  }
+
+                  // Jika tidak ada data tambahan, jangan tampilkan apapun
+                  if (!snapshot.hasData ||
+                      snapshot.data == null ||
+                      snapshot.data!.isEmpty) {
+                    return SizedBox.shrink();
+                  }
+
+                  final additionalCosts = snapshot.data!;
+
+                  // Hitung total biaya tambahan
+                  int totalAdditionalCost = 0;
+                  for (var cost in additionalCosts) {
+                    totalAdditionalCost += (cost['amount'] ?? 0) as int;
+                  }
+
+                  // Jika total biaya tambahan 0, jangan tampilkan
+                  if (totalAdditionalCost <= 0) {
+                    return SizedBox.shrink();
+                  }
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tampilkan total biaya tambahan
+                      Row(
+                        children: [
+                          Text(
+                            'Biaya Tambahan: ',
+                            style: GoogleFonts.poppins(
+                              color: Colors.orange[700],
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            currencyFormat.format(totalAdditionalCost),
+                            style: GoogleFonts.poppins(
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          // Tambahkan ikon untuk menampilkan detail
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4.0),
+                            child: InkWell(
+                              child: Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Colors.blue,
+                              ),
+                              onTap: () => _showAdditionalCostsDetail(
+                                  context, additionalCosts),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Tampilkan catatan dari biaya tambahan terakhir
+                      if (additionalCosts.first['note'] != null &&
+                          additionalCosts.first['note'].toString().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2.0),
+                          child: Text(
+                            'Catatan terbaru: ${additionalCosts.first['note']}',
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           ],
@@ -446,7 +549,8 @@ class ServiceCardWidget extends StatelessWidget {
   Widget _buildPreServiceDocList(
       BuildContext context, Map<String, dynamic> service,
       {bool isReadOnly = false}) {
-    final preServiceDocs = service['pre_service_docs'] as List;
+    // Periksa jika pre_service_docs adalah null
+    final preServiceDocs = service['pre_service_docs'] as List? ?? [];
 
     // Check jika list kosong
     if (preServiceDocs.isEmpty) {
@@ -1496,6 +1600,162 @@ class ServiceCardWidget extends StatelessWidget {
           ),
         );
       }
+    }
+  }
+
+  // Metode untuk mendapatkan biaya tambahan dari database
+  Future<List<Map<String, dynamic>>> _getAllAdditionalCosts(
+      String serviceId) async {
+    try {
+      final supabase = Supabase.instance.client;
+      final additionalCosts = await supabase
+          .from('additional_costs')
+          .select()
+          .eq('service_id', serviceId)
+          .order('created_at', ascending: false);
+
+      return List<Map<String, dynamic>>.from(additionalCosts);
+    } catch (e) {
+      print('Error fetching all additional costs: $e');
+      return [];
+    }
+  }
+
+  void _showAdditionalCostsDetail(
+      BuildContext context, List<Map<String, dynamic>> additionalCosts) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Detail Biaya Tambahan',
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        content: Container(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var cost in additionalCosts)
+                  Card(
+                    margin: EdgeInsets.only(bottom: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      side: BorderSide(
+                        color: cost['status'] == 'PAID'
+                            ? Colors.green.withOpacity(0.3)
+                            : Colors.orange.withOpacity(0.5),
+                        width: 1,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${cost['status'] == 'PAID' ? 'Dibayar' : 'Belum Dibayar'}',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: cost['status'] == 'PAID'
+                                        ? Colors.green
+                                        : Colors.orange,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                currencyFormat.format(cost['amount'] ?? 0),
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: cost['status'] == 'PAID'
+                                      ? Colors.green[700]
+                                      : Colors.orange[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          if (cost['created_at'] != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Text(
+                                'Tanggal: ${_formatDate(cost['created_at'])}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          if (cost['updated_at'] != null &&
+                              cost['status'] == 'PAID')
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: Text(
+                                'Dibayar: ${_formatDate(cost['updated_at'])}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Catatan:',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            cost['note'] ?? 'Tidak ada catatan',
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Tutup',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: Colors.blue,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method untuk format tanggal
+  String _formatDate(String? dateString) {
+    if (dateString == null) return '-';
+    try {
+      final date = DateTime.parse(dateString);
+      final formatter = DateFormat('dd MMM yyyy, HH:mm');
+      return formatter.format(date);
+    } catch (e) {
+      return dateString;
     }
   }
 }

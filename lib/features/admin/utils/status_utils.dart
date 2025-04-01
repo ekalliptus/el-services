@@ -8,6 +8,8 @@ class StatusUtils {
         return 'Menunggu Admin';
       case 'WAITING_PAYMENT':
         return 'Belum Dibayar';
+      case 'UNPAID':
+        return 'Belum Dibayar';
       case 'PROCESSED':
         return 'Diproses';
       case 'COMPLETED':
@@ -23,10 +25,12 @@ class StatusUtils {
 
   /// Mendapatkan warna untuk status
   static Color getStatusColor(String status) {
-    switch (status) {
+    switch (status.toUpperCase()) {
       case 'PENDING':
         return Colors.orange;
       case 'WAITING_PAYMENT':
+        return Colors.orange;
+      case 'UNPAID':
         return Colors.orange;
       case 'PROCESSED':
         return Colors.blue;

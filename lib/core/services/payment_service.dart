@@ -12,6 +12,7 @@ class PaymentService {
   late final SupabaseClient _supabase;
   final StorageService _storageService = StorageService();
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
+  final String _baseUrl = 'https://api.servicehponline.com'; // URL API backend
 
   PaymentService() {
     try {
@@ -264,6 +265,96 @@ class PaymentService {
     } catch (e) {
       print('Error checking payment status: $e');
       return 'PENDING';
+    }
+  }
+
+  /// Method untuk membuat pembayaran biaya tambahan
+  Future<Map<String, dynamic>> createAdditionalPayment(
+      String serviceId, String additionalCostId) async {
+    try {
+      // Dapatkan detail service dan biaya tambahan
+      final service = await _supabase
+          .from('services')
+          .select('*')
+          .eq('id', serviceId)
+          .single();
+
+      final additionalCost = await _supabase
+          .from('additional_costs')
+          .select('*')
+          .eq('id', additionalCostId)
+          .single();
+
+      if (additionalCost['status'] != 'PENDING') {
+        throw Exception('Biaya tambahan ini sudah dibayar atau tidak valid');
+      }
+
+      // Dapatkan detail customer
+      final user = await _supabase
+          .from('users')
+          .select('*')
+          .eq('firebase_uid', service['user_id'])
+          .single();
+
+      // Buat body request ke midtrans
+      final Map<String, dynamic> transactionDetails = {
+        'order_id':
+            'ADD-${serviceId}-${additionalCostId}-${DateTime.now().millisecondsSinceEpoch}',
+        'gross_amount': additionalCost['amount'],
+      };
+
+      final Map<String, dynamic> customerDetails = {
+        'first_name': user['fullname'] ?? 'Customer',
+        'email': user['email'] ?? service['email'],
+        'phone': user['phone'] ?? service['phoneNumber'],
+      };
+
+      final List<Map<String, dynamic>> itemDetails = [
+        {
+          'id': 'ADDSVC-${additionalCostId}',
+          'price': additionalCost['amount'],
+          'quantity': 1,
+          'name': 'Biaya Tambahan Service #${serviceId}',
+          'category': 'Service',
+          'merchant_name': 'Service HP Online',
+        }
+      ];
+
+      // Gabungkan semua data
+      final Map<String, dynamic> body = {
+        'transaction_details': transactionDetails,
+        'customer_details': customerDetails,
+        'item_details': itemDetails,
+      };
+
+      // Lakukan request ke backend/midtrans untuk mendapatkan payment URL
+      final response = await http.post(
+        Uri.parse('$_baseUrl/create-payment'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Gagal membuat pembayaran: ${response.body}');
+      }
+
+      // Update status di database
+      await _supabase.from('additional_costs').update({
+        'payment_id': transactionDetails['order_id'],
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', additionalCostId);
+
+      // Parsing respons
+      final data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      print('Error creating additional payment: $e');
+      if (e is PostgrestException) {
+        throw Exception('Terjadi kesalahan database: ${e.message}');
+      }
+      throw Exception('Gagal membuat pembayaran: ${e.toString()}');
     }
   }
 }
