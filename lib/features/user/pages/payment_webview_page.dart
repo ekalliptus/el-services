@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:servicehponline/features/user/pages/home_page_one.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -78,16 +77,9 @@ class _PaymentWebViewPageState extends State<PaymentWebViewPage> {
                     desc:
                         'Terima kasih telah melakukan pembayaran. Tim kami akan segera memproses service Anda.',
                     btnOkOnPress: () {
-                      Navigator.pushAndRemoveUntil(
+                      Navigator.pushNamedAndRemoveUntil(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => HomePageOne(
-                            nextPage: () {},
-                            prevPage: () {},
-                            username: 'Pelanggan',
-                            onDeviceSelected: (String device) {},
-                          ),
-                        ),
+                        '/history',
                         (route) => false,
                       );
                     },

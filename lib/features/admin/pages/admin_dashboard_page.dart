@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,7 +8,7 @@ import 'package:servicehponline/features/admin/widgets/service_card_widget.dart'
 import 'package:servicehponline/features/admin/widgets/search_bar_widget.dart';
 import 'package:servicehponline/features/admin/widgets/filter_widget.dart';
 import 'package:servicehponline/features/admin/dialogs/update_cost_dialog.dart';
-import 'dart:async';
+import 'package:servicehponline/core/services/supabase_config.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({Key? key}) : super(key: key);
@@ -19,6 +20,7 @@ class AdminDashboardPage extends StatefulWidget {
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   final _supabase = Supabase.instance.client;
   bool _isLoading = false;
+  bool _isSuperAdmin = false;
   bool _isUploadingDoc = false; // Status upload dokumentasi
   String _documentationActionText = 'Mengunggah dokumentasi...';
   List<Map<String, dynamic>> _services = [];
@@ -65,6 +67,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     _loadSortPreference();
     _subscribeToServiceChanges();
     _setupPollingUpdates();
+    _checkSuperAdminStatus();
   }
 
   @override
@@ -789,15 +792,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         return;
       }
 
-      // Verifikasi bahwa user masih admin
+      // Verifikasi bahwa user masih admin (admin biasa atau super admin)
       final adminCheck = await _supabase
           .from('admins')
           .select('*')
           .eq('id', session.user.id)
           .maybeSingle();
 
-      if (adminCheck == null || adminCheck['role'] != 'admin') {
-        // Bukan admin lagi, logout
+      if (adminCheck == null) {
+        // Bukan admin, logout
         await _handleLogout();
       }
     } catch (e) {
@@ -1226,6 +1229,37 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _searchQuery = value;
     });
     _filterServices();
+  }
+
+  Future<void> _checkSuperAdminStatus() async {
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final user = SupabaseConfig.client.auth.currentUser;
+      if (user != null) {
+        final response = await SupabaseConfig.client
+            .from('admins')
+            .select()
+            .eq('id', user.id)
+            .eq('role', 'super_admin')
+            .maybeSingle();
+
+        setState(() {
+          _isSuperAdmin = response != null;
+        });
+
+        print(
+            'User saat ini ${_isSuperAdmin ? "adalah" : "bukan"} super admin');
+      }
+    } catch (e) {
+      print('Error memeriksa status super admin: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override

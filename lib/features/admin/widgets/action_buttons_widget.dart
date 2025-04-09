@@ -5,12 +5,14 @@ class ActionButtonsWidget extends StatelessWidget {
   final Map<String, dynamic> service;
   final Function(String, String) onUpdateStatus;
   final Function(Map<String, dynamic>) onUpdateCost;
+  final Function(Map<String, dynamic>)? onAdditionalCost;
 
   const ActionButtonsWidget({
     Key? key,
     required this.service,
     required this.onUpdateStatus,
     required this.onUpdateCost,
+    this.onAdditionalCost,
   }) : super(key: key);
 
   @override
@@ -41,6 +43,31 @@ class ActionButtonsWidget extends StatelessWidget {
         // Tombol tambah biaya service untuk status PROCESSED
         if (isProcessedStatus)
           _buildCostButton(context, 'Tambah Biaya Service'),
+
+        // Tombol tambah biaya tambahan untuk status PROCESSED
+        if (isProcessedStatus && onAdditionalCost != null)
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () => onAdditionalCost!(service),
+              icon: Icon(Icons.add_circle_outline, color: Colors.white),
+              label: Text(
+                'Tambah Biaya Tambahan',
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

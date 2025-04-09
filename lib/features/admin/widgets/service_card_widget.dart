@@ -314,6 +314,7 @@ class ServiceCardWidget extends StatelessWidget {
                 service: service,
                 onUpdateStatus: onUpdateStatus,
                 onUpdateCost: onUpdateCost,
+                onAdditionalCost: onAdditionalCost,
               ),
             ],
           ),

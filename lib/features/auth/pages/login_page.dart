@@ -1,17 +1,21 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import 'package:servicehponline/core/services/authentication.dart';
+import 'package:servicehponline/features/profile/pages/profile_setup_page.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:servicehponline/features/admin/pages/super_admin_dashboard.dart';
+import 'package:servicehponline/features/admin/pages/admin_dashboard_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import 'package:servicehponline/features/user/widgets/request_service_flow_widget.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:servicehponline/blocs/auth/auth_bloc.dart';
 import 'package:servicehponline/blocs/auth/auth_event.dart';
 import 'package:servicehponline/blocs/auth/auth_state.dart';
-import 'package:servicehponline/core/services/authentication.dart';
-import 'package:servicehponline/features/user/widgets/request_service_flow_widget.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:servicehponline/features/profile/pages/profile_setup_page.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:provider/provider.dart';
+import 'package:servicehponline/core/services/update_service.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -25,20 +29,23 @@ class _HomeState extends State<Home> {
   final _adminFormKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _authentication = Authentication();
-  final _supabase = supabase.Supabase.instance.client;
+  final _supabase = Supabase.instance.client;
+  final _adminEmailController = TextEditingController();
+  final _adminPasswordController = TextEditingController();
   bool _isChecked = false;
   bool _isGoogleLoading = false;
   bool _isWhatsappLoading = false;
   bool _isAdminLoading = false;
 
-  // Controller untuk form login admin
-  final _adminEmailController = TextEditingController();
-  final _adminPasswordController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
     _checkExistingSession();
+
+    // Periksa pembaruan aplikasi setiap kali halaman login dimuat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForAppUpdates();
+    });
 
     // Listen to auth state changes
     final authBloc = BlocProvider.of<AuthBloc>(context);
@@ -420,10 +427,13 @@ class _HomeState extends State<Home> {
                               print(
                                   'Hasil pemeriksaan admin: ${adminCheck != null ? "Ditemukan" : "Tidak ditemukan"}');
 
-                              if (adminCheck != null &&
-                                  adminCheck['role'] == 'admin') {
+                              if (adminCheck != null) {
+                                // Periksa apakah super admin
+                                final isSuperAdmin =
+                                    adminCheck['role'] == 'super_admin';
+
                                 print(
-                                    'Verifikasi admin berhasil. Mengarahkan ke halaman admin.');
+                                    'Verifikasi admin berhasil. isSuperAdmin: $isSuperAdmin');
 
                                 // Simpan sesi admin
                                 final session = response.session;
@@ -432,18 +442,34 @@ class _HomeState extends State<Home> {
                                 }
 
                                 Navigator.of(context).pop();
-                                Navigator.pushReplacementNamed(
-                                    context, '/admin');
+
+                                // Arahkan berdasarkan tipe admin
+                                if (isSuperAdmin) {
+                                  // Arahkan ke halaman super admin
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const SuperAdminDashboard(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                } else {
+                                  // Arahkan ke halaman admin biasa
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const AdminDashboardPage(),
+                                    ),
+                                    (route) => false,
+                                  );
+                                }
                               } else {
                                 // Bukan admin, lakukan logout
                                 print('Bukan admin, melakukan logout');
                                 await _supabase.auth.signOut();
 
-                                String errorMessage = adminCheck == null
-                                    ? 'Akun ini tidak terdaftar sebagai admin.'
-                                    : 'Akun ini tidak memiliki hak akses admin.';
-
-                                throw Exception(errorMessage);
+                                throw Exception(
+                                    'Akun ini tidak terdaftar sebagai admin.');
                               }
                             } catch (e) {
                               print('Error saat verifikasi admin: $e');
@@ -520,22 +546,18 @@ class _HomeState extends State<Home> {
   }
 
   // Simpan sesi admin
-  Future<void> _saveAdminSession(supabase.Session session) async {
+  Future<void> _saveAdminSession(Session session) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('admin_logged_in', true);
 
-      // Simpan data sesi
+      // Simpan data sesi sebagai JSON string
       final sessionData = {
         'access_token': session.accessToken,
         'refresh_token': session.refreshToken,
-        'expires_in': session.expiresIn,
-        'provider_token': session.providerToken,
-        'provider_refresh_token': session.providerRefreshToken,
-        'user': {
-          'id': session.user.id,
-          'email': session.user.email,
-        }
+        'expires_at': session.expiresAt,
+        'user_id': session.user.id,
+        'email': session.user.email,
       };
 
       await prefs.setString('admin_session', jsonEncode(sessionData));
@@ -575,10 +597,26 @@ class _HomeState extends State<Home> {
                     .eq('id', newSession.user.id)
                     .maybeSingle();
 
-                if (adminCheck != null && adminCheck['role'] == 'admin') {
+                if (adminCheck != null) {
+                  final isSuperAdmin = adminCheck['role'] == 'super_admin';
                   print('Admin session refreshed and verified successfully');
+
                   if (mounted) {
-                    Navigator.pushReplacementNamed(context, '/admin');
+                    if (isSuperAdmin) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => const SuperAdminDashboard(),
+                        ),
+                        (route) => false,
+                      );
+                    } else {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(
+                          builder: (context) => const AdminDashboardPage(),
+                        ),
+                        (route) => false,
+                      );
+                    }
                     return;
                   }
                 }
@@ -601,10 +639,26 @@ class _HomeState extends State<Home> {
                 .eq('id', currentSession.user.id)
                 .maybeSingle();
 
-            if (adminCheck != null && adminCheck['role'] == 'admin') {
+            if (adminCheck != null) {
+              final isSuperAdmin = adminCheck['role'] == 'super_admin';
               print('Admin session restored successfully');
+
               if (mounted) {
-                Navigator.pushReplacementNamed(context, '/admin');
+                if (isSuperAdmin) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const SuperAdminDashboard(),
+                    ),
+                    (route) => false,
+                  );
+                } else {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const AdminDashboardPage(),
+                    ),
+                    (route) => false,
+                  );
+                }
                 return;
               }
             }
@@ -636,6 +690,35 @@ class _HomeState extends State<Home> {
     }
   }
 
+  // Fungsi untuk memeriksa pembaruan aplikasi
+  void _checkForAppUpdates() async {
+    try {
+      // Dapatkan layanan pembaruan dari provider jika tersedia
+      final updateService = Provider.of<UpdateService>(context, listen: false);
+
+      // Periksa apakah sudah waktunya untuk memeriksa pembaruan
+      bool shouldCheck = await updateService.shouldCheckForUpdates();
+      if (!shouldCheck) {
+        print('Home: Belum waktunya memeriksa pembaruan. Melewati...');
+        return;
+      }
+
+      // Periksa pembaruan aplikasi
+      final updateInfo = await updateService.checkAppVersion();
+
+      // Jika ada pembaruan tersedia, tampilkan banner pembaruan
+      if (updateInfo != null && mounted) {
+        // Jalankan di microtask agar tidak mengganggu proses rendering
+        Future.microtask(() {
+          // Gunakan banner untuk halaman login daripada dialog penuh
+          updateService.showUpdateBanner(context, updateInfo);
+        });
+      }
+    } catch (e) {
+      print('Error saat memeriksa pembaruan di Home: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
@@ -655,7 +738,7 @@ class _HomeState extends State<Home> {
           SharedPreferences.getInstance().then((prefs) {
             print(
                 'Memeriksa profil Supabase untuk menentukan navigasi selanjutnya');
-            final supabaseClient = supabase.Supabase.instance.client;
+            final supabaseClient = Supabase.instance.client;
 
             print('Mencari profil untuk UID: ${state.user.uid}');
             supabaseClient

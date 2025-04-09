@@ -485,7 +485,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
           btnCancelOnPress: () {
             Navigator.of(context).pushNamedAndRemoveUntil(
               '/history',
-              (route) => false,
+              (route) => route.isFirst,
             );
           },
         ).show();
@@ -602,6 +602,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
           if (shouldPop) {
             Navigator.of(context).pop();
           }
+        } else {
+          Navigator.of(context).pop();
         }
       },
       child: Scaffold(
@@ -645,10 +647,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
-                          Navigator.pop(context, true);
-                          Navigator.pushReplacementNamed(context, '/home');
-                        },
+                        onPressed: () => Navigator.pop(context, true),
                         child: Text(
                           'YA',
                           style: GoogleFonts.poppins(

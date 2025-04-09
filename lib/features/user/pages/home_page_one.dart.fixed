@@ -22,8 +22,6 @@ import 'package:servicehponline/core/services/authentication.dart';
 import 'package:servicehponline/core/services/update_service.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:servicehponline/features/maintenance/maintenance_service.dart';
-import 'package:servicehponline/features/maintenance/maintenance_page.dart';
 
 class HomePageOne extends StatefulWidget {
   final Function() nextPage;
@@ -69,10 +67,6 @@ class _HomePageOneState extends State<HomePageOne>
   PackageInfo? _packageInfo;
   bool _isCheckingUpdate = false;
 
-  // Timer untuk pengecekan maintenance mode secara berkala
-  Timer? _maintenanceCheckTimer;
-  bool _isCheckingMaintenance = false;
-
   @override
   void initState() {
     super.initState();
@@ -84,9 +78,6 @@ class _HomePageOneState extends State<HomePageOne>
 
     // Muat info aplikasi dan periksa pembaruan
     _initPackageInfo();
-
-    // Setup timer untuk memeriksa status maintenance setiap 1 menit
-    _startMaintenanceCheckTimer();
   }
 
   @override
@@ -94,7 +85,6 @@ class _HomePageOneState extends State<HomePageOne>
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _gpsStatusSubscription?.cancel();
-    _maintenanceCheckTimer?.cancel(); // Batalkan timer saat widget dihapus
     super.dispose();
   }
 
@@ -102,7 +92,6 @@ class _HomePageOneState extends State<HomePageOne>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkGPSAndCloseDialog();
-      _checkMaintenanceMode(); // Periksa maintenance mode saat aplikasi di-resume
     }
   }
 
@@ -524,8 +513,6 @@ class _HomePageOneState extends State<HomePageOne>
       await _getCurrentLocation();
       // Refresh riwayat service
       await _loadRecentHistory();
-      // Periksa status maintenance
-      await _checkMaintenanceMode();
       // Data testimoni akan otomatis di-refresh karena menggunakan FutureBuilder
     } catch (e) {
       print('Error refreshing data: $e');
@@ -1417,56 +1404,6 @@ class _HomePageOneState extends State<HomePageOne>
       if (mounted) {
         setState(() {
           _isCheckingUpdate = false;
-        });
-      }
-    }
-  }
-
-  // Fungsi untuk memulai timer pengecekan maintenance
-  void _startMaintenanceCheckTimer() {
-    _maintenanceCheckTimer?.cancel();
-    _maintenanceCheckTimer = Timer.periodic(Duration(minutes: 1), (timer) {
-      _checkMaintenanceMode();
-    });
-
-    // Lakukan pengecekan segera
-    _checkMaintenanceMode();
-  }
-
-  // Fungsi untuk memeriksa status maintenance
-  Future<void> _checkMaintenanceMode() async {
-    if (_isCheckingMaintenance || !mounted) return;
-
-    setState(() {
-      _isCheckingMaintenance = true;
-    });
-
-    try {
-      final isInMaintenanceMode =
-          await MaintenanceService.isInMaintenanceMode(forceCheck: true);
-
-      if (isInMaintenanceMode && mounted) {
-        // Jika dalam maintenance mode, ambil detail dan arahkan ke halaman maintenance
-        final details = await MaintenanceService.getMaintenanceDetails();
-
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => MaintenancePage(
-                title: details['title'],
-                message: details['message'],
-                estimatedCompletion: details['estimatedCompletion'],
-              ),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      print('Error memeriksa status maintenance: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isCheckingMaintenance = false;
         });
       }
     }

@@ -21,6 +21,22 @@ if (flutterRoot == null) {
     throw new FileNotFoundException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
 }
 
+// PANDUAN VERSIONING:
+// versionCode: Integer yang selalu bertambah untuk setiap rilis baru.
+//   - Penting untuk in-app updates agar dapat membandingkan versi
+//   - Harus selalu dinaikkan saat membuat APK baru, baik untuk Play Store atau in-app updates
+//
+// versionName: String yang tampil ke pengguna, menggunakan format Semantic Versioning (MAJOR.MINOR.PATCH)
+//   - MAJOR: perubahan tidak kompatibel dengan versi sebelumnya (breaking changes)
+//   - MINOR: penambahan fitur yang kompatibel dengan versi sebelumnya
+//   - PATCH: perbaikan bug yang kompatibel dengan versi sebelumnya
+//
+// CONTOH PENGGUNAAN:
+// - Rilis awal: versionCode = 1, versionName = "1.0.0"
+// - Perbaikan bug: versionCode = 2, versionName = "1.0.1"
+// - Fitur baru: versionCode = 3, versionName = "1.1.0"
+// - Breaking change: versionCode = 4, versionName = "2.0.0"
+
 def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
 if (flutterVersionCode == null) {
     flutterVersionCode = '1'
@@ -28,7 +44,7 @@ if (flutterVersionCode == null) {
 
 def flutterVersionName = localProperties.getProperty('flutter.versionName')
 if (flutterVersionName == null) {
-    flutterVersionName = '1.0'
+    flutterVersionName = '1.0.0'
 }
 
 android {
