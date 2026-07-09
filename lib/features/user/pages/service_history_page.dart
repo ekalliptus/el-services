@@ -47,6 +47,42 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
   Map<String, Map<String, dynamic>> _serviceCache = {};
   // Tambahkan timer untuk debounce
   Timer? _debounceTimer;
+  // Timer polling & channel realtime — disimpan agar bisa dibatalkan di dispose
+  Timer? _pollTimer;
+  RealtimeChannel? _serviceChannel;
+
+  // Cache future per-service agar FutureBuilder tidak membuat query baru
+  // (dan reset ke loading) setiap kali build dipanggil.
+  final Map<String, Future<Map<String, dynamic>?>> _testimonialFutures = {};
+  final Map<String, Future<Map<String, dynamic>?>> _additionalCostFutures = {};
+  final Map<String, Future<List<Map<String, dynamic>>>> _additionalCostsFutures =
+      {};
+
+  Future<Map<String, dynamic>?> _testimonialFutureFor(String serviceId) {
+    return _testimonialFutures.putIfAbsent(
+      serviceId,
+      () => _supabase
+          .from('testimonials')
+          .select()
+          .eq('service_id', serviceId)
+          .maybeSingle(),
+    );
+  }
+
+  Future<Map<String, dynamic>?> _additionalCostFutureFor(String serviceId) {
+    return _additionalCostFutures.putIfAbsent(
+      serviceId,
+      () => _getAdditionalCost(serviceId),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _additionalCostsFutureFor(
+      String serviceId) {
+    return _additionalCostsFutures.putIfAbsent(
+      serviceId,
+      () => _getAdditionalCosts(serviceId),
+    );
+  }
 
   // Koordinat Service Center
   final serviceCenterPosition = Position(
@@ -78,6 +114,7 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     'model',
     'problem',
     'created_at',
+    'updated_at',
     'complain',
     'device_password',
     'device_password_type',
@@ -121,6 +158,7 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
 
     // Setup direct Supabase channel subscription
     final serviceChannel = _supabase.channel('service_changes');
+    _serviceChannel = serviceChannel;
 
     // Subscribe ke perubahan tabel services
     serviceChannel.subscribe((status, error) {
@@ -132,8 +170,10 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     });
 
     // Set up timer untuk polling updates dalam interval tertentu
-    // (solusi alternatif yang lebih andal daripada mengandalkan realtime saja)
-    Timer.periodic(Duration(seconds: 30), (timer) {
+    // (solusi alternatif yang lebih andal daripada mengandalkan realtime saja).
+    // Disimpan ke _pollTimer agar dibatalkan tepat waktu di dispose.
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(Duration(seconds: 30), (timer) {
       if (mounted) {
         print('Polling for service updates');
         _refreshServicesInBackground();
@@ -252,6 +292,10 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     // Reset pagination
     _currentPage = 0;
     _hasMoreData = true;
+    // Reset cache future per-service agar refresh menampilkan data terbaru
+    _testimonialFutures.clear();
+    _additionalCostFutures.clear();
+    _additionalCostsFutures.clear();
 
     try {
       final user = _firebaseAuth.currentUser;
@@ -397,14 +441,19 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
   void dispose() {
     _realtimeSubscription?.cancel();
     _debounceTimer?.cancel();
-    // Membersihkan subscription yang mungkin masih aktif
-    _supabase.removeAllChannels();
+    _pollTimer?.cancel();
+    // Hapus HANYA channel milik halaman ini, jangan removeAllChannels() yang
+    // akan memutus realtime fitur lain di seluruh aplikasi.
+    if (_serviceChannel != null) {
+      _supabase.removeChannel(_serviceChannel!);
+    }
     super.dispose();
   }
 
   String _formatDate(String? dateStr) {
     if (dateStr == null) return '-';
-    final date = DateTime.parse(dateStr);
+    final date = DateTime.tryParse(dateStr);
+    if (date == null) return dateStr;
     return DateFormat('dd MMM yyyy, HH:mm').format(date);
   }
 
@@ -606,11 +655,7 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
     final hasAdditionalPayment = status == 'ADDITIONAL_PAYMENT';
 
     return FutureBuilder<Map<String, dynamic>?>(
-      future: _supabase
-          .from('testimonials')
-          .select()
-          .eq('service_id', service['id'])
-          .maybeSingle(),
+      future: _testimonialFutureFor(service['id'].toString()),
       builder: (context, snapshot) {
         final hasTestimonial = snapshot.data != null;
 
@@ -734,8 +779,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
 
                           // Tambahkan FutureBuilder untuk mengecek dan menampilkan biaya tambahan
                           FutureBuilder<Map<String, dynamic>?>(
-                            future:
-                                _getAdditionalCost(service['id'].toString()),
+                            future: _additionalCostFutureFor(
+                                service['id'].toString()),
                             builder: (context, snapshot) {
                               if (!snapshot.hasData || snapshot.data == null) {
                                 return SizedBox.shrink();
@@ -1389,6 +1434,7 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
       });
     }).catchError((error) {
       print('Error initializing video: $error');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal memuat video')),
       );
@@ -1398,7 +1444,7 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
   // Widget untuk menampilkan biaya tambahan
   Widget _buildAdditionalCostSection(Map<String, dynamic> service) {
     return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _getAdditionalCosts(service['id'].toString()),
+      future: _additionalCostsFutureFor(service['id'].toString()),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator(strokeWidth: 2));

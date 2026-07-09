@@ -371,43 +371,35 @@ class UpdateService {
   // Dialog global yang dapat diakses di seluruh kelas
   BuildContext? _dialogContext;
   bool _isDialogShowing = false;
+  // Progress unduhan: [progress%, receivedBytes, totalBytes]. Dialog dibuat
+  // sekali; update progress hanya mengubah nilai ini, tidak pop/reshow dialog.
+  final ValueNotifier<List<int>> _downloadProgress =
+      ValueNotifier<List<int>>(const [0, 0, 0]);
 
   // Menampilkan dialog unduhan sebagai dialog global
   void showDownloadDialog(BuildContext context) {
     if (_isDialogShowing) return;
 
     _isDialogShowing = true;
+    _downloadProgress.value = const [0, 0, 0];
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         _dialogContext = dialogContext;
-        return _buildDownloadDialog(0, 0, 0);
+        return ValueListenableBuilder<List<int>>(
+          valueListenable: _downloadProgress,
+          builder: (context, p, _) => _buildDownloadDialog(p[0], p[1], p[2]),
+        );
       },
     );
   }
 
-  // Update progress dialog
+  // Update progress dialog (tanpa membangun ulang dialog)
   void updateDownloadProgress(
       BuildContext context, int progress, int received, int total) {
-    if (!_isDialogShowing || _dialogContext == null) return;
-
-    try {
-      // Update widget secara langsung melalui StatefulBuilder tanpa menutup dialog
-      Navigator.of(_dialogContext!).pop(); // Tutup dialog sebelumnya
-
-      // Buka dialog baru dengan informasi baru
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext dialogContext) {
-          _dialogContext = dialogContext;
-          return _buildDownloadDialog(progress, received, total);
-        },
-      );
-    } catch (e) {
-      print('Error saat update dialog progress: $e');
-    }
+    if (!_isDialogShowing) return;
+    _downloadProgress.value = [progress, received, total];
   }
 
   // Tutup dialog dengan benar

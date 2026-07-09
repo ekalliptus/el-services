@@ -57,6 +57,15 @@ class _ComplaintPageState extends State<ComplaintPage> {
     }
   }
 
+  // Ambil inisial nama secara aman (hindari RangeError pada string kosong).
+  String _initialNama(dynamic customerName, String? displayName) {
+    final c = customerName?.toString().trim() ?? '';
+    if (c.isNotEmpty) return c[0].toUpperCase();
+    final d = displayName?.trim() ?? '';
+    if (d.isNotEmpty) return d[0].toUpperCase();
+    return 'A';
+  }
+
   Widget _buildAvatar(Map<String, dynamic> service, firebase_auth.User? user) {
     return Container(
       width: 48,
@@ -72,8 +81,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
             user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
         child: user?.photoURL == null
             ? Text(
-                (service['customer_name'] ?? user?.displayName ?? 'A')[0]
-                    .toUpperCase(),
+                _initialNama(service['customer_name'], user?.displayName),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -116,6 +124,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             maxHeight: 1080,
                             imageQuality: 85,
                           );
+                          if (!mounted) return;
                           if (image != null) {
                             setState(() {
                               _selectedImage = File(image.path);
@@ -158,6 +167,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             maxHeight: 1080,
                             imageQuality: 85,
                           );
+                          if (!mounted) return;
                           if (image != null) {
                             setState(() {
                               _selectedImage = File(image.path);
@@ -200,6 +210,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
       );
     } catch (e) {
       print('Error picking image: $e');
+      if (!mounted) return;
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
@@ -242,6 +253,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             source: ImageSource.camera,
                             maxDuration: Duration(minutes: 1),
                           );
+                          if (!mounted) return;
                           if (video != null) {
                             setState(() {
                               _selectedVideo = File(video.path);
@@ -283,6 +295,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             source: ImageSource.gallery,
                             maxDuration: Duration(minutes: 1),
                           );
+                          if (!mounted) return;
                           if (video != null) {
                             setState(() {
                               _selectedVideo = File(video.path);
@@ -326,6 +339,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
       );
     } catch (e) {
       print('Error picking video: $e');
+      if (!mounted) return;
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
@@ -339,11 +353,25 @@ class _ComplaintPageState extends State<ComplaintPage> {
     }
   }
 
+  // Hapus objek yang sudah terupload ke storage bila alur komplain gagal,
+  // agar tidak meninggalkan file yatim.
+  Future<void> _cleanupUploads(List<String> fileNames) async {
+    if (fileNames.isEmpty) return;
+    try {
+      await _supabase.storage.from('services').remove(fileNames);
+    } catch (e) {
+      print('Gagal membersihkan media terupload: $e');
+    }
+  }
+
   Future<void> _initializeVideoPlayer() async {
     if (_selectedVideo != null) {
+      // Buang controller sebelumnya bila ada agar tidak bocor saat pengguna
+      // mengganti video tanpa menekan "Hapus Video".
+      await _videoController?.dispose();
       _videoController = VideoPlayerController.file(_selectedVideo!);
       await _videoController!.initialize();
-      setState(() {});
+      if (mounted) setState(() {});
     }
   }
 
@@ -390,6 +418,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
 
       String? imageUrl;
       String? videoUrl;
+      // Lacak objek yang sudah terupload agar bisa dibersihkan bila alur gagal.
+      final List<String> uploadedFiles = [];
 
       // Upload foto jika ada
       if (_selectedImage != null) {
@@ -399,6 +429,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
           await _supabase.storage
               .from('services')
               .upload(fileName, _selectedImage!);
+          uploadedFiles.add(fileName);
           imageUrl = _supabase.storage.from('services').getPublicUrl(fileName);
           print('Foto berhasil diupload: $imageUrl');
         } catch (e) {
@@ -415,28 +446,20 @@ class _ComplaintPageState extends State<ComplaintPage> {
           await _supabase.storage
               .from('services')
               .upload(fileName, _selectedVideo!);
+          uploadedFiles.add(fileName);
           videoUrl = _supabase.storage.from('services').getPublicUrl(fileName);
           print('Video berhasil diupload: $videoUrl');
         } catch (e) {
           print('Error saat upload video: $e');
+          // Bersihkan media yang sudah terlanjur terupload.
+          await _cleanupUploads(uploadedFiles);
           throw Exception('Gagal mengupload video');
         }
       }
 
-      // Update status service
-      try {
-        await _supabase.from('services').update({
-          'status': 'COMPLAINED',
-          'complain': true,
-          'updated_at': DateTime.now().toIso8601String(),
-        }).eq('id', widget.service['id']);
-        print('Status service berhasil diupdate');
-      } catch (e) {
-        print('Error saat update status service: $e');
-        throw Exception('Gagal mengupdate status service');
-      }
-
-      // Insert data komplain
+      // Insert data komplain LEBIH DULU (sumber kebenaran). Status service
+      // baru diubah setelah komplain tersimpan, agar status tidak terlanjur
+      // menjadi COMPLAINED bila insert gagal.
       final complaintData = {
         'service_id': widget.service['id'],
         'user_id': firebaseUser.uid,
@@ -460,6 +483,21 @@ class _ComplaintPageState extends State<ComplaintPage> {
             .select()
             .single();
         print('Komplain berhasil disimpan dengan ID: ${response['id']}');
+
+        // Baru setelah komplain tersimpan, tandai status service.
+        // ponytail: mutasi status ini dipercaya dari client; idealnya
+        // divalidasi kepemilikan via RLS/server (lihat SECURITY-PAYMENT.md).
+        try {
+          await _supabase.from('services').update({
+            'status': 'COMPLAINED',
+            'complain': true,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', widget.service['id']);
+          print('Status service berhasil diupdate');
+        } catch (e) {
+          print('Peringatan: komplain tersimpan tapi gagal update status: $e');
+          // Tidak fatal: komplain sudah tercatat. Jangan gagalkan alur.
+        }
 
         if (!mounted) return;
 
@@ -491,6 +529,8 @@ class _ComplaintPageState extends State<ComplaintPage> {
         ).show();
       } catch (e) {
         print('Error detail saat insert komplain: $e');
+        // Bersihkan media yang sudah terupload agar tidak jadi objek yatim.
+        await _cleanupUploads(uploadedFiles);
         throw Exception('Gagal menyimpan data komplain ke database');
       }
     } catch (e) {
@@ -599,6 +639,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
             ),
           );
 
+          if (!mounted) return;
           if (shouldPop) {
             Navigator.of(context).pop();
           }

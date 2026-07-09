@@ -16,6 +16,10 @@ import 'package:servicehponline/features/admin/dialogs/documentation_preview_dia
     as docPreview;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
+/// Menyimpan id service yang kata sandinya sedang ditampilkan (reveal).
+/// Berupa state sementara sesi UI, bukan data persisten.
+final Set<dynamic> _revealedPasswords = <dynamic>{};
+
 class ServiceCardWidget extends StatelessWidget {
   final Map<String, dynamic> service;
   final Function(String, String) onUpdateStatus;
@@ -196,93 +200,14 @@ class ServiceCardWidget extends StatelessWidget {
                 ],
               ),
 
-              // Selalu cek additional cost dari database dengan FutureBuilder
-              FutureBuilder<List<Map<String, dynamic>>>(
-                future: _getAllAdditionalCosts(service['id'].toString()),
-                builder: (context, snapshot) {
-                  // Tampilkan loading indicator selama cek data
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return SizedBox(
-                      height: 14,
-                      width: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    );
-                  }
-
-                  // Jika tidak ada data tambahan, jangan tampilkan apapun
-                  if (!snapshot.hasData ||
-                      snapshot.data == null ||
-                      snapshot.data!.isEmpty) {
-                    return SizedBox.shrink();
-                  }
-
-                  final additionalCosts = snapshot.data!;
-
-                  // Hitung total biaya tambahan
-                  int totalAdditionalCost = 0;
-                  for (var cost in additionalCosts) {
-                    totalAdditionalCost += (cost['amount'] ?? 0) as int;
-                  }
-
-                  // Jika total biaya tambahan 0, jangan tampilkan
-                  if (totalAdditionalCost <= 0) {
-                    return SizedBox.shrink();
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Tampilkan total biaya tambahan
-                      Row(
-                        children: [
-                          Text(
-                            'Biaya Tambahan: ',
-                            style: GoogleFonts.poppins(
-                              color: Colors.orange[700],
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            currencyFormat.format(totalAdditionalCost),
-                            style: GoogleFonts.poppins(
-                              color: Colors.orange[700],
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          // Tambahkan ikon untuk menampilkan detail
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4.0),
-                            child: InkWell(
-                              child: Icon(
-                                Icons.info_outline,
-                                size: 16,
-                                color: Colors.blue,
-                              ),
-                              onTap: () => _showAdditionalCostsDetail(
-                                  context, additionalCosts),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      // Tampilkan catatan dari biaya tambahan terakhir
-                      if (additionalCosts.first['note'] != null &&
-                          additionalCosts.first['note'].toString().isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2.0),
-                          child: Text(
-                            'Catatan terbaru: ${additionalCosts.first['note']}',
-                            style: GoogleFonts.poppins(
-                              color: Colors.grey[600],
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
-                },
+              // Cek additional cost dari database. Future di-memoize di dalam
+              // _AdditionalCostSummary agar query tidak dijalankan ulang setiap
+              // kali card di-rebuild (search/filter/setState).
+              _AdditionalCostSummary(
+                serviceId: service['id'].toString(),
+                currencyFormat: currencyFormat,
+                loadCosts: _getAllAdditionalCosts,
+                onShowDetail: _showAdditionalCostsDetail,
               ),
             ],
           ],
@@ -357,12 +282,53 @@ class ServiceCardWidget extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
-                  Text(
-                    devicePassword,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                  // Sensitif: kata sandi/pola perangkat pelanggan disamarkan
+                  // secara default dan hanya ditampilkan saat diminta (tap).
+                  StatefulBuilder(
+                    builder: (context, setLocalState) {
+                      bool revealed = _revealedPasswords.contains(service['id']);
+                      final hasValue = devicePassword != '-' &&
+                          devicePassword.toString().isNotEmpty;
+                      return Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              !hasValue
+                                  ? '-'
+                                  : (revealed
+                                      ? devicePassword
+                                      : '•' * devicePassword.toString().length),
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                          if (hasValue)
+                            GestureDetector(
+                              onTap: () {
+                                setLocalState(() {
+                                  if (revealed) {
+                                    _revealedPasswords.remove(service['id']);
+                                  } else {
+                                    _revealedPasswords.add(service['id']);
+                                  }
+                                });
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Icon(
+                                  revealed
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  size: 16,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1423,7 +1389,8 @@ class ServiceCardWidget extends StatelessWidget {
 
   String formatDate(String? dateStr) {
     if (dateStr == null) return '-';
-    final date = DateTime.parse(dateStr);
+    final date = DateTime.tryParse(dateStr);
+    if (date == null) return dateStr;
     return DateFormat('dd MMM yyyy, HH:mm').format(date);
   }
 
@@ -1540,14 +1507,13 @@ class ServiceCardWidget extends StatelessWidget {
       // Hapus cache Supabase terlebih dahulu
       await supabase.auth.refreshSession();
 
-      // Mencoba mendapatkan data dengan query yang berbeda
-      // dan parameter yang memaksa server memperbarui data
-      final cacheBuster = DateTime.now().millisecondsSinceEpoch.toString();
+      // Ambil ulang data service. Tidak ada kolom 'cacheBuster' di tabel
+      // 'services'; filter tersebut membuat query selalu gagal (PostgREST 400),
+      // jadi dihapus. Cache sudah di-refresh via refreshSession() di atas.
       final serviceData = await supabase
           .from('services')
           .select('*, pre_service_docs')
           .eq('id', serviceId)
-          .eq('cacheBuster', cacheBuster) // Parameter tambahan untuk bust cache
           .single();
 
       print(
@@ -1558,10 +1524,9 @@ class ServiceCardWidget extends StatelessWidget {
 
       // Lakukan reload halaman (cara paling efektif)
       if (context.mounted) {
-        // Call memanggil refresh global
-        // Tapi pastikan refresh tidak menampilkan "Mengunggah dokumentasi"
-        // Gunakan metode ini sebagai workaround
-        Navigator.of(context).pop(); // Tutup dialog saat ini jika ada
+        // Dialog/bottom sheet pemanggil sudah ditutup di call site masing-masing,
+        // jadi tidak ada yang perlu di-pop di sini. Memanggil pop() akan menutup
+        // route admin di bawahnya (bug navigasi) — dihilangkan.
         Future.delayed(Duration(milliseconds: 300), () {
           if (context.mounted) {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -1758,5 +1723,130 @@ class ServiceCardWidget extends StatelessWidget {
     } catch (e) {
       return dateString;
     }
+  }
+}
+
+/// Ringkasan biaya tambahan yang me-memoize Future-nya, sehingga query Supabase
+/// tidak dijalankan ulang pada setiap rebuild card (mis. saat search/filter).
+class _AdditionalCostSummary extends StatefulWidget {
+  final String serviceId;
+  final NumberFormat currencyFormat;
+  final Future<List<Map<String, dynamic>>> Function(String serviceId) loadCosts;
+  final void Function(BuildContext, List<Map<String, dynamic>>) onShowDetail;
+
+  const _AdditionalCostSummary({
+    required this.serviceId,
+    required this.currencyFormat,
+    required this.loadCosts,
+    required this.onShowDetail,
+  });
+
+  @override
+  State<_AdditionalCostSummary> createState() => _AdditionalCostSummaryState();
+}
+
+class _AdditionalCostSummaryState extends State<_AdditionalCostSummary> {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.loadCosts(widget.serviceId);
+  }
+
+  @override
+  void didUpdateWidget(_AdditionalCostSummary oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Muat ulang hanya bila service berubah, bukan pada setiap rebuild.
+    if (oldWidget.serviceId != widget.serviceId) {
+      _future = widget.loadCosts(widget.serviceId);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            height: 14,
+            width: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+
+        if (!snapshot.hasData ||
+            snapshot.data == null ||
+            snapshot.data!.isEmpty) {
+          return SizedBox.shrink();
+        }
+
+        final additionalCosts = snapshot.data!;
+
+        // Parsing defensif: Supabase bisa mengembalikan amount sebagai double
+        // atau String, sehingga cast `as int` bisa melempar.
+        int totalAdditionalCost = 0;
+        for (var cost in additionalCosts) {
+          final amt = cost['amount'];
+          totalAdditionalCost +=
+              (amt is num ? amt : num.tryParse('$amt') ?? 0).toInt();
+        }
+
+        if (totalAdditionalCost <= 0) {
+          return SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Biaya Tambahan: ',
+                  style: GoogleFonts.poppins(
+                    color: Colors.orange[700],
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  widget.currencyFormat.format(totalAdditionalCost),
+                  style: GoogleFonts.poppins(
+                    color: Colors.orange[700],
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: InkWell(
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 16,
+                      color: Colors.blue,
+                    ),
+                    onTap: () =>
+                        widget.onShowDetail(context, additionalCosts),
+                  ),
+                ),
+              ],
+            ),
+            if (additionalCosts.first['note'] != null &&
+                additionalCosts.first['note'].toString().isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2.0),
+                child: Text(
+                  'Catatan terbaru: ${additionalCosts.first['note']}',
+                  style: GoogleFonts.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 }

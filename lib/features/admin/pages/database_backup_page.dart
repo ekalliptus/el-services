@@ -36,11 +36,13 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
             .select('*')
             .order('created_at', ascending: false);
 
+        if (!mounted) return;
         setState(() {
           _backupHistory = List<Map<String, dynamic>>.from(response);
         });
       } catch (e) {
         print('Riwayat backup tidak ditemukan: $e');
+        if (!mounted) return;
 
         // Gunakan data sampel jika tidak ada data
         setState(() {
@@ -69,6 +71,7 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memuat riwayat backup: $e'),
@@ -76,28 +79,37 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
+  // ponytail: SIMULASI — belum ada backup nyata. Backup DB harus dijalankan di
+  // sisi server (Edge Function / pg_dump), bukan dari client. Entri di sini
+  // hanya metadata dummy; JANGAN dianggap sebagai jaminan data ter-backup.
+  // Ganti dengan pemanggilan job server-side yang mengembalikan status asli.
+  // Lihat SECURITY-PAYMENT.md.
   Future<void> _createBackup(String name, List<String> tables) async {
     setState(() {
       _isCreatingBackup = true;
     });
 
     try {
-      // Simulasi pembuatan backup (Karena ini memerlukan akses langsung ke database yang tidak tersedia via API)
+      // Simulasi pembuatan backup (memerlukan akses langsung ke database yang
+      // tidak tersedia via API client).
       await Future.delayed(Duration(seconds: 3));
 
-      // Tambahkan entri baru di riwayat backup
+      // Tambahkan entri baru di riwayat backup. Status ditandai 'simulated'
+      // agar tidak menyiratkan backup benar-benar terjadi.
       final newBackup = {
         'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'name': name,
         'created_at': DateTime.now().toIso8601String(),
         'size': 2500000 + (DateTime.now().millisecondsSinceEpoch % 1000000),
-        'status': 'success',
+        'status': 'simulated',
         'tables': tables,
         'created_by':
             SupabaseConfig.client.auth.currentUser?.email ?? 'super_admin',
@@ -111,6 +123,7 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
         // Tetap lanjutkan meskipun gagal menyimpan ke database
       }
 
+      if (!mounted) return;
       // Update tampilan
       setState(() {
         _backupHistory.insert(0, newBackup);
@@ -118,11 +131,13 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Backup berhasil dibuat'),
-          backgroundColor: Colors.green,
+          content: Text(
+              'Catatan backup dibuat (simulasi — belum ada backup data nyata)'),
+          backgroundColor: Colors.orange,
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal membuat backup: $e'),
@@ -130,9 +145,11 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isCreatingBackup = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isCreatingBackup = false;
+        });
+      }
     }
   }
 
@@ -228,13 +245,17 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
           );
         },
       ),
-    );
+    ).whenComplete(nameController.dispose);
   }
 
   Future<void> _showBackupDetails(Map<String, dynamic> backup) async {
     final tables = backup['tables'] is List
         ? List<String>.from(backup['tables'])
         : <String>[];
+    final sizeMb = ((backup['size'] as num?) ?? 0) / 1000000;
+    final createdAt =
+        DateTime.tryParse(backup['created_at']?.toString() ?? '') ??
+            DateTime.now();
 
     return showDialog(
       context: context,
@@ -246,10 +267,9 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildDetailRow('Nama:', backup['name'] ?? 'Tanpa Nama'),
-              _buildDetailRow('Tanggal:',
-                  _dateFormat.format(DateTime.parse(backup['created_at']))),
-              _buildDetailRow('Ukuran:',
-                  '${(backup['size'] / 1000000).toStringAsFixed(2)} MB'),
+              _buildDetailRow('Tanggal:', _dateFormat.format(createdAt)),
+              _buildDetailRow(
+                  'Ukuran:', '${sizeMb.toStringAsFixed(2)} MB'),
               _buildDetailRow('Status:', backup['status'] ?? 'unknown'),
               _buildDetailRow(
                   'Dibuat oleh:', backup['created_by'] ?? 'unknown'),
@@ -310,6 +330,7 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Tidak dapat membuka URL Supabase Dashboard'),
@@ -406,7 +427,7 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
           );
         },
       ),
-    );
+    ).whenComplete(timeController.dispose);
   }
 
   Widget _buildDetailRow(String label, String value) {
@@ -573,8 +594,12 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
                               itemCount: _backupHistory.length,
                               itemBuilder: (context, index) {
                                 final backup = _backupHistory[index];
-                                final createdAt =
-                                    DateTime.parse(backup['created_at']);
+                                final createdAt = DateTime.tryParse(
+                                        backup['created_at']?.toString() ??
+                                            '') ??
+                                    DateTime.now();
+                                final sizeMb =
+                                    ((backup['size'] as num?) ?? 0) / 1000000;
                                 final isSuccess = backup['status'] == 'success';
 
                                 return Card(
@@ -595,7 +620,7 @@ class _DatabaseBackupPageState extends State<DatabaseBackupPage> {
                                     title: Text(backup['name'] ??
                                         'Backup ${index + 1}'),
                                     subtitle: Text(
-                                      '${_dateFormat.format(createdAt)} • ${(backup['size'] / 1000000).toStringAsFixed(2)} MB',
+                                      '${_dateFormat.format(createdAt)} • ${sizeMb.toStringAsFixed(2)} MB',
                                     ),
                                     trailing: IconButton(
                                       icon: Icon(Icons.more_vert),

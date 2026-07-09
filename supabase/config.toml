@@ -1,0 +1,15 @@
+project_id = "servicehponline"
+
+# create-invoice memverifikasi Firebase ID token sendiri (bukan JWT Supabase),
+# jadi verifikasi JWT bawaan dimatikan; auth ditangani di dalam fungsi.
+[functions.create-invoice]
+verify_jwt = false
+
+# Dipanggil oleh Xendit (server-to-server) tanpa JWT Supabase; keamanan via
+# header x-callback-token.
+[functions.xendit-webhook]
+verify_jwt = false
+
+# Memverifikasi Firebase ID token sendiri; mengembalikan Supabase access token.
+[functions.firebase-bridge]
+verify_jwt = false

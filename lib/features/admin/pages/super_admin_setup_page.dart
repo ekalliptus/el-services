@@ -45,6 +45,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
               .eq('role', 'super_admin')
               .maybeSingle();
 
+          if (!mounted) return;
           setState(() {
             _superAdminCreated = response != null;
           });
@@ -71,6 +72,11 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
 
     try {
       // 1. Buat user baru di Supabase Auth
+      // ponytail: role 'super_admin' ditulis dari client dengan anon key —
+      // rawan privilege escalation. Perlu proteksi server-side/RLS (buat lewat
+      // Edge Function service_role + validasi bootstrap secret). Lihat
+      // SECURITY-PAYMENT.md. Selain itu signUp() dapat menggantikan sesi login
+      // aktif dengan akun baru.
       final response = await SupabaseConfig.client.auth.signUp(
         email: _emailController.text,
         password: _passwordController.text,
@@ -112,6 +118,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
               'updated_at': DateTime.now().toIso8601String(),
             });
 
+            if (!mounted) return;
             setState(() {
               _superAdminCreated = true;
             });
@@ -119,6 +126,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                 'Super admin berhasil ditambahkan setelah menambah kolom role');
           } catch (alterError) {
             print('Gagal menambahkan kolom role: $alterError');
+            if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(
                   'Tabel admins tidak memiliki kolom role. Silakan tambahkan kolom secara manual di dashboard Supabase.'),
@@ -130,6 +138,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
         }
       }
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Akun Super Admin berhasil dibuat!'),
@@ -138,6 +147,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
       );
     } catch (e) {
       print('Error membuat super admin: $e');
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
       });
@@ -149,9 +159,11 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -160,6 +172,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Tidak dapat membuka URL: $url')),
       );
@@ -168,6 +181,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
 
   Future<void> _copyToClipboard(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Disalin ke clipboard')),
     );

@@ -89,6 +89,18 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
     }
   }
 
+  // Ambil inisial nama secara aman (hindari RangeError pada string kosong/null).
+  String _initialFrom(dynamic name) {
+    final s = name?.toString().trim() ?? '';
+    return s.isNotEmpty ? s[0].toUpperCase() : '?';
+  }
+
+  // Format tanggal secara defensif; kembalikan '-' bila null/format salah.
+  String _formatTanggal(dynamic value) {
+    final ts = DateTime.tryParse(value?.toString() ?? '');
+    return ts == null ? '-' : DateFormat('dd MMM yyyy').format(ts);
+  }
+
   Widget _buildAvatar(Map<String, dynamic> testimonial) {
     return Container(
       width: 48,
@@ -110,7 +122,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
             : null,
         child: testimonial['photo_url'] == null
             ? Text(
-                testimonial['fullname'][0].toUpperCase(),
+                _initialFrom(testimonial['fullname']),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -188,7 +200,8 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    testimonial['fullname'],
+                                    testimonial['fullname']?.toString() ??
+                                        'Anonim',
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -208,9 +221,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                             ),
                             SizedBox(width: 8),
                             Text(
-                              DateFormat('dd MMM yyyy').format(
-                                DateTime.parse(testimonial['created_at']),
-                              ),
+                              _formatTanggal(testimonial['created_at']),
                               style: GoogleFonts.poppins(
                                 color: Colors.grey[600],
                                 fontSize: 12,
@@ -234,7 +245,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          testimonial['content'],
+                          testimonial['content']?.toString() ?? '',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             height: 1.5,

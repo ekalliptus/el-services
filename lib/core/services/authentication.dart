@@ -41,10 +41,23 @@ class Authentication {
     try {
       print('Starting complete logout process...');
 
-      // 1. Hapus data sesi dari SharedPreferences
+      // 1. Hapus HANYA data sesi dari SharedPreferences.
+      // Jangan pakai prefs.clear() karena itu menghapus preferensi durable
+      // (mis. flag onboarding, info versi update) yang tidak terkait sesi.
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear(); // Hapus semua data
-      print('SharedPreferences cleared');
+      const sessionKeys = [
+        'admin_logged_in',
+        'admin_session',
+        'profile_complete',
+        'admin_filter_start_date',
+        'admin_filter_end_date',
+        'admin_sort_field',
+        'admin_sort_ascending',
+      ];
+      for (final key in sessionKeys) {
+        await prefs.remove(key);
+      }
+      print('Session keys cleared from SharedPreferences');
 
       // 2. Jika menggunakan Supabase, logout dari Supabase
       try {

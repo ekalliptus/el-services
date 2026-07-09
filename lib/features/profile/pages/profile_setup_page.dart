@@ -157,6 +157,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
 
                 // Jalankan deteksi lokasi
                 await Future.delayed(Duration(milliseconds: 500));
+                if (!mounted) return;
                 _detectLocation();
 
                 // Hentikan timer setelah berhasil menutup dialog
@@ -197,6 +198,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
 
             // Tunggu sebentar, lalu jalankan deteksi lokasi
             await Future.delayed(Duration(milliseconds: 500));
+            if (!mounted) return;
             _detectLocation();
           } catch (e) {
             print('Error closing GPS dialog: $e');
@@ -224,6 +226,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
           .select()
           .eq('id', user.uid)
           .maybeSingle();
+
+      if (!mounted) return;
 
       print('Data profil dari Supabase:');
       if (profileData != null) {
@@ -268,6 +272,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       }
     } catch (e) {
       print('Error loading profile data: $e');
+      if (!mounted) return;
       // Set nama dari akun Google jika tersedia
       setState(() {
         _nameController.text = user.displayName ?? '';
@@ -277,7 +282,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         _updateProgress();
       });
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -329,6 +334,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
     try {
       // Cek apakah layanan lokasi aktif
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
       if (!serviceEnabled) {
         setState(() => _isLocationLoading = false);
         setState(() => _isGpsEnabled = false);
@@ -340,8 +346,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
 
       // Cek izin lokasi
       LocationPermission permission = await Geolocator.checkPermission();
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
+        if (!mounted) return;
         if (permission == LocationPermission.denied) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Izin lokasi ditolak')),
@@ -361,6 +369,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      if (!mounted) return;
 
       // Dapatkan alamat dari koordinat dengan prioritas mendapatkan nama jalan
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -369,6 +378,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         localeIdentifier:
             'id_ID', // Gunakan locale Indonesia untuk format alamat yang sesuai
       );
+      if (!mounted) return;
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
@@ -498,11 +508,12 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       }
     } catch (e) {
       print('Error detecting location: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal mendeteksi lokasi: $e')),
       );
     } finally {
-      setState(() => _isLocationLoading = false);
+      if (mounted) setState(() => _isLocationLoading = false);
     }
   }
 
@@ -523,6 +534,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         return WillPopScope(
           onWillPop: () async {
             bool isEnabled = await Geolocator.isLocationServiceEnabled();
+            if (!mounted) return false;
             if (isEnabled) {
               setState(() => _isGpsEnabled = true);
               _gpsDialogContext = null;
@@ -696,7 +708,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       if (user == null) throw Exception('User tidak terautentikasi');
 
       // Gunakan alamat detail sebagai alamat utama
-      _addressController.text.trim();
       String addressDetail = _addressDetailController.text.trim();
       // Pastikan catatan alamat tidak null
       String addressNote = _addressNoteController.text.trim();

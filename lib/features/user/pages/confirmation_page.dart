@@ -79,6 +79,10 @@ class _ConfirmationPageState extends State<ConfirmationPage>
         'longitude': widget.service.longitude,
         'status': 'PENDING',
         'created_at': DateTime.now().toIso8601String(),
+        // ponytail: rahasia kunci perangkat masih disimpan plaintext.
+        // Idealnya dienkripsi at-rest dengan kunci di sisi server + RLS ketat,
+        // dan ditampilkan hanya lewat akses admin yang diaudit.
+        // Lihat SECURITY-PAYMENT.md. (upgrade saat backend/KMS tersedia)
         'device_password': widget.service.devicePassword,
         'device_password_type': widget.service.devicePasswordType,
         'address_note': widget.service.addressNote,
@@ -280,7 +284,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              PageIndicator(currentPage: 3, darkMode: false),
+                              PageIndicator(currentPage: 2, darkMode: false),
                               SizedBox(height: 20.0),
                               Text(
                                 "Konfirmasi",

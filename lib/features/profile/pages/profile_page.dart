@@ -124,6 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
           // Reload data untuk verifikasi bahwa semua berhasil disimpan
           Future.delayed(Duration(milliseconds: 500), () {
+            if (!mounted) return;
             _loadProfileData();
           });
 
@@ -169,6 +170,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfileData() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final profileData = await _supabase
@@ -176,6 +178,8 @@ class _ProfilePageState extends State<ProfilePage> {
           .select()
           .eq('id', widget.user.uid)
           .maybeSingle();
+
+      if (!mounted) return;
 
       // Log data yang diambil untuk debugging
       print('------------ LOADED PROFILE DATA ------------');

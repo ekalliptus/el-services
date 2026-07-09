@@ -352,7 +352,7 @@ class AdminTheme {
   );
 
   /// Tema untuk Card
-  static final CardTheme _cardTheme = CardTheme(
+  static final CardThemeData _cardTheme = CardThemeData(
     color: _lightColorScheme.surface,
     elevation: AdminDesignTokens.elevationSm,
     margin: EdgeInsets.all(AdminDesignTokens.spacingSm),
@@ -362,7 +362,7 @@ class AdminTheme {
   );
 
   /// Tema untuk Card pada tema gelap
-  static final CardTheme _cardThemeDark = CardTheme(
+  static final CardThemeData _cardThemeDark = CardThemeData(
     color: _darkColorScheme.surfaceContainerHighest,
     elevation: AdminDesignTokens.elevationSm,
     margin: EdgeInsets.all(AdminDesignTokens.spacingSm),

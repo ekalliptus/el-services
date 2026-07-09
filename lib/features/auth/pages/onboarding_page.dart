@@ -179,6 +179,13 @@ class _OnboardingPageState extends State<OnboardingPage>
 
     LocationPermission permission = await Geolocator.checkPermission();
 
+    // Jika izin sudah ditolak permanen sejak awal, tampilkan opsi lanjut
+    // tanpa lokasi (jangan diam tanpa melakukan apa pun).
+    if (permission == LocationPermission.deniedForever) {
+      setState(() => _isPermanentlyDenied = true);
+      return;
+    }
+
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
 
@@ -217,6 +224,8 @@ class _OnboardingPageState extends State<OnboardingPage>
   void _continueWithoutLocation() async {
     // Tandai onboarding selesai
     await _markOnboardingComplete();
+
+    if (!mounted) return;
 
     // Navigasi ke halaman pengaturan profil
     _navigateToProfileSetup();

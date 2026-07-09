@@ -8,13 +8,22 @@ class RealtimeService {
 
   Stream<Map<String, dynamic>> get stream => _streamController.stream;
 
-  void setupRealtimeSubscriptions() {
+  /// Menambahkan event ke stream hanya bila controller belum ditutup,
+  /// mencegah StateError bila callback realtime datang setelah dispose().
+  void _safeAdd(Map<String, dynamic> event) {
+    if (!_streamController.isClosed) {
+      _streamController.add(event);
+    }
+  }
+
+  Future<void> setupRealtimeSubscriptions() async {
     final currentUser = _supabase.auth.currentUser;
     if (currentUser == null) return;
 
-    // Unsubscribe dari channel yang ada
+    // Hapus channel yang ada dari client (bukan sekadar unsubscribe) agar
+    // tidak ada langganan duplikat saat setup dipanggil ulang.
     for (var channel in _activeChannels) {
-      channel.unsubscribe();
+      await _supabase.removeChannel(channel);
     }
     _activeChannels.clear();
 
@@ -30,9 +39,12 @@ class RealtimeService {
             print('Old record: ${payload.oldRecord}');
             print('New record: ${payload.newRecord}');
 
-            // Kirim update hanya jika status berubah
+            // Kirim update hanya jika status berubah.
+            // Catatan: oldRecord hanya terisi penuh bila tabel services diset
+            // REPLICA IDENTITY FULL; jika tidak, oldRecord['status'] bernilai
+            // null dan kondisi ini selalu terpenuhi (lihat SECURITY-PAYMENT.md).
             if (payload.oldRecord['status'] != payload.newRecord['status']) {
-              _streamController.add({
+              _safeAdd({
                 'type': 'service_update',
                 'data': payload.newRecord,
                 'old_data': payload.oldRecord,
@@ -54,7 +66,7 @@ class RealtimeService {
           schema: 'public',
           table: 'testimonials',
           callback: (payload) {
-            _streamController.add({
+            _safeAdd({
               'type': 'testimonial_update',
               'data': payload.newRecord,
               'event': payload.eventType,
@@ -74,7 +86,7 @@ class RealtimeService {
           schema: 'public',
           table: 'complaints',
           callback: (payload) {
-            _streamController.add({
+            _safeAdd({
               'type': 'complaint_update',
               'data': payload.newRecord,
               'event': payload.eventType,
@@ -90,12 +102,15 @@ class RealtimeService {
         'Realtime subscriptions setup completed for ${_activeChannels.length} channels');
   }
 
-  void dispose() {
-    // Unsubscribe dari semua channel
+  Future<void> dispose() async {
+    // Hapus semua channel dari client terlebih dahulu (dan tunggu selesai)
+    // agar tidak ada callback yang menembak controller setelah ditutup.
     for (var channel in _activeChannels) {
-      channel.unsubscribe();
+      await _supabase.removeChannel(channel);
     }
     _activeChannels.clear();
-    _streamController.close();
+    if (!_streamController.isClosed) {
+      await _streamController.close();
+    }
   }
 }

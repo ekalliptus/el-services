@@ -14,7 +14,6 @@ import 'package:servicehponline/features/user/pages/service_history_page.dart';
 import 'package:servicehponline/features/admin/admin_dashboard.dart';
 import 'package:servicehponline/features/admin/pages/super_admin_dashboard.dart';
 import 'package:servicehponline/core/constants/constants.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:provider/provider.dart';
 import 'package:servicehponline/core/services/realtime_service.dart';
@@ -28,10 +27,10 @@ import 'package:servicehponline/features/maintenance/maintenance_page.dart';
 bool hasCompletedOnboarding = false;
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   try {
-    WidgetsFlutterBinding.ensureInitialized();
     await Firebase.initializeApp();
-    await dotenv.load(fileName: ".env");
 
     // Inisialisasi Supabase
     print('Initializing Supabase...');
@@ -43,9 +42,49 @@ void main() async {
     hasCompletedOnboarding = prefs.getBool('has_completed_onboarding') ?? false;
 
     runApp(const MyApp());
-  } catch (e) {
-    print('Error initializing app: $e');
-    // Tampilkan error ke user atau handle sesuai kebutuhan
+  } catch (e, stack) {
+    // Kegagalan init kritikal: tetap tampilkan UI (jangan hang di splash).
+    print('Error initializing app: $e\n$stack');
+    runApp(_StartupErrorApp(error: e.toString()));
+  }
+}
+
+/// UI minimal saat inisialisasi gagal, agar aplikasi tidak menggantung di
+/// splash screen kosong.
+class _StartupErrorApp extends StatelessWidget {
+  final String error;
+  const _StartupErrorApp({required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                const Text(
+                  'Gagal memulai aplikasi',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Silakan tutup dan buka kembali aplikasi. '
+                  'Jika masalah berlanjut, hubungi dukungan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -215,26 +254,33 @@ class _MyAppState extends State<MyApp> {
                         return const OnboardingPage();
                       }
 
-                      // Cek apakah profile sudah lengkap
-                      final prefs = SharedPreferences.getInstance();
-                      prefs.then((pref) {
-                        bool isProfileComplete =
-                            pref.getBool('profile_complete') ?? false;
-                        if (!isProfileComplete) {
-                          // Arahkan ke halaman setup profil
-                          Future.microtask(() {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const ProfileSetupPage(isFirstTime: true),
-                              ),
+                      // Cek kelengkapan profil TANPA navigasi imperatif di
+                      // dalam build(): kembalikan halaman yang sesuai langsung
+                      // dari hasil FutureBuilder.
+                      return FutureBuilder<SharedPreferences>(
+                        future: SharedPreferences.getInstance(),
+                        builder: (context, prefSnapshot) {
+                          if (prefSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Scaffold(
+                              body:
+                                  Center(child: CircularProgressIndicator()),
                             );
-                          });
-                        }
-                      });
+                          }
 
-                      return RequestServiceFlow(
-                          username: state.user.displayName ?? '');
+                          final isProfileComplete = prefSnapshot
+                                  .data
+                                  ?.getBool('profile_complete') ??
+                              false;
+
+                          if (!isProfileComplete) {
+                            return const ProfileSetupPage(isFirstTime: true);
+                          }
+
+                          return RequestServiceFlow(
+                              username: state.user.displayName ?? '');
+                        },
+                      );
                     }
 
                     // Jika belum login, arahkan ke halaman login

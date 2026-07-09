@@ -28,6 +28,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
     super.initState();
     // Inisialisasi data locale untuk bahasa Indonesia
     initializeDateFormatting('id_ID', null).then((_) {
+      if (!mounted) return;
       _checkMaintenanceStatus();
     });
   }
@@ -48,10 +49,12 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       // Periksa apakah tabel settings ada
       try {
         await MaintenanceService.ensureSettingsTableExists();
+        if (!mounted) return;
         setState(() {
           _isTableExists = true;
         });
       } catch (e) {
+        if (!mounted) return;
         setState(() {
           _isTableExists = false;
         });
@@ -77,11 +80,13 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
         _estimatedCompletion = DateTime.now().add(Duration(hours: 1));
       }
 
+      if (!mounted) return;
       setState(() {
         _isInMaintenanceMode = isInMaintenance;
       });
     } catch (e) {
       print('Error memeriksa status maintenance: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Terjadi kesalahan: $e'),
@@ -89,9 +94,11 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -112,7 +119,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
         // Nonaktifkan mode maintenance
         success = await MaintenanceService.disableMaintenanceMode();
 
-        if (success) {
+        if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Mode maintenance dinonaktifkan'),
@@ -128,7 +135,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
           estimatedCompletion: _estimatedCompletion,
         );
 
-        if (success) {
+        if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Mode maintenance diaktifkan'),
@@ -143,6 +150,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       }
     } catch (e) {
       print('Error mengubah status maintenance: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Terjadi kesalahan: $e'),
@@ -150,9 +158,11 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isUpdating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
     }
   }
 
@@ -172,7 +182,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
         estimatedCompletion: _estimatedCompletion,
       );
 
-      if (success) {
+      if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Detail maintenance berhasil diperbarui'),
@@ -184,6 +194,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       }
     } catch (e) {
       print('Error memperbarui detail maintenance: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Terjadi kesalahan: $e'),
@@ -191,9 +202,11 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isUpdating = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isUpdating = false;
+        });
+      }
     }
   }
 
@@ -210,7 +223,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       locale: Locale('id', 'ID'),
     );
 
-    if (selectedDate == null) return;
+    if (selectedDate == null || !mounted) return;
 
     // Pilih waktu
     final selectedTime = await showTimePicker(
@@ -218,7 +231,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       initialTime: TimeOfDay.fromDateTime(currentDate),
     );
 
-    if (selectedTime == null) return;
+    if (selectedTime == null || !mounted) return;
 
     setState(() {
       _estimatedCompletion = DateTime(

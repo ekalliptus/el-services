@@ -28,7 +28,7 @@ dependencies:
   image_picker: ^1.0.5
   http: ^1.1.2
   provider: ^6.1.1
-  intl: ^0.19.0
+  intl: ^0.20.2
   geolocator: ^10.1.0
   geocoding: ^2.1.1
   flutter_dotenv: ^5.1.0
@@ -55,6 +55,7 @@ dependencies:
   dio: ^5.4.0
   open_filex: ^4.3.4
   file_selector: ^0.9.5
+  flutter_secure_storage: ^9.2.2
 
 dev_dependencies:
   flutter_test:
@@ -72,7 +73,6 @@ flutter:
     - assets/svg/login/facebook.svg
     - assets/svg/login/google.svg
     - assets/svg/login/whatsapp_login.svg
-    - .env
 
 flutter_launcher_icons:
   android: "launcher_icon"

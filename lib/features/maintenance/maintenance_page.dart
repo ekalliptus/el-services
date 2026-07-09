@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:async';
 import 'package:servicehponline/features/maintenance/maintenance_service.dart';
-import 'package:servicehponline/features/user/widgets/request_service_flow_widget.dart';
 
 class MaintenancePage extends StatefulWidget {
   final String title;
@@ -138,17 +137,13 @@ class _MaintenancePageState extends State<MaintenancePage> {
     }
   }
 
-  // Navigasi kembali ke halaman utama
+  // Navigasi kembali ke halaman utama melalui root route agar alur auth
+  // (AuthBloc + pengecekan onboarding/profil di main.dart) berjalan kembali
+  // dan username yang benar dipakai — bukan hardcode 'User'.
   void _returnToHomePage() {
     if (!mounted) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => RequestServiceFlow(
-          username: 'User', // Default username jika tidak tersedia
-        ),
-      ),
-    );
+    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
   }
 
   @override

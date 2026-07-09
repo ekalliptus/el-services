@@ -57,15 +57,18 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       }
     } catch (e) {
       print('Error mendapatkan data admin: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Terjadi kesalahan saat memuat data: $e'),
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -85,6 +88,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
       }
     } catch (e) {
       print('Error saat logout: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal logout: $e'),

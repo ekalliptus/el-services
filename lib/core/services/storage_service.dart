@@ -11,10 +11,10 @@ class StorageService {
   static const int maxImageSize = 2 * 1024 * 1024; // 2MB
   static const int maxVideoSize = 3 * 1024 * 1024; // 3MB
 
+  // Batas jumlah pass kompresi agar tidak terjadi rekursi tak terbatas.
+  static const int _maxCompressPasses = 4;
+
   Future<File?> _compressImage(File imageFile) async {
-    final dir = await getTemporaryDirectory();
-    final targetPath =
-        path.join(dir.path, 'compressed_${path.basename(imageFile.path)}');
     final fileSize = await imageFile.length();
 
     if (fileSize <= maxImageSize) {
@@ -22,32 +22,61 @@ class StorageService {
     }
 
     try {
-      final quality = (maxImageSize / fileSize * 100).round();
-      final result = await FlutterImageCompress.compressAndGetFile(
-        imageFile.path,
-        targetPath,
-        quality: quality.clamp(1, 100),
-        format: CompressFormat.jpeg,
-      );
+      final dir = await getTemporaryDirectory();
+      File source = imageFile;
 
-      if (result == null) {
-        throw Exception('Kompresi gambar gagal');
+      // Kualitas awal dihitung dari rasio ukuran, lalu diturunkan secara
+      // monoton tiap pass. Loop dibatasi _maxCompressPasses agar konvergen.
+      int quality =
+          (maxImageSize / fileSize * 100).round().clamp(1, 90);
+
+      File? lastResult;
+      for (int pass = 0; pass < _maxCompressPasses; pass++) {
+        final targetPath = path.join(
+          dir.path,
+          'compressed_${pass}_${path.basename(imageFile.path)}',
+        );
+
+        final result = await FlutterImageCompress.compressAndGetFile(
+          source.path,
+          targetPath,
+          quality: quality.clamp(1, 100),
+          format: CompressFormat.jpeg,
+        );
+
+        if (result == null) {
+          throw Exception('Kompresi gambar gagal');
+        }
+
+        final compressedFile = File(result.path);
+        lastResult = compressedFile;
+
+        if (await compressedFile.length() <= maxImageSize) {
+          return compressedFile;
+        }
+
+        // Masih terlalu besar: turunkan kualitas untuk pass berikutnya.
+        source = compressedFile;
+        quality = (quality * 0.6).round().clamp(1, 100);
       }
 
-      // Konversi XFile ke File
-      final compressedFile = File(result.path);
-
-      // Jika masih terlalu besar, kompres lagi dengan kualitas lebih rendah
-      if (await compressedFile.length() > maxImageSize) {
-        return await _compressImage(compressedFile);
-      }
-
-      return compressedFile;
+      // Setelah batas pass tercapai, kembalikan hasil terbaik yang ada.
+      // Validasi ukuran akhir dilakukan di pemanggil (uploadImage).
+      return lastResult;
     } catch (e) {
       print('Error compressing image: $e');
       return null;
     }
   }
+
+  // Daftar kualitas menurun untuk mencoba mengecilkan video secara bertahap.
+  // Dipakai sebagai batas iterasi agar tidak terjadi rekursi/re-encode tanpa
+  // henti pada kualitas yang sama.
+  static const List<VideoQuality> _videoQualityLadder = [
+    VideoQuality.MediumQuality,
+    VideoQuality.LowQuality,
+    VideoQuality.Res640x480Quality,
+  ];
 
   Future<File?> _compressVideo(File videoFile) async {
     final fileSize = await videoFile.length();
@@ -57,23 +86,34 @@ class StorageService {
     }
 
     try {
-      final MediaInfo? mediaInfo = await VideoCompress.compressVideo(
-        videoFile.path,
-        quality: VideoQuality.LowQuality,
-        deleteOrigin: false,
-        includeAudio: true,
-      );
+      File source = videoFile;
+      File? lastResult;
 
-      if (mediaInfo?.file == null) {
-        throw Exception('Kompresi video gagal');
+      // Coba tiap tingkat kualitas (menurun) satu kali. Berhenti begitu hasil
+      // sudah di bawah batas ukuran; jika tidak, kembalikan hasil terkecil
+      // terakhir (validasi ukuran final dilakukan di uploadVideo).
+      for (final quality in _videoQualityLadder) {
+        final MediaInfo? mediaInfo = await VideoCompress.compressVideo(
+          source.path,
+          quality: quality,
+          deleteOrigin: false,
+          includeAudio: true,
+        );
+
+        if (mediaInfo?.file == null) {
+          throw Exception('Kompresi video gagal');
+        }
+
+        lastResult = mediaInfo!.file;
+
+        if (await lastResult!.length() <= maxVideoSize) {
+          return lastResult;
+        }
+
+        source = lastResult;
       }
 
-      // Jika masih terlalu besar, kompres lagi dengan kualitas lebih rendah
-      if (await mediaInfo!.file!.length() > maxVideoSize) {
-        return await _compressVideo(mediaInfo.file!);
-      }
-
-      return mediaInfo.file;
+      return lastResult;
     } catch (e) {
       print('Error compressing video: $e');
       return null;
@@ -169,6 +209,11 @@ class StorageService {
       return videoUrl;
     } catch (e) {
       print('Error uploading video: $e');
+      // Bersihkan cache VideoCompress juga di jalur gagal agar file temporary
+      // hasil kompresi tidak menumpuk dan menekan penyimpanan perangkat.
+      try {
+        await VideoCompress.deleteAllCache();
+      } catch (_) {}
       return null;
     }
   }

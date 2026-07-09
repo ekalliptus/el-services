@@ -6,6 +6,9 @@ import 'dart:async';
 mixin GPSMixin<T extends StatefulWidget> on State<T>, WidgetsBindingObserver {
   bool _isGpsEnabled = false;
   BuildContext? _dialogContext;
+  // Guard sinkron: di-set true SEBELUM showDialog agar dua pemanggil hampir
+  // bersamaan tidak sama-sama membuka dialog GPS (dialog dobel).
+  bool _isGpsDialogShowing = false;
   StreamSubscription<ServiceStatus>? _gpsStatusSubscription;
 
   bool get isGpsEnabled => _isGpsEnabled;
@@ -13,6 +16,8 @@ mixin GPSMixin<T extends StatefulWidget> on State<T>, WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    // Daftarkan observer siklus hidup agar didChangeAppLifecycleState aktif.
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupGpsListener();
       _checkGPSAndCloseDialog();
@@ -21,6 +26,7 @@ mixin GPSMixin<T extends StatefulWidget> on State<T>, WidgetsBindingObserver {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _gpsStatusSubscription?.cancel();
     super.dispose();
   }
@@ -74,7 +80,10 @@ mixin GPSMixin<T extends StatefulWidget> on State<T>, WidgetsBindingObserver {
   }
 
   void _showGpsDialog() {
-    if (!mounted || _dialogContext != null) return;
+    // Guard sinkron: cegah dua dialog terbuka bersamaan. _dialogContext baru
+    // terisi pada frame berikutnya, sehingga tidak cukup sebagai penjaga.
+    if (!mounted || _isGpsDialogShowing || _dialogContext != null) return;
+    _isGpsDialogShowing = true;
 
     showDialog(
       context: context,
@@ -160,6 +169,7 @@ mixin GPSMixin<T extends StatefulWidget> on State<T>, WidgetsBindingObserver {
       },
     ).then((_) {
       _dialogContext = null;
+      _isGpsDialogShowing = false;
     });
   }
 }
