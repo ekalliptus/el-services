@@ -460,8 +460,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
         // Filter berdasarkan tanggal
         if (_startDate != null && _endDate != null) {
-          final serviceDate = DateTime.parse(service['created_at']);
-          matchesDate = serviceDate.isAfter(_startDate!) &&
+          final serviceDate = DateTime.tryParse(service['created_at'] ?? '');
+          matchesDate = serviceDate != null &&
+              serviceDate.isAfter(_startDate!) &&
               serviceDate.isBefore(_endDate!.add(Duration(days: 1)));
         }
 

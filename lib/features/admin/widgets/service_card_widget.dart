@@ -1389,7 +1389,8 @@ class ServiceCardWidget extends StatelessWidget {
 
   String formatDate(String? dateStr) {
     if (dateStr == null) return '-';
-    final date = DateTime.parse(dateStr);
+    final date = DateTime.tryParse(dateStr);
+    if (date == null) return dateStr;
     return DateFormat('dd MMM yyyy, HH:mm').format(date);
   }
 
