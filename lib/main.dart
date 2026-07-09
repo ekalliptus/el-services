@@ -14,7 +14,6 @@ import 'package:servicehponline/features/user/pages/service_history_page.dart';
 import 'package:servicehponline/features/admin/admin_dashboard.dart';
 import 'package:servicehponline/features/admin/pages/super_admin_dashboard.dart';
 import 'package:servicehponline/core/constants/constants.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:provider/provider.dart';
 import 'package:servicehponline/core/services/realtime_service.dart';
@@ -29,14 +28,6 @@ bool hasCompletedOnboarding = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // .env bersifat opsional (mis. build tanpa asset .env). Jangan sampai
-  // kegagalan memuatnya menghentikan seluruh startup aplikasi.
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    print('Peringatan: gagal memuat .env (dilewati): $e');
-  }
 
   try {
     await Firebase.initializeApp();

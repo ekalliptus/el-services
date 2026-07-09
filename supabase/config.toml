@@ -9,3 +9,7 @@ verify_jwt = false
 # header x-callback-token.
 [functions.xendit-webhook]
 verify_jwt = false
+
+# Memverifikasi Firebase ID token sendiri; mengembalikan Supabase access token.
+[functions.firebase-bridge]
+verify_jwt = false

@@ -99,28 +99,9 @@ create policy addcost_all on public.additional_costs
 
 
 -- =====================================================================
--- BAGIAN 2 (JANGAN AKTIFKAN sampai admin auth pindah ke server)
--- =====================================================================
--- Temuan tambahan (H-2 IDOR baca, registrasi super_admin dari client,
--- baca tabel admins dari anon) HANYA bisa ditutup setelah:
---   1. Login admin diverifikasi via Edge Function bertoken (bukan baca
---      tabel admins langsung dari anon).
---   2. Baca riwayat service per-user dipindah ke Edge Function bertoken
---      Firebase, agar bisa memfilter user_id = pemanggil.
---
--- Jika DIAKTIFKAN sekarang, panel admin & login admin akan PUTUS karena
--- aplikasi belum punya client service-role. Aktifkan HANYA setelah migrasi
--- di atas. Skrip disimpan sebagai komentar sengaja.
---
---   alter table public.admins enable row level security;
---   create policy admins_service_only on public.admins
---     for all using (auth.role() = 'service_role')
---     with check (auth.role() = 'service_role');
---
---   -- Kunci baca services agar tak bisa IDOR dari anon (butuh read via
---   -- Edge Function bertoken lebih dulu):
---   drop policy if exists services_all on public.services;
---   create policy services_rw on public.services
---     for all using (auth.role() = 'service_role')
---     with check (auth.role() = 'service_role');
+-- BAGIAN 2 dipindah ke migrasi terpisah:
+--   20260709010000_rls_per_user.sql
+-- Berisi RLS per-user (menutup IDOR/H-2) + lockdown tabel admins.
+-- PRASYARAT: Edge Function firebase-bridge aktif & client memanggil
+-- SupabaseAuthBridge.sync(). Jangan jalankan sebelum itu.
 -- =====================================================================

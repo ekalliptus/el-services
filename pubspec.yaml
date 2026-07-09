@@ -73,7 +73,6 @@ flutter:
     - assets/svg/login/facebook.svg
     - assets/svg/login/google.svg
     - assets/svg/login/whatsapp_login.svg
-    - .env
 
 flutter_launcher_icons:
   android: "launcher_icon"

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:servicehponline/blocs/auth/auth_event.dart';
 import 'package:servicehponline/blocs/auth/auth_state.dart';
+import 'package:servicehponline/core/services/supabase_auth_bridge.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -24,6 +25,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     // Subscribe to auth state changes
     _authSub = _auth.authStateChanges().listen((User? user) {
       print('Auth state changed - User: ${user?.displayName}');
+      // Sinkronkan sesi Supabase (untuk RLS per-user) mengikuti status
+      // Firebase. Fire-and-forget; kegagalan tidak memblokir UI.
+      SupabaseAuthBridge.sync();
       if (!isClosed && user != null && _termsAccepted) {
         add(AuthLoginSuccess(user));
       }
@@ -54,6 +58,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final currentUser = _auth.currentUser;
       if (currentUser != null && _termsAccepted) {
         print('Current user found: ${currentUser.displayName}');
+        // Pastikan sesi Supabase siap sebelum halaman membaca data ber-RLS.
+        await SupabaseAuthBridge.sync();
         emit(AuthAuthenticated(currentUser));
       } else {
         print('No current user found or terms not accepted');
@@ -79,7 +85,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  void _onAuthLoginSuccess(AuthLoginSuccess event, Emitter<AuthState> emit) {
+  void _onAuthLoginSuccess(
+      AuthLoginSuccess event, Emitter<AuthState> emit) async {
     try {
       if (!_termsAccepted) {
         print('Terms not accepted');
@@ -87,6 +94,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
       print('Login success for user: ${event.user.displayName}');
+      // Siapkan sesi Supabase (RLS per-user) sebelum masuk ke area data.
+      await SupabaseAuthBridge.sync();
       emit(AuthAuthenticated(event.user));
     } catch (e) {
       print('Error handling login success: $e');
