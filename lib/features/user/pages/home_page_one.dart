@@ -594,6 +594,7 @@ class _HomePageOneState extends State<HomePageOne>
                             child: GestureDetector(
                               onTap: () async {
                                 await _getCurrentLocation();
+                                if (!mounted) return;
                                 // Refresh semua data setelah mendapatkan lokasi baru
                                 _refreshAllData();
                               },

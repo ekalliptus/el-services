@@ -181,6 +181,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
 
   Future<void> _copyToClipboard(String text) async {
     await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Disalin ke clipboard')),
     );

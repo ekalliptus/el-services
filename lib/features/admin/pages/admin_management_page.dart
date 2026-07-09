@@ -158,6 +158,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
     );
 
     if (confirm != true) return;
+    if (!mounted) return;
 
     // Cegah lockout: jangan hapus akun sendiri.
     final currentUid = SupabaseConfig.client.auth.currentUser?.id;

@@ -157,6 +157,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
 
                 // Jalankan deteksi lokasi
                 await Future.delayed(Duration(milliseconds: 500));
+                if (!mounted) return;
                 _detectLocation();
 
                 // Hentikan timer setelah berhasil menutup dialog
@@ -197,6 +198,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
 
             // Tunggu sebentar, lalu jalankan deteksi lokasi
             await Future.delayed(Duration(milliseconds: 500));
+            if (!mounted) return;
             _detectLocation();
           } catch (e) {
             print('Error closing GPS dialog: $e');
@@ -332,6 +334,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
     try {
       // Cek apakah layanan lokasi aktif
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
       if (!serviceEnabled) {
         setState(() => _isLocationLoading = false);
         setState(() => _isGpsEnabled = false);
@@ -531,6 +534,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         return WillPopScope(
           onWillPop: () async {
             bool isEnabled = await Geolocator.isLocationServiceEnabled();
+            if (!mounted) return false;
             if (isEnabled) {
               setState(() => _isGpsEnabled = true);
               _gpsDialogContext = null;

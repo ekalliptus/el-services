@@ -1228,6 +1228,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                               Text('Memeriksa koneksi ke storage Supabase...')),
                     );
                     await _checkBucket();
+                    if (!context.mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(_isBucketCreated
@@ -1470,12 +1471,14 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                                   try {
                                     await Clipboard.setData(
                                         ClipboardData(text: url));
+                                    if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                           content: Text(
                                               'URL download disalin ke clipboard')),
                                     );
                                   } catch (e) {
+                                    if (!context.mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                           content:
@@ -1584,22 +1587,13 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                                 ),
                               ),
                             if (_selectedApkFile != null)
-                              FutureBuilder<int>(
-                                future: _selectedApkFile!.length(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.hasData) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Text(
-                                        'Ukuran File: ${_formatFileSize(snapshot.data!)}',
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600]),
-                                      ),
-                                    );
-                                  }
-                                  return SizedBox();
-                                },
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Text(
+                                  'Ukuran File: ${_formatFileSize(_selectedApkFile!.lengthSync())}',
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey[600]),
+                                ),
                               ),
                             SizedBox(height: 16),
                             CheckboxListTile(

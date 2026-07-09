@@ -124,6 +124,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             maxHeight: 1080,
                             imageQuality: 85,
                           );
+                          if (!mounted) return;
                           if (image != null) {
                             setState(() {
                               _selectedImage = File(image.path);
@@ -166,6 +167,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             maxHeight: 1080,
                             imageQuality: 85,
                           );
+                          if (!mounted) return;
                           if (image != null) {
                             setState(() {
                               _selectedImage = File(image.path);
@@ -208,6 +210,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
       );
     } catch (e) {
       print('Error picking image: $e');
+      if (!mounted) return;
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
@@ -250,6 +253,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             source: ImageSource.camera,
                             maxDuration: Duration(minutes: 1),
                           );
+                          if (!mounted) return;
                           if (video != null) {
                             setState(() {
                               _selectedVideo = File(video.path);
@@ -291,6 +295,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             source: ImageSource.gallery,
                             maxDuration: Duration(minutes: 1),
                           );
+                          if (!mounted) return;
                           if (video != null) {
                             setState(() {
                               _selectedVideo = File(video.path);
@@ -334,6 +339,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
       );
     } catch (e) {
       print('Error picking video: $e');
+      if (!mounted) return;
       AwesomeDialog(
         context: context,
         dialogType: DialogType.error,
@@ -633,6 +639,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
             ),
           );
 
+          if (!mounted) return;
           if (shouldPop) {
             Navigator.of(context).pop();
           }

@@ -308,6 +308,7 @@ class _HomeState extends State<Home> {
                                   await _saveAdminSession(session);
                                 }
 
+                                if (!mounted) return;
                                 Navigator.of(context).pop();
 
                                 // Arahkan berdasarkan tipe admin
