@@ -8,11 +8,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase;
 
 class PaymentService {
-  final String _xenditKey = SupabaseConfig.xenditKey;
   late final SupabaseClient _supabase;
   final StorageService _storageService = StorageService();
   final firebase.FirebaseAuth _firebaseAuth = firebase.FirebaseAuth.instance;
   final String _baseUrl = 'https://api.servicehponline.com'; // URL API backend
+
+  // Endpoint Edge Function pembayaran (secret Xendit hanya di server).
+  String get _createInvoiceUrl =>
+      '${SupabaseConfig.supabaseUrl}/functions/v1/create-invoice';
 
   PaymentService() {
     try {
@@ -166,58 +169,37 @@ class PaymentService {
   // Membuat pembayaran untuk service yang sudah ada
   Future<Map<String, dynamic>> createPayment(String serviceId) async {
     try {
-      // 1. Ambil data service
-      final service = await _supabase
-          .from('services')
-          .select()
-          .eq('id', serviceId)
-          .single();
-
-      if (service['service_cost'] == null) {
-        throw Exception('Biaya service belum ditentukan oleh admin');
+      // Invoice dibuat oleh Edge Function (secret Xendit hanya di server).
+      // Kirim Firebase ID token untuk otentikasi + verifikasi kepemilikan.
+      final idToken = await _firebaseAuth.currentUser?.getIdToken();
+      if (idToken == null) {
+        throw Exception('User belum login');
       }
 
-      // 2. Buat invoice di Xendit
-      final xenditUrl = 'https://api.xendit.co/v2/invoices';
-      final basicAuth = 'Basic ${base64Encode(utf8.encode('$_xenditKey:'))}';
-
-      final xenditPayload = {
-        'external_id':
-            'SERVICE-$serviceId-${DateTime.now().millisecondsSinceEpoch}',
-        'amount': service['service_cost'],
-        'payer_email': service['phoneNumber'] + '@servicehponline.com',
-        'description':
-            'Pembayaran Service HP Online - ${service['device']} ${service['brand']}',
-        'success_redirect_url': 'servicehponline://payment/success',
-        'failure_redirect_url': 'servicehponline://payment/failed',
-        'currency': 'IDR',
-      };
-
-      final xenditResponse = await http.post(
-        Uri.parse(xenditUrl),
+      final response = await http.post(
+        Uri.parse(_createInvoiceUrl),
         headers: {
-          'Authorization': basicAuth,
+          'Authorization': 'Bearer $idToken',
           'Content-Type': 'application/json',
+          'apikey': SupabaseConfig.supabaseAnonKey,
         },
-        body: jsonEncode(xenditPayload),
+        body: jsonEncode({'serviceId': serviceId}),
       );
 
-      if (xenditResponse.statusCode != 200) {
-        throw Exception('Gagal membuat invoice Xendit: ${xenditResponse.body}');
+      if (response.statusCode != 200) {
+        final msg = _extractError(response.body);
+        throw Exception('Gagal membuat pembayaran: $msg');
       }
 
-      final xenditData = jsonDecode(xenditResponse.body);
-
-      // 3. Update data service dengan invoice ID
-      await _supabase.from('services').update({
-        'xendit_invoice_id': xenditData['id'],
-        'payment_url': xenditData['invoice_url'],
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', serviceId);
+      final data = jsonDecode(response.body);
+      final invoiceUrl = data['invoice_url'];
+      if (invoiceUrl == null) {
+        throw Exception('Respons pembayaran tidak valid');
+      }
 
       return {
         'id': serviceId,
-        'paymentUrl': xenditData['invoice_url'],
+        'paymentUrl': invoiceUrl,
       };
     } catch (e) {
       print('Error creating payment: $e');
@@ -225,43 +207,27 @@ class PaymentService {
     }
   }
 
+  String _extractError(String body) {
+    try {
+      final j = jsonDecode(body);
+      return (j is Map && j['error'] != null) ? j['error'].toString() : body;
+    } catch (_) {
+      return body;
+    }
+  }
+
+  /// Status pembayaran adalah sumber-kebenaran server: hanya diperbarui oleh
+  /// webhook Xendit. Client hanya MEMBACA kolom status; tidak boleh (dan
+  /// tidak bisa, karena RLS) menuliskannya.
   Future<String> getPaymentStatus(String serviceId) async {
     try {
       final service = await _supabase
           .from('services')
-          .select()
+          .select('status')
           .eq('id', serviceId)
           .single();
 
-      if (service['xendit_invoice_id'] == null) {
-        return service['status'] ?? 'PENDING';
-      }
-
-      final xenditUrl =
-          'https://api.xendit.co/v2/invoices/${service['xendit_invoice_id']}';
-      final basicAuth = 'Basic ${base64Encode(utf8.encode('$_xenditKey:'))}';
-
-      final response = await http.get(
-        Uri.parse(xenditUrl),
-        headers: {
-          'Authorization': basicAuth,
-        },
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('Gagal mengecek status pembayaran');
-      }
-
-      final data = jsonDecode(response.body);
-      final status = data['status'];
-
-      // Update status di Supabase
-      await _supabase.from('services').update({
-        'status': status,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', serviceId);
-
-      return status;
+      return service['status'] ?? 'PENDING';
     } catch (e) {
       print('Error checking payment status: $e');
       return 'PENDING';
