@@ -645,6 +645,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _hasMoreData = data.length == _pageSize;
       _currentPage++;
 
+      if (!mounted) return;
       setState(() {
         _services = List<Map<String, dynamic>>.from(data);
         // Terapkan filter pencarian jika ada
@@ -657,6 +658,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       });
     } catch (e) {
       print('Error loading services: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memuat data service'),
@@ -664,7 +666,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -763,9 +765,18 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       _hasMoreData = data.length == _pageSize;
       _currentPage++;
 
-      if (data.isNotEmpty) {
+      // Filter 'unpaid' menggabungkan beberapa sub-query berstatus berbeda;
+      // sebagian di antaranya (WAITING_PAYMENT, PENDING+cost) memakai limit
+      // tanpa offset sehingga bisa memuat ulang baris yang sudah tampil.
+      // Dedupe berdasarkan id agar tidak ada baris ganda di daftar.
+      final existingIds = _services.map((s) => s['id']).toSet();
+      final newRows =
+          data.where((s) => existingIds.add(s['id'])).toList();
+
+      if (newRows.isNotEmpty) {
+        if (!mounted) return;
         setState(() {
-          _services.addAll(data);
+          _services.addAll(newRows);
           // Terapkan filter pencarian jika ada
           if (_searchQuery.isNotEmpty) {
             _filterServices();
@@ -777,7 +788,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     } catch (e) {
       print('Error loading more services: $e');
     } finally {
-      setState(() => _isLoadingMore = false);
+      if (mounted) setState(() => _isLoadingMore = false);
     }
   }
 
@@ -897,6 +908,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       }
 
       // Ubah filter saat ini ke filter yang sesuai dengan status baru
+      if (!mounted) return;
       setState(() {
         _selectedFilter = targetFilter;
       });
@@ -911,6 +923,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memperbarui status'),
@@ -932,14 +945,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
 
     await showUpdateCostDialog(context, service, title: dialogTitle);
+    if (!mounted) return;
 
-    // Selalu muat ulang daftar layanan setelah update
-    _loadServices();
-
-    // Setelah update biaya, pindahkan ke filter 'Belum dibayar'
+    // Setelah update biaya, pindahkan ke filter 'Belum dibayar' LEBIH DULU,
+    // baru muat ulang, agar _loadServices membaca filter yang benar
+    // (menghindari data & label filter tidak sinkron).
     setState(() {
       _selectedFilter = 'unpaid';
     });
+    _loadServices();
   }
 
   // Fungsi untuk menambahkan biaya tambahan
@@ -1113,14 +1127,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
                             if (!context.mounted) return;
 
+                            // Set filter di State halaman SEBELUM menutup dialog
+                            // (bukan lewat setState milik StatefulBuilder yang
+                            // akan hilang setelah pop), lalu tutup & refresh.
+                            _selectedFilter = 'unpaid';
+
                             // Tutup dialog dan refresh data
                             Navigator.of(context).pop();
+                            if (mounted) {
+                              this.setState(() {});
+                            }
                             _loadServices();
-
-                            // Pindahkan ke filter 'Belum dibayar'
-                            setState(() {
-                              _selectedFilter = 'unpaid';
-                            });
 
                             // Tampilkan notifikasi sukses
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -1246,6 +1263,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             .eq('role', 'super_admin')
             .maybeSingle();
 
+        if (!mounted) return;
         setState(() {
           _isSuperAdmin = response != null;
         });
@@ -1256,9 +1274,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     } catch (e) {
       print('Error memeriksa status super admin: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -1548,8 +1568,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ? dateA.compareTo(dateB)
               : dateB.compareTo(dateA);
         } else if (_sortField == 'service_cost') {
-          int costA = a['service_cost'] ?? 0;
-          int costB = b['service_cost'] ?? 0;
+          // service_cost bisa berupa int/double/String dari DB → koersi aman.
+          num costA = (a['service_cost'] is num)
+              ? a['service_cost'] as num
+              : num.tryParse('${a['service_cost'] ?? ''}') ?? 0;
+          num costB = (b['service_cost'] is num)
+              ? b['service_cost'] as num
+              : num.tryParse('${b['service_cost'] ?? ''}') ?? 0;
           return _sortAscending
               ? costA.compareTo(costB)
               : costB.compareTo(costA);

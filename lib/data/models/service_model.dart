@@ -88,7 +88,7 @@ class ServiceModel {
       latitude: parseCoordinate(json['latitude']),
       longitude: parseCoordinate(json['longitude']),
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+          ? DateTime.tryParse(json['created_at'].toString())?.toLocal()
           : null,
       customerEmail: json['customer_email'],
       status: json['status']?.toString().toUpperCase(),

@@ -47,3 +47,5 @@ app.*.map.json
 debug.keystore
 
 supabase_migration.sql
+# iOS build artifacts
+ios/Flutter/ephemeral/

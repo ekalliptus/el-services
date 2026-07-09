@@ -17,7 +17,10 @@ Future<void> showUpdateCostDialog(
     _costController.text = service['service_cost'].toString();
   }
 
-  return showDialog(
+  // Pastikan controller di-dispose setelah dialog ditutup untuk mencegah leak
+  // (fungsi top-level tidak punya lifecycle dispose sendiri).
+  try {
+    await showDialog(
     context: context,
     barrierDismissible: false,
     builder: (context) => StatefulBuilder(
@@ -58,6 +61,8 @@ Future<void> showUpdateCostDialog(
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
+                // Batasi panjang agar nilai tidak melebihi rentang 64-bit.
+                LengthLimitingTextInputFormatter(15),
               ],
               decoration: InputDecoration(
                 labelText: 'Biaya Service',
@@ -68,8 +73,11 @@ Future<void> showUpdateCostDialog(
               onChanged: (value) {
                 // Optional: Format angka dengan pemisah ribuan
                 if (value.isNotEmpty) {
+                  // Gunakan tryParse: input digit sangat panjang bisa melebihi
+                  // rentang 64-bit dan membuat int.parse melempar FormatException.
                   final number =
-                      int.parse(value.replaceAll(RegExp(r'[^0-9]'), ''));
+                      int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
+                  if (number == null) return;
                   _costController.text = number.toString();
                   _costController.selection = TextSelection.fromPosition(
                     TextPosition(offset: _costController.text.length),
@@ -107,7 +115,11 @@ Future<void> showUpdateCostDialog(
                     setState(() => _isSubmitting = true);
 
                     try {
-                      final cost = int.parse(_costController.text);
+                      final cost = int.tryParse(_costController.text);
+                      if (cost == null) {
+                        setState(() => _isSubmitting = false);
+                        return;
+                      }
                       // Ubah status menjadi UNPAID jika sebelumnya PENDING, COMPLAINED atau PROCESSED
                       final currentStatus =
                           service['status']?.toString().toUpperCase() ??
@@ -121,6 +133,10 @@ Future<void> showUpdateCostDialog(
                         newStatus = 'UNPAID';
                       }
 
+                      // ponytail: penulisan service_cost/status langsung dari
+                      // client. Wajib dilindungi RLS admin-only atau dirutekan
+                      // lewat RPC/edge function yang memverifikasi klaim admin —
+                      // lihat SECURITY-PAYMENT.md. Jangan percaya write client.
                       await _supabase.from('services').update({
                         'service_cost': cost,
                         'status': newStatus,
@@ -179,4 +195,7 @@ Future<void> showUpdateCostDialog(
       ),
     ),
   );
+  } finally {
+    _costController.dispose();
+  }
 }

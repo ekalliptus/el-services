@@ -33,7 +33,7 @@ void showDocumentationPreview(BuildContext context, String url, bool isVideo) {
               child: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -103,6 +103,7 @@ class VideoPreviewWidget extends StatefulWidget {
 
 class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
   late VideoPlayerController _videoPlayerController;
+  bool _controllerCreated = false;
   ChewieController? _chewieController;
   bool _isInitialized = false;
   String? _errorMessage;
@@ -158,6 +159,17 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
   }
 
   Future<void> _initializePlayer() async {
+    // Buang controller sebelumnya bila ada (mis. saat "Coba Lagi"),
+    // agar tidak terjadi kebocoran controller video/chewie.
+    if (_controllerCreated) {
+      try {
+        await _videoPlayerController.dispose();
+      } catch (_) {}
+      _controllerCreated = false;
+    }
+    _chewieController?.dispose();
+    _chewieController = null;
+
     try {
       setState(() {
         _isInitialized = false;
@@ -195,6 +207,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
           }
 
           _videoPlayerController = VideoPlayerController.file(_tempFile!);
+          _controllerCreated = true;
 
           // Konfigurasi controller video
           await _videoPlayerController.initialize().timeout(
@@ -315,6 +328,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
               'Expires': '0',
             },
           );
+          _controllerCreated = true;
 
           // Menambahkan timeout yang lebih lama untuk inisialisasi video
           await _videoPlayerController.initialize().timeout(
@@ -465,7 +479,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
                 await _videoPlayerController.play();
               },
               child: Container(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 child: Center(
                   child: Icon(
                     Icons.play_circle_fill,
@@ -481,7 +495,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
         if (_isBuffering)
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               child: Center(
                 child: CircularProgressIndicator(
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -495,7 +509,12 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
 
   @override
   void dispose() {
-    _videoPlayerController.dispose();
+    // Hanya buang controller bila benar-benar sudah dibuat; jika inisialisasi
+    // gagal sebelum assignment, mengaksesnya melempar LateInitializationError
+    // dan membatalkan sisa dispose (kebocoran temp file + assert framework).
+    if (_controllerCreated) {
+      _videoPlayerController.dispose();
+    }
     _chewieController?.dispose();
 
     if (_tempFile != null && _tempFile!.existsSync()) {

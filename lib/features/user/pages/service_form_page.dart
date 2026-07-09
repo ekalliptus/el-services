@@ -128,8 +128,12 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
         pictureFront: _picturePath,
         pictureBack: _picturePath,
         video: _videoPath,
-        latitude: _selectedProblem == 'jemput' ? _latitude : null,
-        longitude: _selectedProblem == 'jemput' ? _longitude : null,
+        // Koordinat hanya relevan untuk metode "jemput". Sebelumnya keliru
+        // memakai _selectedProblem (kode masalah), sehingga selalu null.
+        // ponytail: _latitude/_longitude belum diisi map picker di form ini;
+        // wire map picker sebelum submit bila fitur jemput butuh koordinat.
+        latitude: _shippingMethod == 'jemput' ? _latitude : null,
+        longitude: _shippingMethod == 'jemput' ? _longitude : null,
         devicePassword: _devicePasswordController.text,
         devicePasswordType: _selectedPasswordType ?? 'Tidak Ada',
         addressNote: _addressNoteController.text,

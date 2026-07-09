@@ -452,6 +452,10 @@ class _HomePageThreeState extends State<HomePageThree>
         problem: widget.selectedProblem,
         description: _descriptionController.text,
         shippingMethod: _selectedShipping,
+        // ponytail: rahasia kunci perangkat (PIN/Pola/Password) masih dikirim
+        // & disimpan plaintext. Idealnya dienkripsi at-rest dengan kunci di
+        // sisi server + RLS ketat, dan dimask di seluruh tampilan.
+        // Lihat SECURITY-PAYMENT.md. (upgrade saat backend/KMS tersedia)
         devicePassword: _selectedPasswordType == 'Tidak Ada'
             ? null
             : _devicePasswordController.text,
@@ -2101,7 +2105,24 @@ class _HomePageThreeState extends State<HomePageThree>
       });
     }
 
-    // Validasi password jika tipe selain 'Tidak Ada' dan 'Pola' (yang dihandle terpisah)
+    // Validasi khusus 'Pola': pola digambar lewat dialog dan disimpan ke
+    // controller. Jika dialog ditutup/dibatalkan tanpa menggambar pola,
+    // controller tetap kosong — wajib ditolak agar tidak lolos validasi.
+    if (_selectedPasswordType == 'Pola') {
+      if (_devicePasswordController.text.isEmpty) {
+        setState(() {
+          _passwordError = 'Pola harus digambar';
+          _passwordFieldHighlighted = true;
+        });
+        isValid = false;
+      } else {
+        setState(() {
+          _passwordError = null;
+        });
+      }
+    }
+
+    // Validasi password jika tipe selain 'Tidak Ada' dan 'Pola'
     if (_selectedPasswordType != null &&
         _selectedPasswordType != 'Tidak Ada' &&
         _selectedPasswordType != 'Pola') {

@@ -26,6 +26,12 @@ class LocationSectionWidget extends StatelessWidget {
     required this.service,
   }) : super(key: key);
 
+  // Koersi nilai dinamis (int/double/String) menjadi double; null bila gagal.
+  double? _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse('$value');
+  }
+
   @override
   Widget build(BuildContext context) {
     if (service['shipping_method'] == 'antar') {
@@ -69,9 +75,16 @@ class LocationSectionWidget extends StatelessWidget {
         ],
       );
     } else if (service['latitude'] != null && service['longitude'] != null) {
+      // Koersi aman: kolom bisa berupa int/String, sedangkan Position butuh
+      // double. Lewati bila tidak dapat di-parse agar tidak crash saat build.
+      final lat = _toDouble(service['latitude']);
+      final lng = _toDouble(service['longitude']);
+      if (lat == null || lng == null) {
+        return const SizedBox.shrink();
+      }
       final pickupPosition = Position(
-        latitude: service['latitude'],
-        longitude: service['longitude'],
+        latitude: lat,
+        longitude: lng,
         timestamp: DateTime.now(),
         accuracy: 0,
         altitude: 0,

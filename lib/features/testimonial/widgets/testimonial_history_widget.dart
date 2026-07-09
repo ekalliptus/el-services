@@ -46,6 +46,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
           .eq('service_id', widget.service['id'])
           .single();
 
+      if (!mounted) return;
       setState(() {
         _previousTestimonial = testimonial['content'];
         _testimonialController.text = _previousTestimonial ?? '';
@@ -53,6 +54,16 @@ class _TestimonialPageState extends State<TestimonialPage> {
     } catch (e) {
       print('Error loading previous testimonial: $e');
     }
+  }
+
+  // Ambil inisial nama secara aman: lewati string kosong agar tidak terjadi
+  // RangeError saat mengindeks [0].
+  String _initialNama(dynamic customerName, String? displayName) {
+    final c = customerName?.toString().trim() ?? '';
+    if (c.isNotEmpty) return c[0].toUpperCase();
+    final d = displayName?.trim() ?? '';
+    if (d.isNotEmpty) return d[0].toUpperCase();
+    return 'A';
   }
 
   Widget _buildAvatar(Map<String, dynamic> service, firebase_auth.User? user) {
@@ -70,8 +81,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
             user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
         child: user?.photoURL == null
             ? Text(
-                (service['customer_name'] ?? user?.displayName ?? 'A')[0]
-                    .toUpperCase(),
+                _initialNama(service['customer_name'], user?.displayName),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -259,10 +269,9 @@ class _TestimonialPageState extends State<TestimonialPage> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(context, true);
-                    Navigator.pop(context);
-                  },
+                  // Hanya tutup dialog dengan hasil true; navigasi halaman
+                  // dilakukan sekali oleh pemanggil (hindari pop ganda).
+                  onPressed: () => Navigator.pop(context, true),
                   child: Text(
                     'YA',
                     style: GoogleFonts.poppins(
@@ -317,10 +326,9 @@ class _TestimonialPageState extends State<TestimonialPage> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {
-                          Navigator.pop(context, true);
-                          Navigator.pop(context);
-                        },
+                        // Hanya tutup dialog dengan hasil true; halaman
+                        // di-pop sekali oleh pemanggil di bawah.
+                        onPressed: () => Navigator.pop(context, true),
                         child: Text(
                           'YA',
                           style: GoogleFonts.poppins(
@@ -332,7 +340,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                     ],
                   ),
                 );
-                if (shouldPop ?? false) {
+                if ((shouldPop ?? false) && mounted) {
                   Navigator.pop(context);
                 }
               } else {

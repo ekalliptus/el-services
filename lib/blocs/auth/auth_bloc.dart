@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,6 +10,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   bool _termsAccepted = false;
   static const String TERMS_ACCEPTED_KEY = 'terms_accepted';
 
+  late final StreamSubscription<User?> _authSub;
+
   AuthBloc() : super(AuthInitial()) {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
@@ -19,12 +22,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     _loadTermsAcceptance();
 
     // Subscribe to auth state changes
-    _auth.authStateChanges().listen((User? user) {
+    _authSub = _auth.authStateChanges().listen((User? user) {
       print('Auth state changed - User: ${user?.displayName}');
-      if (user != null && _termsAccepted) {
+      if (!isClosed && user != null && _termsAccepted) {
         add(AuthLoginSuccess(user));
       }
     });
+  }
+
+  @override
+  Future<void> close() {
+    _authSub.cancel();
+    return super.close();
   }
 
   Future<void> _loadTermsAcceptance() async {

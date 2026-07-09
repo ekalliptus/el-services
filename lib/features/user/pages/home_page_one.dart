@@ -51,6 +51,9 @@ class _HomePageOneState extends State<HomePageOne>
   final firebase_auth.User? currentUser =
       firebase_auth.FirebaseAuth.instance.currentUser;
   List<ServiceModel> _recentServices = [];
+  // Future testimoni di-cache sekali agar tidak dibuat ulang tiap rebuild
+  // (widget ini sering rebuild: timer maintenance 1 menit, event GPS, dll).
+  late Future<List<Map<String, dynamic>>> _testimonialsFuture;
   bool _isLoadingHistory = false;
   String _active = "";
   String _currentAddress = "Memuat lokasi...";
@@ -77,6 +80,7 @@ class _HomePageOneState extends State<HomePageOne>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _testimonialsFuture = _fetchTestimonials();
     _loadRecentHistory();
     _setupAnimations();
     _setupGpsListener();
@@ -302,10 +306,12 @@ class _HomePageOneState extends State<HomePageOne>
 
     try {
       if (currentUser == null) {
-        setState(() {
-          _recentServices = [];
-          _isLoadingHistory = false;
-        });
+        if (mounted) {
+          setState(() {
+            _recentServices = [];
+            _isLoadingHistory = false;
+          });
+        }
         return;
       }
 
@@ -359,6 +365,7 @@ class _HomePageOneState extends State<HomePageOne>
 
     try {
       serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!mounted) return;
       setState(() {
         _isGpsEnabled = serviceEnabled;
         if (!serviceEnabled) {
@@ -377,6 +384,7 @@ class _HomePageOneState extends State<HomePageOne>
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
+          if (!mounted) return;
           setState(() {
             _isGpsEnabled = false;
             _currentAddress = 'Izin lokasi ditolak';
@@ -387,6 +395,7 @@ class _HomePageOneState extends State<HomePageOne>
       }
 
       if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
         setState(() {
           _isGpsEnabled = false;
           _currentAddress = 'Izin lokasi ditolak permanen';
@@ -479,6 +488,16 @@ class _HomePageOneState extends State<HomePageOne>
     }
   }
 
+  // Ambil daftar testimoni. Dipanggil sekali di initState dan disimpan ke
+  // _testimonialsFuture agar tidak dibuat ulang setiap rebuild.
+  Future<List<Map<String, dynamic>>> _fetchTestimonials() async {
+    return await _supabase
+        .from('testimonials')
+        .select()
+        .order('created_at', ascending: false)
+        .limit(5);
+  }
+
   // Tambahkan fungsi _buildAvatar sebelum build
   Widget _buildAvatar(Map<String, dynamic> testimonial) {
     return Container(
@@ -498,7 +517,12 @@ class _HomePageOneState extends State<HomePageOne>
             : null,
         child: testimonial['photo_url'] == null
             ? Text(
-                testimonial['fullname'][0].toUpperCase(),
+                () {
+                  final name = (testimonial['fullname'] as String?)?.trim();
+                  return (name != null && name.isNotEmpty)
+                      ? name[0].toUpperCase()
+                      : '?';
+                }(),
                 style: GoogleFonts.poppins(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -1058,11 +1082,7 @@ class _HomePageOneState extends State<HomePageOne>
                               ),
                               SizedBox(height: 12),
                               FutureBuilder<List<Map<String, dynamic>>>(
-                                future: _supabase
-                                    .from('testimonials')
-                                    .select()
-                                    .order('created_at', ascending: false)
-                                    .limit(5),
+                                future: _testimonialsFuture,
                                 builder: (context, snapshot) {
                                   if (snapshot.connectionState ==
                                       ConnectionState.waiting) {
@@ -1205,7 +1225,8 @@ class _HomePageOneState extends State<HomePageOne>
                                               ),
                                               SizedBox(height: 12),
                                               Text(
-                                                testimonial['content'],
+                                                (testimonial['content'] ?? '')
+                                                    as String,
                                                 style: GoogleFonts.poppins(
                                                   fontSize: 14,
                                                   height: 1.5,
@@ -1215,18 +1236,26 @@ class _HomePageOneState extends State<HomePageOne>
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                               SizedBox(height: 12),
-                                              Text(
-                                                DateFormat(
-                                                  'dd MMMM yyyy',
-                                                ).format(
-                                                  DateTime.parse(
-                                                    testimonial['created_at'],
-                                                  ),
-                                                ),
-                                                style: GoogleFonts.poppins(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
+                                              Builder(
+                                                builder: (context) {
+                                                  final ts = DateTime.tryParse(
+                                                    testimonial['created_at']
+                                                            ?.toString() ??
+                                                        '',
+                                                  );
+                                                  if (ts == null) {
+                                                    return const SizedBox
+                                                        .shrink();
+                                                  }
+                                                  return Text(
+                                                    DateFormat('dd MMMM yyyy')
+                                                        .format(ts),
+                                                    style: GoogleFonts.poppins(
+                                                      color: Colors.grey[600],
+                                                      fontSize: 12,
+                                                    ),
+                                                  );
+                                                },
                                               ),
                                             ],
                                           ),

@@ -135,6 +135,7 @@ class _MapPickerState extends State<MapPicker> {
 
   @override
   void dispose() {
+    _mapController.dispose();
     super.dispose();
   }
 }

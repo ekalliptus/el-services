@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -89,6 +88,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
     // Debug admin status
     await _checkAdminStatus();
 
+    if (!mounted) return false;
     setState(() {
       _isLoadingBucket = true;
       _bucketStatus = 'Memeriksa bucket...';
@@ -130,6 +130,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
           // Tampilkan panduan RLS
           _showRlsPolicyGuide(e.toString(), null);
 
+          if (!mounted) return false;
           setState(() {
             _isLoadingBucket = false;
             _bucketStatus = 'Gagal: $e';
@@ -157,6 +158,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
         // Simpan nama bucket ke SharedPreferences untuk digunakan nanti
         await _saveBucketPreference(targetBucket);
 
+        if (!mounted) return false;
         setState(() {
           _isLoadingBucket = false;
           _bucketStatus = 'Terhubung ke bucket "$targetBucket"';
@@ -175,6 +177,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
         // Tampilkan panduan RLS
         _showRlsPolicyGuide(e.toString(), targetBucket);
 
+        if (!mounted) return false;
         setState(() {
           _isLoadingBucket = false;
           _bucketStatus =
@@ -190,6 +193,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       }
     } catch (e) {
       print('Error checking bucket: $e');
+      if (!mounted) return false;
       setState(() {
         _isLoadingBucket = false;
         _bucketStatus = 'Error: $e';
@@ -503,6 +507,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       if (!hasVersionsTable) {
         // Tabel tidak ada, tampilkan panduan
         _showCreateVersionsTableGuide();
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
@@ -530,6 +535,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       if (missingCriticalColumns.isNotEmpty) {
         // Ada kolom kritis yang hilang, tampilkan panduan
         _showFixTableSchemaGuide(missingColumns);
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
@@ -537,7 +543,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       }
 
       // Jika ada kolom tidak kritis yang hilang, cukup tampilkan peringatan
-      if (missingColumns.isNotEmpty) {
+      if (missingColumns.isNotEmpty && mounted) {
         // Tampilkan peringatan tapi tetap lanjutkan
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -569,17 +575,6 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       final selectQuery = columnsToSelect.join(',');
       print('Memilih kolom: $selectQuery');
 
-      // Debug: periksa semua data versi yang ada
-      print('DEBUG: Memeriksa semua data versi yang ada...');
-      final allVersions =
-          await SupabaseConfig.client.from('versions').select('*');
-
-      print('DEBUG: SEMUA DATA VERSI:');
-      for (var version in allVersions) {
-        print(
-            '- ${version['latest_version_name']} (code: ${version['latest_version_code']})');
-      }
-
       // Gunakan query dengan kolom yang tersedia
       final versions = await SupabaseConfig.client
           .from('versions')
@@ -606,6 +601,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
             '2. ${versions[1]['latest_version_name']} (${versions[1]['latest_version_code']})');
       }
 
+      if (!mounted) return;
       setState(() {
         _versions = List<Map<String, dynamic>>.from(versions);
         if (_versions.isNotEmpty) {
@@ -636,6 +632,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       });
     } catch (e) {
       print('Error loading versions: $e');
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
@@ -799,7 +796,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       File? selectedFile;
 
       try {
-        // Coba gunakan file_selector terlebih dahulu (jika tersedia)
+        // Gunakan file_selector untuk memilih berkas .apk.
         final XTypeGroup typeGroup = XTypeGroup(
           label: 'APK files',
           extensions: ['apk'],
@@ -809,14 +806,16 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
           selectedFile = File(file.path);
         }
       } catch (e) {
-        print('File selector not available, falling back to image_picker: $e');
-        // Fallback ke image_picker
-        final picker = ImagePicker();
-        final XFile? pickedFile =
-            await picker.pickImage(source: ImageSource.gallery);
-        if (pickedFile != null) {
-          selectedFile = File(pickedFile.path);
-        }
+        // Jangan fallback ke image_picker: hanya memunculkan gambar, tidak
+        // dapat memilih APK sehingga selalu ditolak oleh cek ekstensi.
+        print('File selector gagal: $e');
+        if (!mounted) return;
+        setState(() {
+          _apkError =
+              'Tidak dapat membuka pemilih berkas. Pastikan aplikasi file '
+              'tersedia untuk memilih berkas .apk.';
+        });
+        return;
       }
 
       if (selectedFile == null) return;
@@ -834,6 +833,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       try {
         // Periksa ukuran file
         final fileSize = await selectedFile.length();
+        if (!mounted) return;
         if (fileSize <= 0 || fileSize > 100 * 1024 * 1024) {
           // Max 100MB
           setState(() {
@@ -844,6 +844,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
 
         // Periksa magic number untuk ZIP/APK
         final bytes = await selectedFile.openRead(0, 50).toList();
+        if (!mounted) return;
         if (bytes.isEmpty) {
           setState(() {
             _apkError = 'Gagal membaca file';
@@ -865,12 +866,14 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
         }
       } catch (e) {
         print('Error verifying APK: $e');
+        if (!mounted) return;
         setState(() {
           _apkError = 'Gagal memverifikasi file: $e';
         });
         return;
       }
 
+      if (!mounted) return;
       setState(() {
         _selectedApkFile = selectedFile;
         _apkError = null;
@@ -884,6 +887,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       );
     } catch (e) {
       print('Error selecting file: $e');
+      if (!mounted) return;
       setState(() {
         _apkError = 'Gagal memilih file: $e';
       });
@@ -946,6 +950,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
 
       if (missingCriticalColumns.isNotEmpty) {
         // Ada kolom kritis yang hilang, harus ditambahkan
+        if (!mounted) return;
         setState(() {
           _isLoading = false;
         });
@@ -982,10 +987,17 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
         optionalColumnsInUse.add('published_at');
       }
 
+      // Sertakan is_mandatory bila kolomnya tidak ada, agar admin tahu flag
+      // "pembaruan wajib" tidak akan tersimpan (sebelumnya di-drop diam-diam).
+      if (schemaStatus['is_mandatory'] == false && _isMandatory) {
+        optionalColumnsInUse.add('is_mandatory');
+      }
+
       if (optionalColumnsInUse.isNotEmpty) {
         // Tanyakan user apakah ingin melanjutkan tanpa kolom opsional
         bool continueWithoutOptionalColumns =
             await _showConfirmMissingColumnsDialog(optionalColumnsInUse);
+        if (!mounted) return;
 
         if (!continueWithoutOptionalColumns) {
           setState(() {
@@ -1066,6 +1078,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       await SupabaseConfig.client.from('versions').insert(insertData);
 
       // 4. Reset form dan reload data
+      if (!mounted) return;
       setState(() {
         _selectedApkFile = null;
         _versionNameController.clear();
@@ -1081,6 +1094,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       _loadVersions();
     } catch (e) {
       print('Error uploading version: $e');
+      if (!mounted) return;
 
       String errorMessage = 'Gagal upload versi baru: ${e.toString()}';
 
@@ -1113,9 +1127,11 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -1389,14 +1405,16 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                                         TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   TextSpan(
-                                    text: _latestVersion!
-                                            .containsKey('created_at')
-                                        ? DateFormat('dd MMM yyyy, HH:mm')
-                                            .format(
-                                            DateTime.parse(
-                                                _latestVersion!['created_at']),
-                                          )
-                                        : 'Tidak tersedia',
+                                    text: (() {
+                                      final parsed = DateTime.tryParse(
+                                          _latestVersion!['created_at']
+                                                  ?.toString() ??
+                                              '');
+                                      return parsed != null
+                                          ? DateFormat('dd MMM yyyy, HH:mm')
+                                              .format(parsed.toLocal())
+                                          : 'Tidak tersedia';
+                                    })(),
                                   ),
                                 ],
                               ),
@@ -1657,6 +1675,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
 
       if (savedBucketName != null && savedBucketName.isNotEmpty) {
         print('Found saved bucket name: $savedBucketName');
+        if (!mounted) return;
         setState(() {
           _bucketName = savedBucketName;
           _bucketStatus =
@@ -1733,7 +1752,24 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
         columnStatus[column] = false; // Default false sampai terbukti ada
       }
 
-      // Coba query sederhana untuk setiap kolom untuk melihat apakah ada
+      // Optimasi: coba satu round-trip yang memilih SEMUA kolom sekaligus.
+      // Bila berhasil, seluruh kolom ada. Hanya jika gagal (mis. ada kolom
+      // hilang) kita jatuh ke pemeriksaan per-kolom untuk tahu mana yang hilang.
+      try {
+        await SupabaseConfig.client
+            .from('versions')
+            .select(requiredColumns.join(','))
+            .limit(1);
+        for (final column in requiredColumns) {
+          columnStatus[column] = true;
+        }
+        print('Skema tabel versions lengkap (single-query).');
+        return columnStatus;
+      } catch (_) {
+        // Lanjut ke pemeriksaan per-kolom di bawah.
+      }
+
+      // Fallback: periksa keberadaan tiap kolom satu per satu.
       for (final column in requiredColumns) {
         try {
           // Query untuk memeriksa keberadaan kolom

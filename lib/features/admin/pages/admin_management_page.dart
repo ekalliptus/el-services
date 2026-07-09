@@ -41,10 +41,12 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
     try {
       final response = await SupabaseConfig.client.from('admins').select('*');
 
+      if (!mounted) return;
       setState(() {
         _adminList = List<Map<String, dynamic>>.from(response);
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memuat daftar admin: $e'),
@@ -52,9 +54,11 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -68,6 +72,10 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
 
     try {
       // 1. Buat user baru di Supabase Auth
+      // ponytail: auth.admin.* butuh service_role key — TIDAK boleh dipanggil
+      // dari client. Pindahkan pembuatan/penghapusan user ke Edge Function
+      // server-side yang memegang service_role & mengotorisasi pemanggil.
+      // Lihat SECURITY-PAYMENT.md.
       final response = await SupabaseConfig.client.auth.admin.createUser(
         AdminUserAttributes(
           email: _emailController.text,
@@ -86,11 +94,13 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       await SupabaseConfig.client.from('admins').insert({
         'id': userId,
         'user_id': userId,
+        'email': _emailController.text,
         'role': _isSuperAdmin ? 'super_admin' : 'admin',
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Admin baru berhasil ditambahkan'),
@@ -107,6 +117,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
 
       _loadAdminList();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = e.toString();
       });
@@ -118,9 +129,11 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -146,17 +159,58 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
 
     if (confirm != true) return;
 
+    // Cegah lockout: jangan hapus akun sendiri.
+    final currentUid = SupabaseConfig.client.auth.currentUser?.id;
+    if (currentUid != null && currentUid == id) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Anda tidak dapat menghapus akun Anda sendiri'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Cegah lockout: jangan hapus super_admin terakhir.
+      final target = await SupabaseConfig.client
+          .from('admins')
+          .select('role')
+          .eq('id', id)
+          .maybeSingle();
+      if (target != null && target['role'] == 'super_admin') {
+        final superAdmins = await SupabaseConfig.client
+            .from('admins')
+            .select('id')
+            .eq('role', 'super_admin');
+        if ((superAdmins as List).length <= 1) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Tidak dapat menghapus super admin terakhir'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
       // Hapus dari tabel admins
       await SupabaseConfig.client.from('admins').delete().eq('id', id);
 
       // Hapus user dari Auth (opsional, tergantung kebutuhan)
+      // ponytail: auth.admin.deleteUser butuh service_role — pindahkan ke
+      // Edge Function server-side. Lihat SECURITY-PAYMENT.md.
       await SupabaseConfig.client.auth.admin.deleteUser(id);
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Admin berhasil dihapus'),
@@ -166,6 +220,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
 
       _loadAdminList();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal menghapus admin: $e'),
@@ -173,23 +228,61 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _toggleSuperAdminStatus(String id, bool currentStatus) async {
+    // Cegah lockout: menurunkan super_admin terakhir / diri sendiri.
+    if (currentStatus) {
+      final currentUid = SupabaseConfig.client.auth.currentUser?.id;
+      if (currentUid != null && currentUid == id) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Anda tidak dapat menurunkan status Anda sendiri'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
+      if (currentStatus) {
+        final superAdmins = await SupabaseConfig.client
+            .from('admins')
+            .select('id')
+            .eq('role', 'super_admin');
+        if ((superAdmins as List).length <= 1) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Harus ada minimal satu super admin'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+
       await SupabaseConfig.client.from('admins').update({
         'role': currentStatus ? 'admin' : 'super_admin',
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', id);
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Status Super Admin berhasil diubah'),
@@ -199,6 +292,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
 
       _loadAdminList();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal mengubah status: $e'),
@@ -206,9 +300,11 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

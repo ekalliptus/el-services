@@ -16,6 +16,7 @@ import 'package:servicehponline/blocs/auth/auth_event.dart';
 import 'package:servicehponline/blocs/auth/auth_state.dart';
 import 'package:provider/provider.dart';
 import 'package:servicehponline/core/services/update_service.dart';
+import 'package:servicehponline/core/services/secure_store.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -47,14 +48,9 @@ class _HomeState extends State<Home> {
       _checkForAppUpdates();
     });
 
-    // Listen to auth state changes
-    final authBloc = BlocProvider.of<AuthBloc>(context);
-    authBloc.stream.listen((state) {
-      if (state is AuthAuthenticated) {
-        // Periksa profil pengguna saat autentikasi berhasil
-        _onLoginSuccess(state.user);
-      }
-    });
+    // Navigasi pasca-autentikasi ditangani secara terpusat oleh BlocListener
+    // di build(). Listener stream terpisah dihapus agar tidak terjadi navigasi
+    // ganda (triple-navigation) pada alur login.
   }
 
   @override
@@ -87,13 +83,11 @@ class _HomeState extends State<Home> {
         context.read<AuthBloc>().add(AuthTermsAccepted(true));
         context.read<AuthBloc>().add(AuthLoginSuccess(userCredential.user!));
 
-        // Periksa status login user
+        // Periksa status login user (hanya menyetel flag; navigasi ditangani
+        // oleh BlocListener saat state AuthAuthenticated diterima).
         if (userCredential.user != null) {
           await _checkUserLogin(userCredential.user!);
         }
-
-        // Periksa profil pengguna tanpa perlu menunggu AuthBloc
-        await _onLoginSuccess(userCredential.user!);
         return;
       } else {
         print('Google Sign In cancelled or failed');
@@ -129,133 +123,6 @@ class _HomeState extends State<Home> {
     }
   }
 
-  Future<void> _onLoginSuccess(firebase_auth.User user) async {
-    if (!mounted) return;
-
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Set flag onboarding dan profile complete terlebih dahulu sebagai fallback
-      try {
-        await prefs.setBool('has_completed_onboarding', true);
-        await prefs.setBool('profile_complete', true);
-      } catch (flagError) {
-        print('Error setting initial flags: $flagError');
-      }
-
-      // LANGSUNG periksa data profil di Supabase
-      try {
-        print('Memeriksa profil pengguna di Supabase...');
-
-        // Cek apakah pengguna sudah memiliki profil di Supabase
-        final profile = await _supabase
-            .from('profiles')
-            .select()
-            .eq('id', user.uid)
-            .maybeSingle();
-
-        print(
-            'Hasil pemeriksaan profil: ${profile != null ? "Ditemukan" : "Tidak ditemukan"}');
-
-        if (profile != null) {
-          // Jika pengguna sudah memiliki profil di Supabase
-          // Anggap sudah melewati onboarding dan setup profil
-          await prefs.setBool('has_completed_onboarding', true);
-          await prefs.setBool('profile_complete', true);
-
-          print(
-              'Profil lengkap ditemukan di Supabase, menandai onboarding sebagai selesai');
-
-          // Update session terakhir login - coba update, tapi tangani jika kolom tidak ada
-          try {
-            await _supabase.from('profiles').update({
-              'last_login': DateTime.now().toIso8601String(),
-            }).eq('id', user.uid);
-          } catch (updateError) {
-            // Tangani error jika kolom last_login tidak ada
-            print('Warning: Tidak bisa update last_login: $updateError');
-            // Lanjutkan proses login tanpa update last_login
-          }
-
-          print('Profil ditemukan, mengarahkan ke halaman utama');
-
-          // Langsung ke halaman utama - gunakan RequestServiceFlow bukan route name
-          if (!mounted) return;
-
-          // Gunakan data dari Supabase bukan Firebase (dengan pengecekan null)
-          String username = 'User';
-          if (profile['fullname'] != null) {
-            username = profile['fullname'].toString();
-          } else if (user.displayName != null && user.displayName!.isNotEmpty) {
-            username = user.displayName!;
-          }
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RequestServiceFlow(
-                username: username,
-              ),
-            ),
-          );
-          return;
-        }
-
-        // Jika tidak memiliki profil, arahkan ke halaman setup profile (tanpa memeriksa onboarding)
-        print('Profil tidak ditemukan, arahkan ke setup profil');
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProfileSetupPage(isFirstTime: true),
-          ),
-        );
-      } catch (e) {
-        print('Error saat memeriksa profil: $e');
-        // Pastikan flag tetap disetel meskipun terjadi error
-        try {
-          await prefs.setBool('has_completed_onboarding', true);
-          await prefs.setBool('profile_complete', true);
-        } catch (flagError) {
-          print('Error setting flags after profile check error: $flagError');
-        }
-
-        // Jika gagal memeriksa profil, gunakan fallback ke halaman utama dengan RequestServiceFlow
-        if (!mounted) return;
-
-        // Gunakan future delayed untuk memastikan flag tersimpan
-        Future.delayed(Duration(milliseconds: 200), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => RequestServiceFlow(
-                username: user.displayName ?? 'User',
-              ),
-            ),
-          );
-        });
-      }
-    } catch (e) {
-      print('Error umum: $e');
-      if (!mounted) return;
-
-      // Gunakan future delayed untuk memastikan flag tersimpan
-      Future.delayed(Duration(milliseconds: 200), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RequestServiceFlow(
-              username: user.displayName ?? 'User',
-            ),
-          ),
-        );
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan saat login: $e')),
-      );
-    }
-  }
 
   // Tambahkan fungsi untuk memeriksa user yang sudah login
   Future<void> _checkUserLogin(firebase_auth.User user) async {
@@ -548,10 +415,7 @@ class _HomeState extends State<Home> {
   // Simpan sesi admin
   Future<void> _saveAdminSession(Session session) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('admin_logged_in', true);
-
-      // Simpan data sesi sebagai JSON string
+      // Simpan data sesi ke secure storage (Keystore/Keychain), bukan plaintext
       final sessionData = {
         'access_token': session.accessToken,
         'refresh_token': session.refreshToken,
@@ -560,8 +424,8 @@ class _HomeState extends State<Home> {
         'email': session.user.email,
       };
 
-      await prefs.setString('admin_session', jsonEncode(sessionData));
-      print('Admin session saved successfully');
+      await SecureStore.writeAdminSession(jsonEncode(sessionData));
+      print('Admin session saved securely');
     } catch (e) {
       print('Error saving admin session: $e');
     }
@@ -570,11 +434,9 @@ class _HomeState extends State<Home> {
   // Cek apakah sudah ada sesi admin yang tersimpan
   Future<void> _checkExistingSession() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final isAdminLoggedIn = prefs.getBool('admin_logged_in') ?? false;
-      final adminSessionStr = prefs.getString('admin_session');
+      final adminSessionStr = await SecureStore.readAdminSession();
 
-      if (isAdminLoggedIn && adminSessionStr != null) {
+      if (adminSessionStr != null) {
         print('Found existing admin session, attempting to restore...');
 
         try {
@@ -626,8 +488,15 @@ class _HomeState extends State<Home> {
             }
           }
 
-          // Jika refresh gagal, coba set session dengan access token
-          await _supabase.auth.setSession(sessionData['access_token']);
+          // Jika refresh gagal, coba pulihkan sesi dengan refresh token.
+          // Supabase setSession() menerima REFRESH token, bukan access token.
+          final refreshToken = sessionData['refresh_token'];
+          if (refreshToken == null) {
+            print('Tidak ada refresh token tersimpan; sesi tidak dapat dipulihkan');
+            await _clearAdminSession();
+            return;
+          }
+          await _supabase.auth.setSession(refreshToken);
 
           // Verifikasi sesi
           final currentSession = await _supabase.auth.currentSession;
@@ -680,9 +549,7 @@ class _HomeState extends State<Home> {
   // Hapus sesi admin
   Future<void> _clearAdminSession() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('admin_logged_in');
-      await prefs.remove('admin_session');
+      await SecureStore.clearAdminSession();
       await _supabase.auth.signOut();
       print('Admin session cleared successfully');
     } catch (e) {

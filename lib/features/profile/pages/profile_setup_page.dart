@@ -225,6 +225,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
           .eq('id', user.uid)
           .maybeSingle();
 
+      if (!mounted) return;
+
       print('Data profil dari Supabase:');
       if (profileData != null) {
         print('fullname: ${profileData['fullname']}');
@@ -268,6 +270,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       }
     } catch (e) {
       print('Error loading profile data: $e');
+      if (!mounted) return;
       // Set nama dari akun Google jika tersedia
       setState(() {
         _nameController.text = user.displayName ?? '';
@@ -277,7 +280,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         _updateProgress();
       });
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -340,8 +343,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
 
       // Cek izin lokasi
       LocationPermission permission = await Geolocator.checkPermission();
+      if (!mounted) return;
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
+        if (!mounted) return;
         if (permission == LocationPermission.denied) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Izin lokasi ditolak')),
@@ -361,6 +366,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+      if (!mounted) return;
 
       // Dapatkan alamat dari koordinat dengan prioritas mendapatkan nama jalan
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -369,6 +375,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         localeIdentifier:
             'id_ID', // Gunakan locale Indonesia untuk format alamat yang sesuai
       );
+      if (!mounted) return;
 
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
@@ -498,11 +505,12 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       }
     } catch (e) {
       print('Error detecting location: $e');
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal mendeteksi lokasi: $e')),
       );
     } finally {
-      setState(() => _isLocationLoading = false);
+      if (mounted) setState(() => _isLocationLoading = false);
     }
   }
 
@@ -696,7 +704,6 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
       if (user == null) throw Exception('User tidak terautentikasi');
 
       // Gunakan alamat detail sebagai alamat utama
-      _addressController.text.trim();
       String addressDetail = _addressDetailController.text.trim();
       // Pastikan catatan alamat tidak null
       String addressNote = _addressNoteController.text.trim();
