@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 
 class SuperAdminSetupPage extends StatefulWidget {
   const SuperAdminSetupPage({Key? key}) : super(key: key);
@@ -130,7 +131,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(
                   'Tabel admins tidak memiliki kolom role. Silakan tambahkan kolom secara manual di dashboard Supabase.'),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ));
           }
         } else {
@@ -142,7 +143,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Akun Super Admin berhasil dibuat!'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
     } catch (e) {
@@ -155,7 +156,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal membuat akun: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -203,9 +204,10 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.primary),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,22 +244,23 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
+                  color: AppColors.success.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade200),
+                  border: Border.all(
+                      color: AppColors.success.withValues(alpha: 0.5)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green),
+                        Icon(Icons.check_circle, color: AppColors.success),
                         SizedBox(width: 8),
                         Text(
                           'Akun Super Admin Sudah Dibuat',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800,
+                            color: AppColors.success,
                           ),
                         ),
                       ],
@@ -326,12 +329,13 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                       Container(
                         padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.red.shade50,
+                          color: Theme.of(context).colorScheme.errorContainer,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           _errorMessage!,
-                          style: TextStyle(color: Colors.red),
+                          style: TextStyle(
+                              color: Theme.of(context).colorScheme.error),
                         ),
                       ),
                     SizedBox(height: 16),
@@ -343,7 +347,8 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                       child: _isLoading
                           ? CircularProgressIndicator(
                               valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                                  AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).colorScheme.onPrimary),
                               strokeWidth: 2,
                             )
                           : Text('Buat Akun Super Admin'),
@@ -366,9 +371,10 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outline),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -383,7 +389,7 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                     icon: Icon(Icons.open_in_new),
                     label: Text('Buka Dashboard Supabase'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   SizedBox(height: 16),
@@ -410,7 +416,8 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Column(
@@ -449,9 +456,11 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'SELECT * FROM admins WHERE id = \'${SupabaseConfig.client.auth.currentUser?.id ?? ""}\';',
@@ -466,9 +475,11 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'UPDATE admins SET role = \'super_admin\' WHERE id = \'${SupabaseConfig.client.auth.currentUser?.id ?? ""}\';',
@@ -484,9 +495,11 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'CREATE TABLE IF NOT EXISTS admins (\n  id UUID PRIMARY KEY,\n  user_id UUID NOT NULL,\n  email TEXT,\n  role TEXT DEFAULT \'admin\',\n  created_at TIMESTAMPTZ DEFAULT NOW(),\n  updated_at TIMESTAMPTZ DEFAULT NOW()\n);',
@@ -514,9 +527,11 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT \'admin\';',
@@ -543,9 +558,11 @@ class _SuperAdminSetupPageState extends State<SuperAdminSetupPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'CREATE OR REPLACE FUNCTION add_role_column()\nRETURNS void AS\n\$\$\nBEGIN\n  ALTER TABLE admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT \'admin\';\nEND;\n\$\$ LANGUAGE plpgsql;',

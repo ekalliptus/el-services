@@ -15,6 +15,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:servicehponline/features/admin/dialogs/documentation_preview_dialog.dart'
     as docPreview;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 
 /// Menyimpan id service yang kata sandinya sedang ditampilkan (reveal).
 /// Berupa state sementara sesi UI, bukan data persisten.
@@ -65,7 +66,7 @@ class ServiceCardWidget extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: hasComplaint ? Colors.red.withAlpha(77) : Colors.grey[200]!,
+          color: hasComplaint ? Theme.of(context).colorScheme.error.withValues(alpha: 0.3) : Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
       ),
       child: ExpansionTile(
@@ -115,19 +116,19 @@ class ServiceCardWidget extends StatelessWidget {
                       padding:
                           EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.red.withAlpha(26),
+                        color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.warning_amber_rounded,
-                              color: Colors.red, size: 14),
+                              color: Theme.of(context).colorScheme.error, size: 14),
                           SizedBox(width: 4),
                           Text(
                             'Komplain',
                             style: GoogleFonts.poppins(
-                              color: Colors.red,
+                              color: Theme.of(context).colorScheme.error,
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -152,13 +153,13 @@ class ServiceCardWidget extends StatelessWidget {
                 Icon(
                   Icons.calendar_today,
                   size: 14,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 SizedBox(width: 4),
                 Text(
                   formatDate(service['created_at']),
                   style: GoogleFonts.poppins(
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -173,7 +174,7 @@ class ServiceCardWidget extends StatelessWidget {
             Text(
               '${service['brand']} - ${service['model']}',
               style: GoogleFonts.poppins(
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -185,14 +186,14 @@ class ServiceCardWidget extends StatelessWidget {
                   Text(
                     'Biaya Awal: ',
                     style: GoogleFonts.poppins(
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 14,
                     ),
                   ),
                   Text(
                     currencyFormat.format(service['service_cost']),
                     style: GoogleFonts.poppins(
-                      color: Colors.green[700],
+                      color: AppColors.success,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -220,7 +221,7 @@ class ServiceCardWidget extends StatelessWidget {
               SizedBox(height: 24),
 
               // Tambahan Bagian catatan alamat dan kata sandi
-              _buildAdditionalInfoSection(service),
+              _buildAdditionalInfoSection(context, service),
               SizedBox(height: 24),
 
               LocationSectionWidget(service: service),
@@ -248,7 +249,8 @@ class ServiceCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildAdditionalInfoSection(Map<String, dynamic> service) {
+  Widget _buildAdditionalInfoSection(
+      BuildContext context, Map<String, dynamic> service) {
     final devicePassword = service['device_password'] ?? '-';
 
     return Column(
@@ -259,7 +261,7 @@ class ServiceCardWidget extends StatelessWidget {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         SizedBox(height: 12),
@@ -268,7 +270,7 @@ class ServiceCardWidget extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.password, size: 16, color: Colors.grey[600]),
+            Icon(Icons.password, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
             SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -279,7 +281,7 @@ class ServiceCardWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   // Sensitif: kata sandi/pola perangkat pelanggan disamarkan
@@ -300,7 +302,7 @@ class ServiceCardWidget extends StatelessWidget {
                                       : '•' * devicePassword.toString().length),
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -322,7 +324,7 @@ class ServiceCardWidget extends StatelessWidget {
                                       ? Icons.visibility_off
                                       : Icons.visibility,
                                   size: 16,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -356,7 +358,7 @@ class ServiceCardWidget extends StatelessWidget {
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           // Tampilkan tombol hanya jika tidak dalam mode read-only (COMPLETED)
@@ -395,8 +397,8 @@ class ServiceCardWidget extends StatelessWidget {
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
-                        backgroundColor: Colors.grey[200],
-                        foregroundColor: Colors.black87,
+                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        foregroundColor: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -409,7 +411,7 @@ class ServiceCardWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 11,
                       fontStyle: FontStyle.italic,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
@@ -439,7 +441,7 @@ class ServiceCardWidget extends StatelessWidget {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
                   ),
                 ),
                 SizedBox(width: 12),
@@ -447,7 +449,7 @@ class ServiceCardWidget extends StatelessWidget {
               ],
             ),
             duration: Duration(seconds: 2),
-            backgroundColor: Colors.blue,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -479,12 +481,12 @@ class ServiceCardWidget extends StatelessWidget {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
+                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
                 Text('Data berhasil diperbarui'),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: Duration(seconds: 2),
           ),
         );
@@ -499,12 +501,12 @@ class ServiceCardWidget extends StatelessWidget {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error_outline, color: Colors.white),
+                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
                 Expanded(child: Text('Gagal memperbarui data: $e')),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: Duration(seconds: 3),
           ),
         );
@@ -528,7 +530,7 @@ class ServiceCardWidget extends StatelessWidget {
             'Belum ada dokumentasi kondisi awal',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontStyle: FontStyle.italic,
             ),
           ),
@@ -641,12 +643,12 @@ class ServiceCardWidget extends StatelessWidget {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white),
+                Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
                 Text('Dokumentasi berhasil dihapus'),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
             duration: Duration(seconds: 3),
           ),
         );
@@ -663,12 +665,12 @@ class ServiceCardWidget extends StatelessWidget {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error, color: Colors.white),
+                Icon(Icons.error, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
                 Expanded(child: Text('Gagal menghapus dokumentasi: $e')),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: Duration(seconds: 5),
           ),
         );
@@ -693,7 +695,7 @@ class ServiceCardWidget extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(16),
-              color: Colors.blue.withAlpha(26),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -893,7 +895,7 @@ class ServiceCardWidget extends StatelessWidget {
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
                 ),
               ),
               SizedBox(width: 12),
@@ -901,7 +903,7 @@ class ServiceCardWidget extends StatelessWidget {
             ],
           ),
           duration: Duration(seconds: 60), // Durasi lebih pendek
-          backgroundColor: Colors.blue,
+          backgroundColor: Theme.of(context).colorScheme.primary,
         ),
       );
     }
@@ -1119,14 +1121,14 @@ class ServiceCardWidget extends StatelessWidget {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error_outline, color: Colors.white),
+                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text('Gagal menyimpan: ${e.toString()}'),
                 ),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: Duration(seconds: 5),
           ),
         );
@@ -1152,12 +1154,12 @@ class ServiceCardWidget extends StatelessWidget {
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.check_circle, color: Colors.white),
+              Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
               SizedBox(width: 12),
               Text('${type == 'image' ? 'Foto' : 'Video'} berhasil disimpan'),
             ],
           ),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
           duration: Duration(seconds: 3),
         ),
       );
@@ -1194,12 +1196,12 @@ class ServiceCardWidget extends StatelessWidget {
                         return Container(
                           width: 120,
                           height: 120,
-                          color: Colors.grey[300],
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           child: Center(
                             child: Icon(
                               Icons.movie,
                               size: 32,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         );
@@ -1208,18 +1210,18 @@ class ServiceCardWidget extends StatelessWidget {
                   : Container(
                       width: 120,
                       height: 120,
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Center(
                         child: Icon(
                           Icons.movie,
                           size: 32,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
               Icon(
                 Icons.play_circle_fill,
-                color: Colors.white.withAlpha(204),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                 size: 36,
               ),
             ],
@@ -1240,12 +1242,12 @@ class ServiceCardWidget extends StatelessWidget {
                 return Container(
                   width: 120,
                   height: 120,
-                  color: Colors.grey[300],
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: Center(
                     child: Icon(
                       Icons.image,
                       size: 32,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                 );
@@ -1256,12 +1258,12 @@ class ServiceCardWidget extends StatelessWidget {
           content = Container(
             width: 120,
             height: 120,
-            color: Colors.grey[300],
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Center(
               child: Icon(
                 Icons.broken_image,
                 size: 32,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           );
@@ -1289,12 +1291,12 @@ class ServiceCardWidget extends StatelessWidget {
                         return Container(
                           width: 120,
                           height: 120,
-                          color: Colors.grey[300],
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           child: Center(
                             child: Icon(
                               Icons.movie,
                               size: 32,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         );
@@ -1303,18 +1305,18 @@ class ServiceCardWidget extends StatelessWidget {
                   : Container(
                       width: 120,
                       height: 120,
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Center(
                         child: Icon(
                           Icons.movie,
                           size: 32,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),
               Icon(
                 Icons.play_circle_fill,
-                color: Colors.white.withAlpha(204),
+                color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
                 size: 36,
               ),
             ],
@@ -1332,12 +1334,12 @@ class ServiceCardWidget extends StatelessWidget {
               return Container(
                 width: 120,
                 height: 120,
-                color: Colors.grey[300],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Center(
                   child: Icon(
                     Icons.image,
                     size: 32,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               );
@@ -1352,7 +1354,7 @@ class ServiceCardWidget extends StatelessWidget {
       margin: EdgeInsets.only(right: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Stack(
         children: [
@@ -1371,12 +1373,12 @@ class ServiceCardWidget extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(128),
+                    color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.close,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                     size: 12,
                   ),
                 ),
@@ -1491,7 +1493,7 @@ class ServiceCardWidget extends StatelessWidget {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.onPrimary),
                   ),
                 ),
                 SizedBox(width: 12),
@@ -1499,7 +1501,7 @@ class ServiceCardWidget extends StatelessWidget {
               ],
             ),
             duration: Duration(seconds: 2),
-            backgroundColor: Colors.blue,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -1534,12 +1536,12 @@ class ServiceCardWidget extends StatelessWidget {
               SnackBar(
                 content: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.white),
+                    Icon(Icons.check_circle, color: Theme.of(context).colorScheme.onPrimary),
                     SizedBox(width: 12),
                     Text('Data berhasil dimuat ulang. Silakan buka menu lagi.'),
                   ],
                 ),
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
                 duration: Duration(seconds: 4),
               ),
             );
@@ -1556,12 +1558,12 @@ class ServiceCardWidget extends StatelessWidget {
           SnackBar(
             content: Row(
               children: [
-                Icon(Icons.error_outline, color: Colors.white),
+                Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onPrimary),
                 SizedBox(width: 12),
                 Expanded(child: Text('Gagal memperbarui data: $e')),
               ],
             ),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
             duration: Duration(seconds: 3),
           ),
         );
@@ -1613,8 +1615,8 @@ class ServiceCardWidget extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       side: BorderSide(
                         color: cost['status'] == 'PAID'
-                            ? Colors.green.withOpacity(0.3)
-                            : Colors.orange.withOpacity(0.5),
+                            ? AppColors.success.withValues(alpha: 0.3)
+                            : AppColors.warning.withValues(alpha: 0.5),
                         width: 1,
                       ),
                     ),
@@ -1633,8 +1635,8 @@ class ServiceCardWidget extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
                                     color: cost['status'] == 'PAID'
-                                        ? Colors.green
-                                        : Colors.orange,
+                                        ? AppColors.success
+                                        : AppColors.warning,
                                   ),
                                 ),
                               ),
@@ -1644,8 +1646,8 @@ class ServiceCardWidget extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                   color: cost['status'] == 'PAID'
-                                      ? Colors.green[700]
-                                      : Colors.orange[700],
+                                      ? AppColors.success
+                                      : AppColors.warning,
                                 ),
                               ),
                             ],
@@ -1658,7 +1660,7 @@ class ServiceCardWidget extends StatelessWidget {
                                 'Tanggal: ${_formatDate(cost['created_at'])}',
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -1670,7 +1672,7 @@ class ServiceCardWidget extends StatelessWidget {
                                 'Dibayar: ${_formatDate(cost['updated_at'])}',
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -1686,7 +1688,7 @@ class ServiceCardWidget extends StatelessWidget {
                             cost['note'] ?? 'Tidak ada catatan',
                             style: GoogleFonts.poppins(
                               fontSize: 13,
-                              color: Colors.black87,
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
@@ -1704,7 +1706,7 @@ class ServiceCardWidget extends StatelessWidget {
               'Tutup',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
-                color: Colors.blue,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -1805,14 +1807,14 @@ class _AdditionalCostSummaryState extends State<_AdditionalCostSummary> {
                 Text(
                   'Biaya Tambahan: ',
                   style: GoogleFonts.poppins(
-                    color: Colors.orange[700],
+                    color: AppColors.warning,
                     fontSize: 14,
                   ),
                 ),
                 Text(
                   widget.currencyFormat.format(totalAdditionalCost),
                   style: GoogleFonts.poppins(
-                    color: Colors.orange[700],
+                    color: AppColors.warning,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -1823,7 +1825,7 @@ class _AdditionalCostSummaryState extends State<_AdditionalCostSummary> {
                     child: Icon(
                       Icons.info_outline,
                       size: 16,
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     onTap: () =>
                         widget.onShowDetail(context, additionalCosts),
@@ -1838,7 +1840,7 @@ class _AdditionalCostSummaryState extends State<_AdditionalCostSummary> {
                 child: Text(
                   'Catatan terbaru: ${additionalCosts.first['note']}',
                   style: GoogleFonts.poppins(
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                   ),

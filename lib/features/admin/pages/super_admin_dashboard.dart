@@ -7,6 +7,7 @@ import 'package:servicehponline/features/admin/pages/system_settings_page.dart';
 import 'package:servicehponline/features/admin/pages/database_backup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:servicehponline/features/auth/pages/login_page.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   const SuperAdminDashboard({Key? key}) : super(key: key);
@@ -123,9 +124,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                       width: double.infinity,
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: Theme.of(context).colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
+                        border: Border.all(
+                            color: Theme.of(context).colorScheme.primary),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +137,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
                             ),
                           ),
                           SizedBox(height: 8),
@@ -158,7 +162,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         _buildMenuCard(
                           icon: Icons.system_update,
                           title: 'Kelola Versi Aplikasi',
-                          color: Colors.green,
+                          color: AppColors.success,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -188,7 +192,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         _buildMenuCard(
                           icon: Icons.settings,
                           title: 'Pengaturan Sistem',
-                          color: Colors.orange,
+                          color: AppColors.warning,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -203,7 +207,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         _buildMenuCard(
                           icon: Icons.backup,
                           title: 'Backup Database',
-                          color: Colors.blue,
+                          color: Theme.of(context).colorScheme.primary,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -223,9 +227,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                       width: double.infinity,
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(
+                            color: Theme.of(context).colorScheme.outline),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -240,7 +247,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           SizedBox(height: 8),
                           Row(
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green),
+                              Icon(Icons.check_circle,
+                                  color: AppColors.success),
                               SizedBox(width: 8),
                               Text('Database: Terhubung'),
                             ],
@@ -248,7 +256,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green),
+                              Icon(Icons.check_circle,
+                                  color: AppColors.success),
                               SizedBox(width: 8),
                               Text('Storage: Terhubung'),
                             ],

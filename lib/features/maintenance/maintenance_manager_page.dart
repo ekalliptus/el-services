@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 import 'package:servicehponline/features/maintenance/maintenance_service.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -90,7 +91,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -123,7 +124,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Mode maintenance dinonaktifkan'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
         }
@@ -139,7 +140,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Mode maintenance diaktifkan'),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warning,
             ),
           );
         }
@@ -154,7 +155,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -186,7 +187,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Detail maintenance berhasil diperbarui'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppColors.success,
           ),
         );
 
@@ -198,7 +199,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Terjadi kesalahan: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -263,9 +264,10 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: SelectableText(
                   MaintenanceService.getCreateTableSQL(),
@@ -299,6 +301,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text('Kelola Mode Maintenance'),
@@ -313,7 +316,7 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.warning_amber_rounded,
-                            size: 64, color: Colors.orange),
+                            size: 64, color: AppColors.warning),
                         SizedBox(height: 16),
                         Text(
                           'Tabel System Settings Belum Ada',
@@ -350,14 +353,16 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
                           width: double.infinity,
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: _isInMaintenanceMode
-                                ? Colors.orange.shade50
-                                : Colors.green.shade50,
+                            color: (_isInMaintenanceMode
+                                    ? AppColors.warning
+                                    : AppColors.success)
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: _isInMaintenanceMode
-                                  ? Colors.orange.shade200
-                                  : Colors.green.shade200,
+                              color: (_isInMaintenanceMode
+                                      ? AppColors.warning
+                                      : AppColors.success)
+                                  .withValues(alpha: 0.4),
                             ),
                           ),
                           child: Column(
@@ -378,8 +383,8 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
                                         ? Icons.engineering
                                         : Icons.check_circle,
                                     color: _isInMaintenanceMode
-                                        ? Colors.orange
-                                        : Colors.green,
+                                        ? AppColors.warning
+                                        : AppColors.success,
                                     size: 24,
                                   ),
                                   SizedBox(width: 8),
@@ -391,8 +396,8 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
                                       color: _isInMaintenanceMode
-                                          ? Colors.orange.shade800
-                                          : Colors.green.shade800,
+                                          ? AppColors.warning
+                                          : AppColors.success,
                                     ),
                                   ),
                                 ],
@@ -409,9 +414,9 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
                                     : 'Aktifkan Mode Maintenance'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _isInMaintenanceMode
-                                      ? Colors.green
-                                      : Colors.orange,
-                                  foregroundColor: Colors.white,
+                                      ? AppColors.success
+                                      : AppColors.warning,
+                                  foregroundColor: colorScheme.onPrimary,
                                 ),
                               ),
                             ],

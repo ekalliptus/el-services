@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Menampilkan dialog untuk memperbarui biaya service
@@ -41,7 +42,7 @@ Future<void> showUpdateCostDialog(
                   'Perbarui biaya service untuk penanganan komplain ini. Status akan otomatis diubah menjadi "Belum Dibayar".',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.red[700],
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
               ),
@@ -52,7 +53,7 @@ Future<void> showUpdateCostDialog(
                   'Menambahkan biaya service tambahan akan mengubah status menjadi "Belum Dibayar" sehingga pelanggan perlu melakukan pembayaran tambahan.',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.blue[700],
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ),
@@ -93,7 +94,7 @@ Future<void> showUpdateCostDialog(
             child: Text(
               'BATAL',
               style: GoogleFonts.poppins(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -106,7 +107,7 @@ Future<void> showUpdateCostDialog(
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Biaya service harus diisi'),
-                          backgroundColor: Colors.red,
+                          backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
                       return;
@@ -155,7 +156,7 @@ Future<void> showUpdateCostDialog(
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(message),
-                          backgroundColor: Colors.green,
+                          backgroundColor: AppColors.success,
                         ),
                       );
                     } catch (e) {
@@ -165,7 +166,7 @@ Future<void> showUpdateCostDialog(
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Gagal update biaya service'),
-                          backgroundColor: Colors.red,
+                          backgroundColor: Theme.of(context).colorScheme.error,
                         ),
                       );
                     } finally {
@@ -180,13 +181,14 @@ Future<void> showUpdateCostDialog(
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).colorScheme.primary),
                     ),
                   )
                 : Text(
                     'SIMPAN',
                     style: GoogleFonts.poppins(
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

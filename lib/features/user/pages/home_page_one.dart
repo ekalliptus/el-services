@@ -24,6 +24,7 @@ import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:servicehponline/features/maintenance/maintenance_service.dart';
 import 'package:servicehponline/features/maintenance/maintenance_page.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 
 class HomePageOne extends StatefulWidget {
   final Function() nextPage;
@@ -199,7 +200,8 @@ class _HomePageOneState extends State<HomePageOne>
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.location_off, size: 64, color: Colors.red),
+                Icon(Icons.location_off,
+                    size: 64, color: Theme.of(context).colorScheme.error),
                 SizedBox(height: 16),
                 Text(
                   'Aplikasi membutuhkan akses lokasi untuk melanjutkan. Silakan aktifkan GPS pada perangkat Anda.',
@@ -214,7 +216,7 @@ class _HomePageOneState extends State<HomePageOne>
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -223,7 +225,7 @@ class _HomePageOneState extends State<HomePageOne>
                       child: Text(
                         'AKTIFKAN GPS',
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -274,7 +276,7 @@ class _HomePageOneState extends State<HomePageOne>
             'Maaf, layanan untuk perangkat ini belum tersedia',
             style: GoogleFonts.poppins(),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -482,7 +484,7 @@ class _HomePageOneState extends State<HomePageOne>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal keluar dari aplikasi: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -500,18 +502,21 @@ class _HomePageOneState extends State<HomePageOne>
 
   // Tambahkan fungsi _buildAvatar sebelum build
   Widget _buildAvatar(Map<String, dynamic> testimonial) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color:
-            testimonial['photo_url'] != null ? Colors.transparent : Colors.blue,
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        color: testimonial['photo_url'] != null
+            ? Colors.transparent
+            : colorScheme.primary,
+        border: Border.all(color: colorScheme.outline, width: 1),
       ),
       child: CircleAvatar(
-        backgroundColor:
-            testimonial['photo_url'] != null ? Colors.grey[200] : Colors.blue,
+        backgroundColor: testimonial['photo_url'] != null
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primary,
         backgroundImage: testimonial['photo_url'] != null
             ? NetworkImage(testimonial['photo_url'])
             : null,
@@ -524,7 +529,7 @@ class _HomePageOneState extends State<HomePageOne>
                       : '?';
                 }(),
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
                 ),
@@ -566,6 +571,7 @@ class _HomePageOneState extends State<HomePageOne>
   Widget build(BuildContext context) {
     // Menggunakan _isGpsEnabled untuk mengontrol status GPS
     bool isGpsActive = _isGpsEnabled;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return WillPopScope(
       onWillPop: () async {
@@ -575,7 +581,7 @@ class _HomePageOneState extends State<HomePageOne>
       child: Opacity(
         opacity: isGpsActive ? 1.0 : 0.5,
         child: Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: colorScheme.surface,
           body: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -600,19 +606,19 @@ class _HomePageOneState extends State<HomePageOne>
                               },
                               child: Row(
                                 children: [
-                                  Icon(
-                                    Icons.location_on,
-                                    size: 20,
-                                    color: Colors.grey[600],
-                                  ),
-                                  SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      _isLoadingLocation
-                                          ? "Memuat lokasi..."
-                                          : _currentAddress,
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
+                              Icon(
+                                Icons.location_on,
+                                size: 20,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  _isLoadingLocation
+                                      ? "Memuat lokasi..."
+                                      : _currentAddress,
+                                  style: GoogleFonts.poppins(
+                                    color: colorScheme.onSurfaceVariant,
                                         fontSize: 14.0,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -631,21 +637,23 @@ class _HomePageOneState extends State<HomePageOne>
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: CircleAvatar(
-                                  radius: 24,
-                                  backgroundColor: Colors.grey[100],
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colorScheme.shadow
+                                        .withValues(alpha: 0.1),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: CircleAvatar(
+                                radius: 24,
+                                backgroundColor:
+                                    colorScheme.surfaceContainerHighest,
                                   backgroundImage: currentUser?.photoURL != null
                                       ? NetworkImage(currentUser!.photoURL!)
                                       : AssetImage(AppImages.logo)
@@ -659,13 +667,13 @@ class _HomePageOneState extends State<HomePageOne>
                                     children: [
                                       Icon(
                                         Icons.person_outline,
-                                        color: Colors.grey[700],
+                                        color: colorScheme.onSurface,
                                       ),
                                       SizedBox(width: 12),
                                       Text(
                                         'Profil Saya',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.grey[700],
+                                          color: colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -675,12 +683,13 @@ class _HomePageOneState extends State<HomePageOne>
                                   value: 'logout',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.logout, color: Colors.red),
+                                      Icon(Icons.logout,
+                                          color: colorScheme.error),
                                       SizedBox(width: 12),
                                       Text(
                                         'Keluar',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.red,
+                                          color: colorScheme.error,
                                         ),
                                       ),
                                     ],
@@ -720,34 +729,34 @@ class _HomePageOneState extends State<HomePageOne>
                                             onPressed: () => Navigator.of(
                                               context,
                                             ).pop(),
-                                            child: Text(
-                                              'BATAL',
-                                              style: GoogleFonts.poppins(
-                                                color: Colors.grey,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
+                                child: Text(
+                                  'BATAL',
+                                  style: GoogleFonts.poppins(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                                           ),
                                           TextButton(
                                             onPressed: () {
                                               Navigator.of(context).pop();
                                               _handleLogout();
                                             },
-                                            child: Text(
-                                              'KELUAR',
-                                              style: GoogleFonts.poppins(
-                                                color: Colors.red,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    break;
-                                }
-                              },
-                            ),
+                                child: Text(
+                                  'KELUAR',
+                                  style: GoogleFonts.poppins(
+                                    color: colorScheme.error,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                        break;
+                      }
+                    },
+                  ),
                           ),
                         ],
                       ),
@@ -767,19 +776,19 @@ class _HomePageOneState extends State<HomePageOne>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      "${_getGreeting()}, ${widget.username}",
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
-                                        fontSize: 14.0,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      "Pilih perangkat\nyang sedang bermasalah",
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.black87,
+                              Text(
+                                "${_getGreeting()}, ${widget.username}",
+                                style: GoogleFonts.poppins(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                "Pilih perangkat\nyang sedang bermasalah",
+                                style: GoogleFonts.poppins(
+                                  color: colorScheme.onSurface,
                                         fontSize: 24.0,
                                         fontWeight: FontWeight.bold,
                                         height: 1.3,
@@ -851,7 +860,7 @@ class _HomePageOneState extends State<HomePageOne>
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
+                                      color: colorScheme.onSurface,
                                     ),
                                   ),
                                   TextButton(
@@ -869,7 +878,7 @@ class _HomePageOneState extends State<HomePageOne>
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.blue,
+                                        color: colorScheme.primary,
                                       ),
                                     ),
                                   ),
@@ -882,14 +891,14 @@ class _HomePageOneState extends State<HomePageOne>
                                 Container(
                                   padding: EdgeInsets.symmetric(vertical: 24),
                                   decoration: BoxDecoration(
-                                    color: Colors.grey[100],
+                                    color: colorScheme.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(16),
                                   ),
                                   child: Center(
                                     child: Text(
                                       'Belum ada riwayat service',
                                       style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
+                                        color: colorScheme.onSurfaceVariant,
                                         fontSize: 14,
                                       ),
                                     ),
@@ -902,7 +911,7 @@ class _HomePageOneState extends State<HomePageOne>
                                       margin: EdgeInsets.only(bottom: 12),
                                       padding: EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[100],
+                                        color: colorScheme.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(
                                           16,
                                         ),
@@ -918,7 +927,7 @@ class _HomePageOneState extends State<HomePageOne>
                                               Container(
                                                 padding: EdgeInsets.all(12),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.white,
+                                                  color: colorScheme.surface,
                                                   borderRadius:
                                                       BorderRadius.circular(
                                                     12,
@@ -926,11 +935,11 @@ class _HomePageOneState extends State<HomePageOne>
                                                 ),
                                                 child: Icon(
                                                   service.device.contains(
-                                                    'iphone',
-                                                  )
+                                                            'iphone',
+                                                          )
                                                       ? Icons.phone_iphone
                                                       : Icons.phone_android,
-                                                  color: Colors.blue,
+                                                  color: colorScheme.primary,
                                                   size: 24,
                                                 ),
                                               ),
@@ -957,7 +966,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                         fontWeight:
                                                             FontWeight.w600,
                                                         fontSize: 14,
-                                                        color: Colors.black87,
+                                                        color: colorScheme.onSurface,
                                                       ),
                                                     ),
                                                     SizedBox(height: 4),
@@ -972,7 +981,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                       style:
                                                           GoogleFonts.poppins(
                                                         fontSize: 13,
-                                                        color: Colors.grey[600],
+                                                        color: colorScheme.onSurfaceVariant,
                                                       ),
                                                     ),
                                                     SizedBox(height: 8),
@@ -984,6 +993,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                       ),
                                                       decoration: BoxDecoration(
                                                         color: _getStatusColor(
+                                                          context,
                                                           service.status,
                                                           serviceCost: service
                                                                           .price !=
@@ -1017,6 +1027,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                               FontWeight.w500,
                                                           color:
                                                               _getStatusColor(
+                                                            context,
                                                             service.status,
                                                             serviceCost: service
                                                                             .price !=
@@ -1051,7 +1062,7 @@ class _HomePageOneState extends State<HomePageOne>
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
+                                      color: colorScheme.onSurface,
                                     ),
                                   ),
                                   TextButton(
@@ -1075,7 +1086,7 @@ class _HomePageOneState extends State<HomePageOne>
                                       style: GoogleFonts.poppins(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.blue,
+                                        color: colorScheme.primary,
                                       ),
                                     ),
                                   ),
@@ -1098,14 +1109,14 @@ class _HomePageOneState extends State<HomePageOne>
                                         vertical: 24,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[100],
+                                        color: colorScheme.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Center(
                                         child: Text(
                                           'Gagal memuat testimoni',
                                           style: GoogleFonts.poppins(
-                                            color: Colors.grey[600],
+                                            color: colorScheme.onSurfaceVariant,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -1121,14 +1132,14 @@ class _HomePageOneState extends State<HomePageOne>
                                         vertical: 24,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[100],
+                                        color: colorScheme.surfaceContainerHighest,
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                       child: Center(
                                         child: Text(
                                           'Belum ada testimoni',
                                           style: GoogleFonts.poppins(
-                                            color: Colors.grey[600],
+                                            color: colorScheme.onSurfaceVariant,
                                             fontSize: 14,
                                           ),
                                         ),
@@ -1152,11 +1163,11 @@ class _HomePageOneState extends State<HomePageOne>
                                           ),
                                           padding: EdgeInsets.all(16),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey[100],
+                                            color: colorScheme.surfaceContainerHighest,
                                             borderRadius:
                                                 BorderRadius.circular(16),
                                             border: Border.all(
-                                              color: Colors.grey[200]!,
+                                              color: colorScheme.outline,
                                               width: 1,
                                             ),
                                           ),
@@ -1219,7 +1230,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                                 0)
                                                         ? Icons.star
                                                         : Icons.star_border,
-                                                    color: Colors.amber,
+                                                    color: AppColors.warning,
                                                     size: 20,
                                                   ),
                                                 ),
@@ -1231,7 +1242,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                 style: GoogleFonts.poppins(
                                                   fontSize: 14,
                                                   height: 1.5,
-                                                  color: Colors.black87,
+                                                  color: colorScheme.onSurface,
                                                 ),
                                                 maxLines: 3,
                                                 overflow: TextOverflow.ellipsis,
@@ -1252,7 +1263,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                     DateFormat('dd MMMM yyyy')
                                                         .format(ts),
                                                     style: GoogleFonts.poppins(
-                                                      color: Colors.grey[600],
+                                                      color: colorScheme.onSurfaceVariant,
                                                       fontSize: 12,
                                                     ),
                                                   );
@@ -1303,28 +1314,28 @@ class _HomePageOneState extends State<HomePageOne>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
-                  child: Text(
-                    'KELUAR',
-                    style: GoogleFonts.poppins(
-                      color: Colors.red,
-                      fontWeight: FontWeight.w600,
+                    child: Text(
+                      'KELUAR',
+                      style: GoogleFonts.poppins(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  onPressed: () {
-                    SystemNavigator.pop();
-                  },
+                    onPressed: () {
+                      SystemNavigator.pop();
+                    },
                 ),
                 TextButton(
-                  child: Text(
-                    'TUTUP',
-                    style: GoogleFonts.poppins(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.w600,
+                    child: Text(
+                      'TUTUP',
+                      style: GoogleFonts.poppins(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
                 ),
               ],
             ),
@@ -1354,23 +1365,25 @@ class _HomePageOneState extends State<HomePageOne>
     }
   }
 
-  Color _getStatusColor(String? status, {dynamic serviceCost}) {
-    if (status == null) return Colors.grey;
+  Color _getStatusColor(BuildContext context, String? status,
+      {dynamic serviceCost}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (status == null) return colorScheme.onSurfaceVariant;
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return serviceCost != null ? Colors.orange : Colors.blue;
+        return serviceCost != null ? AppColors.warning : colorScheme.primary;
       case 'PROCESSED':
-        return Colors.blue;
+        return colorScheme.primary;
       case 'COMPLETED':
-        return Colors.green;
+        return AppColors.success;
       case 'PAID':
-        return Colors.green;
+        return AppColors.success;
       case 'EXPIRED':
-        return Colors.red;
+        return colorScheme.error;
       case 'COMPLAINED':
-        return Colors.red;
+        return colorScheme.error;
       default:
-        return Colors.grey;
+        return colorScheme.onSurfaceVariant;
     }
   }
 

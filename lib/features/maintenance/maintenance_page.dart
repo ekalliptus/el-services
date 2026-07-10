@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'dart:async';
+import 'package:servicehponline/core/theme/app_colors.dart';
 import 'package:servicehponline/features/maintenance/maintenance_service.dart';
 
 class MaintenancePage extends StatefulWidget {
@@ -111,7 +112,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Aplikasi masih dalam perbaikan. Silakan tunggu.'),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warning,
             ),
           );
         }
@@ -124,7 +125,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
           SnackBar(
             content: Text(
                 'Terjadi kesalahan saat memeriksa status. Silakan coba lagi.'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -148,8 +149,9 @@ class _MaintenancePageState extends State<MaintenancePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -161,7 +163,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                 Icon(
                   Icons.engineering_rounded,
                   size: 120,
-                  color: Colors.orange,
+                  color: AppColors.warning,
                 ),
                 SizedBox(height: 32),
 
@@ -171,7 +173,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -182,7 +184,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                   widget.message,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
-                    color: Colors.black54,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -193,9 +195,10 @@ class _MaintenancePageState extends State<MaintenancePage> {
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: colorScheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade100),
+                      border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       children: [
@@ -204,7 +207,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Colors.blue.shade800,
+                            color: colorScheme.primary,
                           ),
                         ),
                         SizedBox(height: 4),
@@ -213,7 +216,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade800,
+                            color: colorScheme.primary,
                           ),
                         ),
                       ],
@@ -227,7 +230,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                   'Otomatis memeriksa status setiap 30 detik',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey,
+                    color: colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -242,17 +245,19 @@ class _MaintenancePageState extends State<MaintenancePage> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: colorScheme.onPrimary,
                           ),
                         )
                       : Icon(Icons.refresh),
                   label: Text(_isRetrying ? 'Memeriksa...' : 'Coba Lagi'),
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.blue.withOpacity(0.6),
-                    disabledForegroundColor: Colors.white70,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    disabledBackgroundColor:
+                        colorScheme.primary.withValues(alpha: 0.6),
+                    disabledForegroundColor:
+                        colorScheme.onPrimary.withValues(alpha: 0.7),
                   ),
                 ),
 
@@ -274,7 +279,7 @@ class _MaintenancePageState extends State<MaintenancePage> {
                         'Memeriksa status...',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],

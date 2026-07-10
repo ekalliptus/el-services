@@ -12,6 +12,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:servicehponline/features/user/widgets/page_indicator_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/core/mixins/gps_mixin.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 
 class ConfirmationPage extends StatefulWidget {
   final ServiceModel service;
@@ -207,7 +208,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
             (route) => false,
           );
         },
-        btnOkColor: Colors.blue,
+        btnOkColor: Theme.of(context).colorScheme.primary,
         btnOkText: 'Lihat Riwayat',
       ).show();
     } catch (e) {
@@ -231,7 +232,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
         btnOkOnPress: () {
           Navigator.of(context).pop();
         },
-        btnOkColor: Colors.red,
+        btnOkColor: Theme.of(context).colorScheme.error,
         btnOkText: 'OK',
       ).show();
     } finally {
@@ -246,6 +247,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return WillPopScope(
       onWillPop: () async {
         if (_isLoading || _isSubmitting) {
@@ -255,7 +257,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
             animType: AnimType.scale,
             title: 'Peringatan',
             desc: 'Mohon tunggu hingga proses pengiriman selesai',
-            btnOkColor: Colors.orange,
+            btnOkColor: AppColors.warning,
             btnOkText: 'OK',
             btnOkOnPress: () {},
             dismissOnBackKeyPress: false,
@@ -268,7 +270,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
       child: Stack(
         children: [
           Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: colorScheme.surface,
             body: SafeArea(
               child: AbsorbPointer(
                 absorbing: _isLoading || _isSubmitting,
@@ -289,7 +291,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                               Text(
                                 "Konfirmasi",
                                 style: GoogleFonts.poppins(
-                                  color: Colors.black87,
+                                  color: colorScheme.onSurface,
                                   fontSize: 32.0,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
@@ -299,7 +301,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                               Text(
                                 "Periksa kembali data service Anda",
                                 style: GoogleFonts.poppins(
-                                  color: Colors.black54,
+                                  color: colorScheme.onSurfaceVariant,
                                   fontSize: 16.0,
                                   height: 1.5,
                                 ),
@@ -464,16 +466,18 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                                       borderRadius: BorderRadius.circular(12.0),
                                       side: BorderSide(
                                           color: _isLoading
-                                              ? Colors.grey[200]!
-                                              : Colors.grey[300]!),
+                                              ? colorScheme.outline
+                                                  .withValues(alpha: 0.5)
+                                              : colorScheme.outline),
                                     ),
                                   ),
                                   child: Text(
                                     "KEMBALI",
                                     style: GoogleFonts.poppins(
                                       color: _isLoading
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
+                                          ? colorScheme.onSurfaceVariant
+                                              .withValues(alpha: 0.5)
+                                          : colorScheme.onSurfaceVariant,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -486,7 +490,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                                   style: ElevatedButton.styleFrom(
                                     padding:
                                         EdgeInsets.symmetric(vertical: 16.0),
-                                    backgroundColor: Colors.blue,
+                                    backgroundColor: colorScheme.primary,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12.0),
                                     ),
@@ -499,13 +503,13 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                                             strokeWidth: 2,
                                             valueColor:
                                                 AlwaysStoppedAnimation<Color>(
-                                                    Colors.white),
+                                                    colorScheme.onPrimary),
                                           ),
                                         )
                                       : Text(
                                           "KONFIRMASI",
                                           style: GoogleFonts.poppins(
-                                            color: Colors.white,
+                                            color: colorScheme.onPrimary,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -523,16 +527,17 @@ class _ConfirmationPageState extends State<ConfirmationPage>
           ),
           if (_isLoading || _isSubmitting)
             Container(
-              color: Colors.black54,
+              color: colorScheme.scrim.withValues(alpha: 0.5),
               child: Center(
                 child: Container(
                   padding: EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: colorScheme.surface,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(colorScheme.primary),
                   ),
                 ),
               ),
@@ -546,12 +551,13 @@ class _ConfirmationPageState extends State<ConfirmationPage>
     required String title,
     required List<Widget> content,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,7 +565,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
           Text(
             title,
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontSize: 16.0,
               fontWeight: FontWeight.w600,
             ),
@@ -575,6 +581,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
     required String label,
     required String value,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Column(
@@ -583,7 +590,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
           Text(
             label,
             style: GoogleFonts.poppins(
-              color: Colors.grey[600],
+              color: colorScheme.onSurfaceVariant,
               fontSize: 14.0,
             ),
           ),
@@ -591,7 +598,7 @@ class _ConfirmationPageState extends State<ConfirmationPage>
           Text(
             value,
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontSize: 15.0,
               fontWeight: FontWeight.w500,
             ),
@@ -605,13 +612,14 @@ class _ConfirmationPageState extends State<ConfirmationPage>
     required String label,
     required String imagePath,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: GoogleFonts.poppins(
-            color: Colors.grey[600],
+            color: colorScheme.onSurfaceVariant,
             fontSize: 14.0,
           ),
         ),
@@ -636,13 +644,14 @@ class _ConfirmationPageState extends State<ConfirmationPage>
     required String label,
     required String videoPath,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
           style: GoogleFonts.poppins(
-            color: Colors.grey[600],
+            color: colorScheme.onSurfaceVariant,
             fontSize: 14.0,
           ),
         ),

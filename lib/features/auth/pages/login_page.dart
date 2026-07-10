@@ -252,7 +252,7 @@ class _HomeState extends State<Home> {
               child: Text(
                 'BATAL',
                 style: GoogleFonts.poppins(
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -380,7 +380,8 @@ class _HomeState extends State<Home> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(errorMessage),
-                              backgroundColor: Colors.red,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.error,
                             ),
                           );
                         } finally {
@@ -396,13 +397,14 @@ class _HomeState extends State<Home> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary),
                       ),
                     )
                   : Text(
                       'LOGIN',
                       style: GoogleFonts.poppins(
-                        color: Colors.blue,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -749,8 +751,9 @@ class _HomeState extends State<Home> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          final colorScheme = Theme.of(context).colorScheme;
           return Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: colorScheme.surface,
             body: SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
@@ -788,7 +791,7 @@ class _HomeState extends State<Home> {
                           style: GoogleFonts.poppins(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: colorScheme.onSurface,
                             height: 1.3,
                           ),
                         ),
@@ -798,7 +801,7 @@ class _HomeState extends State<Home> {
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: Colors.black54,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -810,9 +813,9 @@ class _HomeState extends State<Home> {
                             padding: const EdgeInsets.symmetric(
                                 vertical: 12, horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(32),
-                              border: Border.all(color: Colors.grey.shade300),
+                              border: Border.all(color: colorScheme.outline),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -824,7 +827,7 @@ class _HomeState extends State<Home> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.grey.shade400),
+                                          colorScheme.onSurfaceVariant),
                                     ),
                                   )
                                 else
@@ -845,7 +848,7 @@ class _HomeState extends State<Home> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: colorScheme.onSurface,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -876,9 +879,9 @@ class _HomeState extends State<Home> {
                             padding: const EdgeInsets.symmetric(
                                 vertical: 12, horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(32),
-                              border: Border.all(color: Colors.grey.shade300),
+                              border: Border.all(color: colorScheme.outline),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -898,7 +901,7 @@ class _HomeState extends State<Home> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: colorScheme.onSurface,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -928,7 +931,7 @@ class _HomeState extends State<Home> {
                                 text: TextSpan(
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
-                                    color: Colors.black54,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                   children: [
                                     TextSpan(
@@ -936,14 +939,14 @@ class _HomeState extends State<Home> {
                                             'Saya telah membaca dan menyetujui '),
                                     TextSpan(
                                       text: 'Ketentuan Layanan',
-                                      style: TextStyle(color: Colors.blue),
+                                      style: TextStyle(color: colorScheme.primary),
                                     ),
                                     TextSpan(text: ' dan '),
                                     TextSpan(
                                       text: 'Kebijakan Privasi',
-                                      style: TextStyle(color: Colors.blue),
+                                      style: TextStyle(color: colorScheme.primary),
                                     ),
-                                    TextSpan(text: ' Service HP Online'),
+                                    TextSpan(text: ' ANRServices'),
                                   ],
                                 ),
                               ),
@@ -958,7 +961,7 @@ class _HomeState extends State<Home> {
                             'Login sebagai Admin',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: colorScheme.onSurfaceVariant,
                               decoration: TextDecoration.underline,
                             ),
                           ),

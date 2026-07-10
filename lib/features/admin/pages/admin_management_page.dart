@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 
 class AdminManagementPage extends StatefulWidget {
   const AdminManagementPage({Key? key}) : super(key: key);
@@ -50,7 +51,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memuat daftar admin: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -104,7 +105,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Admin baru berhasil ditambahkan'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
 
@@ -125,7 +126,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal menambahkan admin: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -166,7 +167,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Anda tidak dapat menghapus akun Anda sendiri'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -193,7 +194,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Tidak dapat menghapus super admin terakhir'),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
           setState(() {
@@ -215,7 +216,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Admin berhasil dihapus'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
 
@@ -225,7 +226,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal menghapus admin: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -246,7 +247,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
           SnackBar(
             content:
                 Text('Anda tidak dapat menurunkan status Anda sendiri'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
         return;
@@ -268,7 +269,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Harus ada minimal satu super admin'),
-              backgroundColor: Colors.red,
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
           setState(() {
@@ -287,7 +288,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Status Super Admin berhasil diubah'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.success,
         ),
       );
 
@@ -297,7 +298,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal mengubah status: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -391,7 +392,8 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(color: Colors.red),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error),
                     ),
                   ),
               ],
@@ -454,7 +456,9 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                               child: Text(
                                 'Belum ada admin terdaftar',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                   fontSize: 16,
                                 ),
                               ),
@@ -473,12 +477,17 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                                     leading: CircleAvatar(
                                       backgroundColor: isSuperAdmin
                                           ? Colors.purple.withAlpha(50)
-                                          : Colors.blue.withAlpha(50),
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withValues(alpha: 0.2),
                                       child: Icon(
                                         Icons.person,
                                         color: isSuperAdmin
                                             ? Colors.purple
-                                            : Colors.blue,
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                       ),
                                     ),
                                     title:
@@ -488,7 +497,9 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                                       style: TextStyle(
                                         color: isSuperAdmin
                                             ? Colors.purple
-                                            : Colors.blue,
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                       ),
                                     ),
                                     trailing: Row(
@@ -503,7 +514,9 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                                         ),
                                         IconButton(
                                           icon: Icon(Icons.delete,
-                                              color: Colors.red),
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .error),
                                           onPressed: () {
                                             _deleteAdmin(
                                                 admin['id'], admin['email']);

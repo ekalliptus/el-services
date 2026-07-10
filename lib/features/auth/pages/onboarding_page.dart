@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:servicehponline/features/profile/pages/profile_setup_page.dart';
@@ -240,8 +241,9 @@ class _OnboardingPageState extends State<OnboardingPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       body: _isCheckingUserStatus
           ? Center(child: CircularProgressIndicator())
           : SafeArea(
@@ -262,13 +264,14 @@ class _OnboardingPageState extends State<OnboardingPage>
                                   width: 120,
                                   height: 120,
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.withOpacity(0.1),
+                                    color: colorScheme.primary
+                                        .withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
                                     Icons.location_on,
                                     size: 60,
-                                    color: Colors.blue,
+                                    color: colorScheme.primary,
                                   ),
                                 ),
                               ),
@@ -277,11 +280,11 @@ class _OnboardingPageState extends State<OnboardingPage>
                             FadeTransition(
                               opacity: _fadeAnimation,
                               child: Text(
-                                "Selamat datang di Service HP Online!",
+                                "Selamat datang di ANRServices!",
                                 style: GoogleFonts.poppins(
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: colorScheme.onSurface,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -293,7 +296,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                                 "Izinkan akses lokasi untuk pengalaman lebih personal dan kemudahan layanan kami.",
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
-                                  color: Colors.black54,
+                                  color: colorScheme.onSurfaceVariant,
                                   height: 1.5,
                                 ),
                                 textAlign: TextAlign.center,
@@ -319,27 +322,28 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   Widget _buildRationaleMessage() {
+    final colorScheme = Theme.of(context).colorScheme;
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.1),
+          color: AppColors.warning.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange.withOpacity(0.3)),
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.orange),
+                Icon(Icons.info_outline, color: AppColors.warning),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     "Mengapa butuh lokasi?",
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      color: Colors.orange[800],
+                      color: AppColors.warning,
                     ),
                   ),
                 ),
@@ -350,7 +354,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               "Kami membutuhkan lokasi Anda untuk menemukan teknisi terdekat dan mempercepat layanan service.",
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.black54,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -360,27 +364,28 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   Widget _buildPermanentlyDeniedMessage() {
+    final colorScheme = Theme.of(context).colorScheme;
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.1),
+          color: colorScheme.error.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.red.withOpacity(0.3)),
+          border: Border.all(color: colorScheme.error.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
             Row(
               children: [
-                Icon(Icons.location_disabled, color: Colors.red),
+                Icon(Icons.location_disabled, color: colorScheme.error),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     "Izin lokasi ditolak",
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      color: Colors.red[800],
+                      color: colorScheme.error,
                     ),
                   ),
                 ),
@@ -391,7 +396,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               "Kamu perlu mengaktifkan izin lokasi melalui Pengaturan perangkat untuk menggunakan fitur lengkap aplikasi.",
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.black54,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
             SizedBox(height: 12),
@@ -400,7 +405,7 @@ class _OnboardingPageState extends State<OnboardingPage>
                 await Geolocator.openAppSettings();
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: colorScheme.error,
                 padding: EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -409,7 +414,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               child: Text(
                 "BUKA PENGATURAN",
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: colorScheme.onError,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -421,27 +426,28 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   Widget _buildSuccessMessage() {
+    final colorScheme = Theme.of(context).colorScheme;
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Container(
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.1),
+          color: AppColors.success.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.green.withOpacity(0.3)),
+          border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
             Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.green),
+                Icon(Icons.check_circle, color: AppColors.success),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     "Terima kasih!",
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      color: Colors.green[800],
+                      color: AppColors.success,
                     ),
                   ),
                 ),
@@ -452,7 +458,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               "Sekarang kamu bisa temukan layanan terdekat dengan mudah.",
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.black54,
+                color: colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -462,13 +468,14 @@ class _OnboardingPageState extends State<OnboardingPage>
   }
 
   Widget _buildBottomButtons() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, -5),
           ),
@@ -481,7 +488,7 @@ class _OnboardingPageState extends State<OnboardingPage>
             ElevatedButton(
               onPressed: _requestLocationPermission,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: colorScheme.primary,
                 minimumSize: Size(double.infinity, 56),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -490,7 +497,7 @@ class _OnboardingPageState extends State<OnboardingPage>
               child: Text(
                 "IZINKAN LOKASI",
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
@@ -505,13 +512,13 @@ class _OnboardingPageState extends State<OnboardingPage>
                   minimumSize: Size(double.infinity, 56),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey[300]!),
+                    side: BorderSide(color: colorScheme.outline),
                   ),
                 ),
                 child: Text(
                   "LANJUTKAN TANPA LOKASI",
                   style: GoogleFonts.poppins(
-                    color: Colors.black54,
+                    color: colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),

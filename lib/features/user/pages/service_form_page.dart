@@ -158,19 +158,20 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Form Service',
           style: GoogleFonts.poppins(
-            color: Colors.black,
+            color: colorScheme.onSurface,
             fontSize: 20.0,
             fontWeight: FontWeight.w600,
           ),
@@ -188,7 +189,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 18.0,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 16.0),
@@ -297,7 +298,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 18.0,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 16.0),
@@ -383,7 +384,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 18.0,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 16.0),
@@ -423,7 +424,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 18.0,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               SizedBox(height: 16.0),
@@ -459,7 +460,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
               ElevatedButton(
                 onPressed: _submitForm,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: EdgeInsets.symmetric(vertical: 16.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
@@ -484,35 +485,41 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
   // Metode untuk membuat tombol saran (gunakan data tersimpan)
   Widget _buildSuggestButton(
       {required String title, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blue.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.history,
-              size: 16,
-              color: Colors.blue,
+    return Builder(
+      builder: (context) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return InkWell(
+          onTap: onTap,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border:
+                  Border.all(color: colorScheme.primary.withValues(alpha: 0.3)),
             ),
-            SizedBox(width: 4),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.blue,
-                fontWeight: FontWeight.w500,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.history,
+                  size: 16,
+                  color: colorScheme.primary,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

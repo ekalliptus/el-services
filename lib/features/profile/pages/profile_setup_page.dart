@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -555,7 +556,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 Icon(
                   Icons.location_off,
                   size: 64,
-                  color: Colors.red,
+                  color: Theme.of(context).colorScheme.error,
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -571,7 +572,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -583,7 +584,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                       child: Text(
                         'AKTIFKAN GPS',
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -637,7 +638,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 Icon(
                   Icons.location_disabled,
                   size: 64,
-                  color: Colors.orange,
+                  color: AppColors.warning,
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -653,22 +654,22 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        'BUKA PENGATURAN',
-                        style: GoogleFonts.poppins(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    child: Text(
+                      'BUKA PENGATURAN',
+                      style: GoogleFonts.poppins(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      onPressed: () async {
-                        await Geolocator.openAppSettings();
-                      },
+                    ),
+                    onPressed: () async {
+                      await Geolocator.openAppSettings();
+                    },
                     ),
                   ),
                 ],
@@ -779,7 +780,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         title: 'Profil Berhasil Disimpan',
         desc: 'Profil Anda berhasil disimpan. Selamat menggunakan aplikasi!',
         btnOkText: 'Lanjutkan',
-        btnOkColor: Colors.blue,
+        btnOkColor: Theme.of(context).colorScheme.primary,
         btnOkOnPress: () {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
@@ -801,7 +802,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
         title: 'Gagal Menyimpan Profil',
         desc: 'Terjadi kesalahan saat menyimpan profil: $e',
         btnOkText: 'Coba Lagi',
-        btnOkColor: Colors.blue,
+        btnOkColor: Theme.of(context).colorScheme.primary,
         btnOkOnPress: () {},
       ).show();
     } finally {
@@ -912,25 +913,26 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return WillPopScope(
       onWillPop: () async {
         _cancelProfileSetup();
         return false;
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         appBar: AppBar(
           title: Text(
             'Pengaturan Profil',
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: colorScheme.surface,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.black87),
+            icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
             onPressed: () => _cancelProfileSetup(),
           ),
         ),
@@ -950,15 +952,15 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                         SizedBox(height: 8),
                         LinearProgressIndicator(
                           value: _progress,
-                          backgroundColor: Colors.grey[200],
+                          backgroundColor: colorScheme.surfaceContainerHighest,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.blue),
+                              AlwaysStoppedAnimation<Color>(colorScheme.primary),
                           borderRadius: BorderRadius.circular(8),
                           minHeight: 10,
                         ),
@@ -967,7 +969,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                           "${(_progress * 100).toInt()}% Lengkap",
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.black54,
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -1002,6 +1004,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
   }
 
   Widget _buildInfoData() {
+    final colorScheme = Theme.of(context).colorScheme;
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Column(
@@ -1012,7 +1015,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 8),
@@ -1020,7 +1023,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
             "Informasi ini akan digunakan untuk layanan service",
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.black54,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
           SizedBox(height: 24),
@@ -1032,7 +1035,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 "Nama Lengkap",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
               SizedBox(width: 8),
@@ -1041,7 +1044,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Colors.red[700],
+                  color: colorScheme.error,
                 ),
               ),
             ],
@@ -1069,7 +1072,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 "Nomor WhatsApp",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
               SizedBox(width: 8),
@@ -1078,7 +1081,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Colors.red[700],
+                  color: colorScheme.error,
                 ),
               ),
             ],
@@ -1097,7 +1100,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
               helperText: "Format: Diawali dengan 0 atau 62, total 11-13 digit",
               helperStyle: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: colorScheme.onSurfaceVariant,
               ),
               errorMaxLines: 2,
             ),
@@ -1151,6 +1154,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
   }
 
   Widget _buildLocationData() {
+    final colorScheme = Theme.of(context).colorScheme;
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Column(
@@ -1161,7 +1165,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: colorScheme.onSurface,
             ),
           ),
           SizedBox(height: 8),
@@ -1169,7 +1173,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
             "Alamat ini akan digunakan untuk pengiriman/penjemputan perangkat",
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.black54,
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
           SizedBox(height: 16),
@@ -1177,12 +1181,13 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
           ElevatedButton.icon(
             onPressed: _isLocationLoading ? null : _detectLocation,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[50],
-              foregroundColor: Colors.blue,
+              backgroundColor: colorScheme.primary.withValues(alpha: 0.1),
+              foregroundColor: colorScheme.primary,
               padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: Colors.blue[200]!),
+                side: BorderSide(
+                    color: colorScheme.primary.withValues(alpha: 0.4)),
               ),
             ),
             icon: _isLocationLoading
@@ -1191,7 +1196,8 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                     height: 16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(colorScheme.primary),
                     ),
                   )
                 : Icon(Icons.my_location),
@@ -1211,7 +1217,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 "Detail Alamat",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
               SizedBox(width: 8),
@@ -1220,7 +1226,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Colors.red[700],
+                  color: colorScheme.error,
                 ),
               ),
             ],
@@ -1252,7 +1258,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 "Catatan Alamat",
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w500,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
               SizedBox(width: 8),
@@ -1261,7 +1267,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Colors.blue[700],
+                  color: colorScheme.primary,
                 ),
               ),
             ],
@@ -1281,6 +1287,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
   }
 
   Widget _buildBottomButtons() {
+    final colorScheme = Theme.of(context).colorScheme;
     bool isFirstStepInputValid = _nameController.text.isNotEmpty &&
         _whatsappController.text.isNotEmpty &&
         _whatsappController.text.length >= 11;
@@ -1288,10 +1295,10 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
     return Container(
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: Offset(0, -5),
           ),
@@ -1304,11 +1311,11 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
               child: TextButton(
                 onPressed: _isLoading ? null : _prevStep,
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.black54,
+                  foregroundColor: colorScheme.onSurfaceVariant,
                   padding: EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey[300]!),
+                    side: BorderSide(color: colorScheme.outline),
                   ),
                 ),
                 child: Text(
@@ -1329,7 +1336,7 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                       : _saveProfile),
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(vertical: 16),
-                backgroundColor: Colors.blue,
+                backgroundColor: colorScheme.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1340,13 +1347,14 @@ class _ProfileSetupPageState extends State<ProfileSetupPage>
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                       ),
                     )
                   : Text(
                       _currentStep < 1 ? "LANJUT" : "SIMPAN PROFIL",
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

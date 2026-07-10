@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 import 'package:servicehponline/data/models/device_problems.dart';
 
 class AllTestimonialsPage extends StatefulWidget {
@@ -69,7 +70,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Gagal memuat testimoni'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -102,21 +103,24 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
   }
 
   Widget _buildAvatar(Map<String, dynamic> testimonial) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color:
-            testimonial['photo_url'] != null ? Colors.transparent : Colors.blue,
+        color: testimonial['photo_url'] != null
+            ? Colors.transparent
+            : colorScheme.primary,
         border: Border.all(
-          color: Colors.grey[200]!,
+          color: colorScheme.outline,
           width: 1,
         ),
       ),
       child: CircleAvatar(
-        backgroundColor:
-            testimonial['photo_url'] != null ? Colors.grey[200] : Colors.blue,
+        backgroundColor: testimonial['photo_url'] != null
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primary,
         backgroundImage: testimonial['photo_url'] != null
             ? NetworkImage(testimonial['photo_url'])
             : null,
@@ -124,7 +128,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
             ? Text(
                 _initialFrom(testimonial['fullname']),
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
                 ),
@@ -136,19 +140,20 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colorScheme.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Semua Testimoni',
           style: GoogleFonts.poppins(
-            color: Colors.black87,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -160,7 +165,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                 child: Text(
                   'Belum ada testimoni',
                   style: GoogleFonts.poppins(
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                   ),
                 ),
@@ -185,7 +190,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                     margin: EdgeInsets.only(bottom: 16),
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -211,7 +216,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                                     DeviceProblems.formatDeviceName(
                                         testimonial),
                                     style: GoogleFonts.poppins(
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurfaceVariant,
                                       fontSize: 12,
                                     ),
                                     overflow: TextOverflow.ellipsis,
@@ -223,7 +228,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                             Text(
                               _formatTanggal(testimonial['created_at']),
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
+                                color: colorScheme.onSurfaceVariant,
                                 fontSize: 12,
                               ),
                             ),
@@ -238,7 +243,7 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                               index < (testimonial['rating'] ?? 0)
                                   ? Icons.star
                                   : Icons.star_border,
-                              color: Colors.amber,
+                              color: AppColors.warning,
                               size: 20,
                             ),
                           ),
