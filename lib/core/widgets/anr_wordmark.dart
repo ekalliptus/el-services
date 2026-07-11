@@ -39,3 +39,29 @@ class AnrWordmark extends StatelessWidget {
     );
   }
 }
+
+/// Loader bermerek: wordmark ANRServices + indikator progres halus.
+/// Dipakai untuk splash/loading antar-halaman agar konsisten.
+class AnrBrandLoader extends StatelessWidget {
+  const AnrBrandLoader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const AnrWordmark(fontSize: 30),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation(scheme.primary),
+          ),
+        ),
+      ],
+    );
+  }
+}
