@@ -67,7 +67,7 @@ android {
 
     defaultConfig {
         applicationId "com.servicehponline"
-        minSdkVersion 21
+        minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
@@ -79,7 +79,12 @@ android {
 
     signingConfigs {
         debug {
-            storeFile file("debug.keystore")
+            // Pakai debug keystore standar Android (~/.android/debug.keystore),
+            // fallback ke file lokal proyek bila ada. Hindari commit keystore.
+            def defaultDebugStore = new File(
+                System.getProperty("user.home"), ".android/debug.keystore")
+            def localDebugStore = file("debug.keystore")
+            storeFile localDebugStore.exists() ? localDebugStore : defaultDebugStore
             storePassword "android"
             keyAlias "androiddebugkey"
             keyPassword "android"
