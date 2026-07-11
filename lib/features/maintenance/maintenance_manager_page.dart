@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:servicehponline/features/maintenance/maintenance_service.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -265,7 +266,8 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(16),
+
                   border:
                       Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
@@ -301,7 +303,6 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: Text('Kelola Mode Maintenance'),
@@ -309,212 +310,178 @@ class _MaintenanceManagerPageState extends State<MaintenanceManagerPage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : !_isTableExists
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.warning_amber_rounded,
-                            size: 64, color: AppColors.warning),
-                        SizedBox(height: 16),
-                        Text(
-                          'Tabel System Settings Belum Ada',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Anda perlu membuat tabel system_settings di database Supabase untuk menggunakan fitur ini.',
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: _showCreateTableDialog,
-                          icon: Icon(Icons.code),
-                          label: Text('Lihat SQL untuk Membuat Tabel'),
-                        ),
-                      ],
-                    ),
+              ? AnrEmptyState(
+                  icon: Icons.warning_amber_rounded,
+                  title: 'Tabel System Settings Belum Ada',
+                  message:
+                      'Buat tabel system_settings di Supabase untuk menggunakan fitur maintenance.',
+                  action: AnrButton(
+                    label: 'Lihat SQL',
+                    onPressed: _showCreateTableDialog,
+                    icon: Icons.code_rounded,
+                    fullWidth: false,
                   ),
                 )
               : SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Status Panel
-                        Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: (_isInMaintenanceMode
-                                    ? AppColors.warning
-                                    : AppColors.success)
-                                .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 32),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 720),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Status Panel
+                            AnrCard(
                               color: (_isInMaintenanceMode
                                       ? AppColors.warning
                                       : AppColors.success)
-                                  .withValues(alpha: 0.4),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Status Saat Ini:',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Row(
+                                  .withValues(alpha: 0.1),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    _isInMaintenanceMode
-                                        ? Icons.engineering
-                                        : Icons.check_circle,
-                                    color: _isInMaintenanceMode
-                                        ? AppColors.warning
-                                        : AppColors.success,
-                                    size: 24,
-                                  ),
-                                  SizedBox(width: 8),
                                   Text(
-                                    _isInMaintenanceMode
-                                        ? 'Aplikasi dalam Mode Maintenance'
-                                        : 'Aplikasi Berjalan Normal',
+                                    'Status Saat Ini:',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                      color: _isInMaintenanceMode
-                                          ? AppColors.warning
-                                          : AppColors.success,
+                                      fontWeight: FontWeight.w700,
                                     ),
+                                  ),
+                                  SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        _isInMaintenanceMode
+                                            ? Icons.engineering
+                                            : Icons.check_circle,
+                                        color: _isInMaintenanceMode
+                                            ? AppColors.warning
+                                            : AppColors.success,
+                                        size: 24,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          _isInMaintenanceMode
+                                              ? 'Aplikasi dalam Mode Maintenance'
+                                              : 'Aplikasi Berjalan Normal',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: _isInMaintenanceMode
+                                                ? AppColors.warning
+                                                : AppColors.success,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 16),
+                                  AnrButton(
+                                    label: _isInMaintenanceMode
+                                        ? 'Nonaktifkan Mode Maintenance'
+                                        : 'Aktifkan Mode Maintenance',
+                                    onPressed: _isUpdating
+                                        ? null
+                                        : _toggleMaintenanceMode,
+                                    icon: _isInMaintenanceMode
+                                        ? Icons.toggle_off_rounded
+                                        : Icons.toggle_on_rounded,
+                                    loading: _isUpdating,
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 16),
-                              ElevatedButton.icon(
-                                onPressed:
-                                    _isUpdating ? null : _toggleMaintenanceMode,
-                                icon: Icon(_isInMaintenanceMode
-                                    ? Icons.toggle_off
-                                    : Icons.toggle_on),
-                                label: Text(_isInMaintenanceMode
-                                    ? 'Nonaktifkan Mode Maintenance'
-                                    : 'Aktifkan Mode Maintenance'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: _isInMaintenanceMode
-                                      ? AppColors.success
-                                      : AppColors.warning,
-                                  foregroundColor: colorScheme.onPrimary,
+                            ),
+                            SizedBox(height: 24),
+
+                            // Settings Form
+                            AnrSectionHeader(
+                              title: 'Pengaturan Maintenance',
+                              subtitle:
+                                  'Pesan ini ditampilkan saat mode maintenance aktif.',
+                            ),
+                            SizedBox(height: 16),
+
+                            // Title field
+                            TextFormField(
+                              controller: _titleController,
+                              decoration: InputDecoration(
+                                labelText: 'Judul',
+                                hintText: 'Judul pesan maintenance',
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Judul tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16),
+
+                            // Message field
+                            TextFormField(
+                              controller: _messageController,
+                              decoration: InputDecoration(
+                                labelText: 'Pesan',
+                                hintText:
+                                    'Pesan yang akan ditampilkan kepada pengguna',
+                                border: OutlineInputBorder(),
+                              ),
+                              maxLines: 3,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Pesan tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: 16),
+
+                            // Estimated completion time
+                            InkWell(
+                              onTap: () => _selectDateTime(context),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'Estimasi Waktu Selesai',
+                                  hintText: 'Pilih tanggal dan waktu',
+                                  border: OutlineInputBorder(),
+                                  suffixIcon: Icon(Icons.calendar_today),
+                                ),
+                                child: Text(
+                                  _estimatedCompletion != null
+                                      ? DateFormat(
+                                              'dd MMMM yyyy, HH:mm', 'id_ID')
+                                          .format(_estimatedCompletion!)
+                                      : 'Pilih tanggal dan waktu',
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 24),
-
-                        // Settings Form
-                        Text(
-                          'Pengaturan Maintenance',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 16),
-
-                        // Title field
-                        TextFormField(
-                          controller: _titleController,
-                          decoration: InputDecoration(
-                            labelText: 'Judul',
-                            hintText: 'Judul pesan maintenance',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Judul tidak boleh kosong';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 16),
-
-                        // Message field
-                        TextFormField(
-                          controller: _messageController,
-                          decoration: InputDecoration(
-                            labelText: 'Pesan',
-                            hintText:
-                                'Pesan yang akan ditampilkan kepada pengguna',
-                            border: OutlineInputBorder(),
-                          ),
-                          maxLines: 3,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Pesan tidak boleh kosong';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: 16),
-
-                        // Estimated completion time
-                        InkWell(
-                          onTap: () => _selectDateTime(context),
-                          child: InputDecorator(
-                            decoration: InputDecoration(
-                              labelText: 'Estimasi Waktu Selesai',
-                              hintText: 'Pilih tanggal dan waktu',
-                              border: OutlineInputBorder(),
-                              suffixIcon: Icon(Icons.calendar_today),
                             ),
-                            child: Text(
-                              _estimatedCompletion != null
-                                  ? DateFormat('dd MMMM yyyy, HH:mm', 'id_ID')
-                                      .format(_estimatedCompletion!)
-                                  : 'Pilih tanggal dan waktu',
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 24),
+                            SizedBox(height: 24),
 
-                        // Update button
-                        if (_isInMaintenanceMode)
-                          Center(
-                            child: ElevatedButton.icon(
-                              onPressed: _isUpdating
-                                  ? null
-                                  : _updateMaintenanceDetails,
-                              icon: Icon(Icons.save),
-                              label: Text('Perbarui Detail Maintenance'),
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 12),
+                            // Update button
+                            if (_isInMaintenanceMode)
+                              AnrButton(
+                                label: 'Perbarui Detail Maintenance',
+                                onPressed: _isUpdating
+                                    ? null
+                                    : _updateMaintenanceDetails,
+                                icon: Icons.save_rounded,
+                                loading: _isUpdating,
                               ),
-                            ),
-                          ),
 
-                        // Loading indicator
-                        if (_isUpdating)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                      ],
+                            // Loading indicator
+                            if (_isUpdating)
+                              Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),

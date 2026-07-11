@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -74,9 +75,8 @@ class _TestimonialPageState extends State<TestimonialPage> {
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: user?.photoURL != null
-            ? Colors.transparent
-            : colorScheme.primary,
+        color:
+            user?.photoURL != null ? Colors.transparent : colorScheme.primary,
       ),
       child: CircleAvatar(
         backgroundColor: user?.photoURL != null
@@ -363,54 +363,48 @@ class _TestimonialPageState extends State<TestimonialPage> {
           ),
         ),
         body: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      _buildAvatar(widget.service, currentUser),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Service #${widget.service['id']}',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
+              AnrCard(
+                child: Row(
+                  children: [
+                    _buildAvatar(widget.service, currentUser),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Service #${widget.service['id']}',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              widget.service['device']
-                                          ?.toString()
-                                          .toLowerCase() ==
-                                      'android'
-                                  ? '${widget.service['brand']} - ${widget.service['model']}'
-                                  : '${widget.service['brand']} - ${widget.service['model']}',
-                              style: GoogleFonts.poppins(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            widget.service['device']
+                                        ?.toString()
+                                        .toLowerCase() ==
+                                    'android'
+                                ? '${widget.service['brand']} - ${widget.service['model']}'
+                                : '${widget.service['brand']} - ${widget.service['model']}',
+                            style: GoogleFonts.poppins(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 24),
-              Text(
-                'Rating Anda',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              AnrSectionHeader(
+                title: 'Rating Anda',
+                subtitle: 'Pilih penilaian untuk layanan ini.',
               ),
               SizedBox(height: 8),
               Row(
@@ -436,22 +430,10 @@ class _TestimonialPageState extends State<TestimonialPage> {
               ),
               SizedBox(height: 24),
               if (widget.isUpdate && _previousTestimonial != null) ...[
-                Text(
-                  'Testimoni Sebelumnya',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+                AnrSectionHeader(title: 'Testimoni Sebelumnya'),
                 SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: colorScheme.outline),
-                  ),
+                AnrCard(
+                  color: colorScheme.surfaceContainerHighest,
                   child: Text(
                     _previousTestimonial!,
                     style: GoogleFonts.poppins(
@@ -463,12 +445,9 @@ class _TestimonialPageState extends State<TestimonialPage> {
                 ),
                 SizedBox(height: 24),
               ],
-              Text(
-                widget.isUpdate ? 'Update Testimoni' : 'Testimoni',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              AnrSectionHeader(
+                title: widget.isUpdate ? 'Update Testimoni' : 'Testimoni',
+                subtitle: 'Bagikan pengalaman Anda secara singkat dan jelas.',
               ),
               SizedBox(height: 8),
               TextField(
@@ -479,45 +458,17 @@ class _TestimonialPageState extends State<TestimonialPage> {
                   hintText: widget.isUpdate
                       ? 'Tulis testimoni baru Anda...'
                       : 'Bagikan pengalaman Anda...',
-                  border: OutlineInputBorder(),
-                  filled: true,
                   fillColor: _isSubmitting
                       ? colorScheme.surfaceContainerHighest
                       : colorScheme.surfaceContainerHigh,
                 ),
               ),
               SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitTestimonial,
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    disabledBackgroundColor:
-                        colorScheme.primary.withValues(alpha: 0.6),
-                  ),
-                  child: _isSubmitting
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.onPrimary),
-                          ),
-                        )
-                      : Text(
-                          widget.isUpdate
-                              ? 'Update Testimoni'
-                              : 'Kirim Testimoni',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
+              AnrButton(
+                label: widget.isUpdate ? 'Update Testimoni' : 'Kirim Testimoni',
+                onPressed: _isSubmitting ? null : _submitTestimonial,
+                icon: widget.isUpdate ? Icons.save_rounded : Icons.send_rounded,
+                loading: _isSubmitting,
               ),
             ],
           ),

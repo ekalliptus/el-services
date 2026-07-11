@@ -13,6 +13,7 @@ import 'package:servicehponline/features/user/widgets/page_indicator_widget.dart
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/core/mixins/gps_mixin.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class ConfirmationPage extends StatefulWidget {
   final ServiceModel service;
@@ -288,23 +289,10 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                             children: [
                               PageIndicator(currentPage: 2, darkMode: false),
                               SizedBox(height: 20.0),
-                              Text(
-                                "Konfirmasi",
-                                style: GoogleFonts.poppins(
-                                  color: colorScheme.onSurface,
-                                  fontSize: 32.0,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                              SizedBox(height: 12.0),
-                              Text(
-                                "Periksa kembali data service Anda",
-                                style: GoogleFonts.poppins(
-                                  color: colorScheme.onSurfaceVariant,
-                                  fontSize: 16.0,
-                                  height: 1.5,
-                                ),
+                              const AnrSectionHeader(
+                                title: 'Konfirmasi',
+                                subtitle:
+                                    'Periksa kembali data service Anda sebelum dikirim.',
                               ),
                             ],
                           ),
@@ -456,63 +444,19 @@ class _ConfirmationPageState extends State<ConfirmationPage>
                           child: Row(
                             children: [
                               Expanded(
-                                child: TextButton(
+                                child: AnrButton(
+                                  label: 'Kembali',
                                   onPressed:
                                       _isLoading ? null : widget.prevPage,
-                                  style: TextButton.styleFrom(
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 16.0),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                      side: BorderSide(
-                                          color: _isLoading
-                                              ? colorScheme.outline
-                                                  .withValues(alpha: 0.5)
-                                              : colorScheme.outline),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    "KEMBALI",
-                                    style: GoogleFonts.poppins(
-                                      color: _isLoading
-                                          ? colorScheme.onSurfaceVariant
-                                              .withValues(alpha: 0.5)
-                                          : colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  variant: AnrButtonVariant.secondary,
                                 ),
                               ),
                               SizedBox(width: 16.0),
                               Expanded(
-                                child: ElevatedButton(
+                                child: AnrButton(
+                                  label: 'Konfirmasi',
                                   onPressed: _isLoading ? null : _submitService,
-                                  style: ElevatedButton.styleFrom(
-                                    padding:
-                                        EdgeInsets.symmetric(vertical: 16.0),
-                                    backgroundColor: colorScheme.primary,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12.0),
-                                    ),
-                                  ),
-                                  child: _isLoading
-                                      ? SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor:
-                                                AlwaysStoppedAnimation<Color>(
-                                                    colorScheme.onPrimary),
-                                          ),
-                                        )
-                                      : Text(
-                                          "KONFIRMASI",
-                                          style: GoogleFonts.poppins(
-                                            color: colorScheme.onPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
+                                  loading: _isLoading,
                                 ),
                               ),
                             ],
@@ -552,13 +496,8 @@ class _ConfirmationPageState extends State<ConfirmationPage>
     required List<Widget> content,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: colorScheme.outline),
-      ),
+    return AnrCard(
+      color: colorScheme.surfaceContainerHighest,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

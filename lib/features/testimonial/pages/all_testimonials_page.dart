@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:servicehponline/data/models/device_problems.dart';
 
 class AllTestimonialsPage extends StatefulWidget {
@@ -161,14 +162,11 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
       body: RefreshIndicator(
         onRefresh: () => _loadTestimonials(refresh: true),
         child: _testimonials.isEmpty && !_isLoading
-            ? Center(
-                child: Text(
-                  'Belum ada testimoni',
-                  style: GoogleFonts.poppins(
-                    color: colorScheme.onSurfaceVariant,
-                    fontSize: 14,
-                  ),
-                ),
+            ? AnrEmptyState(
+                icon: Icons.format_quote_rounded,
+                title: 'Belum ada testimoni',
+                message:
+                    'Pengalaman pelanggan akan tampil di sini setelah dibagikan.',
               )
             : ListView.builder(
                 controller: _scrollController,
@@ -186,79 +184,77 @@ class _AllTestimonialsPageState extends State<AllTestimonialsPage> {
                   }
 
                   final testimonial = _testimonials[index];
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 16),
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            _buildAvatar(testimonial),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    testimonial['fullname']?.toString() ??
-                                        'Anonim',
-                                    style: GoogleFonts.poppins(
-                                      fontWeight: FontWeight.w600,
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: 16),
+                    child: AnrCard(
+                      color: colorScheme.surface,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              _buildAvatar(testimonial),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      testimonial['fullname']?.toString() ??
+                                          'Anonim',
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    DeviceProblems.formatDeviceName(
-                                        testimonial),
-                                    style: GoogleFonts.poppins(
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontSize: 12,
+                                    Text(
+                                      DeviceProblems.formatDeviceName(
+                                          testimonial),
+                                      style: GoogleFonts.poppins(
+                                        color: colorScheme.onSurfaceVariant,
+                                        fontSize: 12,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                _formatTanggal(testimonial['created_at']),
+                                style: GoogleFonts.poppins(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 16),
+                          Wrap(
+                            spacing: 2,
+                            children: List.generate(
+                              5,
+                              (index) => Icon(
+                                index < (testimonial['rating'] ?? 0)
+                                    ? Icons.star
+                                    : Icons.star_border,
+                                color: AppColors.warning,
+                                size: 20,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              _formatTanggal(testimonial['created_at']),
-                              style: GoogleFonts.poppins(
-                                color: colorScheme.onSurfaceVariant,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 12),
-                        Wrap(
-                          spacing: 2,
-                          children: List.generate(
-                            5,
-                            (index) => Icon(
-                              index < (testimonial['rating'] ?? 0)
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: AppColors.warning,
-                              size: 20,
-                            ),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          testimonial['content']?.toString() ?? '',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            height: 1.5,
+                          SizedBox(height: 8),
+                          Text(
+                            testimonial['content']?.toString() ?? '',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              height: 1.5,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 5,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 5,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

@@ -38,8 +38,9 @@ class NeumorphicContainer extends StatelessWidget {
 
     // Warna bayangan untuk efek terang dan gelap
     final Color lightShadowColor =
-        Colors.white.withOpacity(pressed ? 0.5 : 0.8);
-    final Color darkShadowColor = Colors.black.withOpacity(pressed ? 0.2 : 0.1);
+        Theme.of(context).colorScheme.surface.withValues(alpha: pressed ? 0.5 : 0.8);
+    final Color darkShadowColor =
+        Theme.of(context).colorScheme.scrim.withValues(alpha: pressed ? 0.2 : 0.1);
 
     // Offset untuk bayangan (berubah saat pressed)
     final Offset lightOffset = pressed ? Offset(1, 1) : Offset(-2, -2);

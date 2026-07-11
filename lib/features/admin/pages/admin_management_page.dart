@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class AdminManagementPage extends StatefulWidget {
   const AdminManagementPage({Key? key}) : super(key: key);
@@ -245,8 +246,7 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
       if (currentUid != null && currentUid == id) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('Anda tidak dapat menurunkan status Anda sendiri'),
+            content: Text('Anda tidak dapat menurunkan status Anda sendiri'),
             backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
@@ -392,8 +392,8 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
                       _errorMessage!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.error),
+                      style:
+                          TextStyle(color: Theme.of(context).colorScheme.error),
                     ),
                   ),
               ],
@@ -431,7 +431,10 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kelola Admin'),
+        title: Text(
+          'Kelola Admin',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
       ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
@@ -442,26 +445,15 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Daftar Admin',
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    AnrSectionHeader(title: 'Daftar Admin'),
                     SizedBox(height: 16),
                     Expanded(
                       child: _adminList.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Belum ada admin terdaftar',
-                                style: TextStyle(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
-                                  fontSize: 16,
-                                ),
-                              ),
+                          ? AnrEmptyState(
+                              icon: Icons.admin_panel_settings_outlined,
+                              title: 'Belum ada admin terdaftar',
+                              message:
+                                  'Tambahkan admin untuk mulai mengelola akses.',
                             )
                           : ListView.builder(
                               itemCount: _adminList.length,
@@ -470,60 +462,67 @@ class _AdminManagementPageState extends State<AdminManagementPage> {
                                 final isSuperAdmin =
                                     admin['role'] == 'super_admin';
 
-                                return Card(
-                                  elevation: 2,
-                                  margin: EdgeInsets.only(bottom: 12),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: isSuperAdmin
-                                          ? Colors.purple.withAlpha(50)
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.2),
-                                      child: Icon(
-                                        Icons.person,
-                                        color: isSuperAdmin
-                                            ? Colors.purple
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 16),
+                                  child: AnrCard(
+                                    padding: EdgeInsets.zero,
+                                    child: ListTile(
+                                      leading: CircleAvatar(
+                                        backgroundColor: isSuperAdmin
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .tertiaryContainer
                                             : Theme.of(context)
                                                 .colorScheme
-                                                .primary,
-                                      ),
-                                    ),
-                                    title:
-                                        Text(admin['email'] ?? 'Unknown Email'),
-                                    subtitle: Text(
-                                      isSuperAdmin ? 'Super Admin' : 'Admin',
-                                      style: TextStyle(
-                                        color: isSuperAdmin
-                                            ? Colors.purple
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                      ),
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Switch(
-                                          value: isSuperAdmin,
-                                          onChanged: (value) {
-                                            _toggleSuperAdminStatus(
-                                                admin['id'], isSuperAdmin);
-                                          },
-                                        ),
-                                        IconButton(
-                                          icon: Icon(Icons.delete,
-                                              color: Theme.of(context)
+                                                .primaryContainer,
+                                        child: Icon(
+                                          Icons.person,
+                                          color: isSuperAdmin
+                                              ? Theme.of(context)
                                                   .colorScheme
-                                                  .error),
-                                          onPressed: () {
-                                            _deleteAdmin(
-                                                admin['id'], admin['email']);
-                                          },
-                                          tooltip: 'Hapus Admin',
+                                                  .onTertiaryContainer
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimaryContainer,
                                         ),
-                                      ],
+                                      ),
+                                      title: Text(
+                                          admin['email'] ?? 'Unknown Email'),
+                                      subtitle: Text(
+                                        isSuperAdmin ? 'Super Admin' : 'Admin',
+                                        style: TextStyle(
+                                          color: isSuperAdmin
+                                              ? Theme.of(context)
+                                                  .colorScheme
+                                                  .tertiary
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                        ),
+                                      ),
+                                      trailing: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Switch(
+                                            value: isSuperAdmin,
+                                            onChanged: (value) {
+                                              _toggleSuperAdminStatus(
+                                                  admin['id'], isSuperAdmin);
+                                            },
+                                          ),
+                                          IconButton(
+                                            icon: Icon(Icons.delete,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .error),
+                                            onPressed: () {
+                                              _deleteAdmin(
+                                                  admin['id'], admin['email']);
+                                            },
+                                            tooltip: 'Hapus Admin',
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 );

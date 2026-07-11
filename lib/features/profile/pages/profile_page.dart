@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -133,10 +134,10 @@ class _ProfilePageState extends State<ProfilePage> {
             context: context,
             dialogType: DialogType.success,
             animType: AnimType.bottomSlide,
-          title: 'Berhasil',
-          desc: 'Profil berhasil diperbarui',
-          btnOkColor: Theme.of(context).colorScheme.primary,
-          btnOkOnPress: () {},
+            title: 'Berhasil',
+            desc: 'Profil berhasil diperbarui',
+            btnOkColor: Theme.of(context).colorScheme.primary,
+            btnOkOnPress: () {},
           ).show();
         }
       } catch (e) {
@@ -366,81 +367,70 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               // Profile Header
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Stack(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: colorScheme.surfaceContainerHighest,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: AnrCard(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colorScheme.surfaceContainerHighest,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: widget.user.photoURL != null
+                                  ? Image.network(
+                                      widget.user.photoURL!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Icon(
+                                          Icons.person,
+                                          size: 60,
+                                          color: colorScheme.onSurfaceVariant,
+                                        );
+                                      },
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                            ),
                           ),
-                          child: ClipOval(
-                            child: widget.user.photoURL != null
-                                ? Image.network(
-                                    widget.user.photoURL!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(
-                                        Icons.person,
-                                        size: 60,
-                                        color: colorScheme.onSurfaceVariant,
-                                      );
-                                    },
-                                  )
-                                : Icon(
-                                    Icons.person,
-                                    size: 60,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        widget.user.displayName ?? 'Pengguna',
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      widget.user.displayName ?? 'Pengguna',
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: colorScheme.onSurface,
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      widget.user.email ?? 'Email tidak tersedia',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: colorScheme.onSurfaceVariant,
+                      SizedBox(height: 4),
+                      Text(
+                        widget.user.email ?? 'Email tidak tersedia',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 24),
@@ -452,14 +442,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                              'Informasi Pribadi',
-                              style: GoogleFonts.poppins(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                      ),
+                      AnrSectionHeader(title: 'Informasi Pribadi'),
                       SizedBox(height: 16),
                       _buildTextField(
                         controller: _nameController,
@@ -547,7 +530,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                   padding: EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: colorScheme.outline),
+                                    side:
+                                        BorderSide(color: colorScheme.outline),
                                   ),
                                 ),
                                 child: Text(
@@ -561,63 +545,22 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             SizedBox(width: 16),
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _updateProfile,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: colorScheme.primary,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: _isLoading
-                                    ? SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                  colorScheme.onPrimary),
-                                        ),
-                                      )
-                                    : Text(
-                                        'SIMPAN',
-                                        style: GoogleFonts.poppins(
-                                          color: colorScheme.onPrimary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                              child: AnrButton(
+                                label: 'SIMPAN',
+                                onPressed: _updateProfile,
+                                loading: _isLoading,
                               ),
                             ),
                           ],
                         ),
                       SizedBox(height: 24),
                       // Account Info Section
-                      Container(
+                      AnrCard(
                         padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Informasi Akun',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: colorScheme.onSurface,
-                              ),
-                            ),
+                            AnrSectionHeader(title: 'Informasi Akun'),
                             SizedBox(height: 16),
                             _buildInfoItem(
                               icon: Icons.verified_user,
@@ -682,7 +625,8 @@ class _ProfilePageState extends State<ProfilePage> {
           color: colorScheme.onSurfaceVariant,
         ),
         prefixIcon: Icon(icon,
-            color: enabled ? colorScheme.primary : colorScheme.onSurfaceVariant),
+            color:
+                enabled ? colorScheme.primary : colorScheme.onSurfaceVariant),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.outline),
@@ -696,9 +640,8 @@ class _ProfilePageState extends State<ProfilePage> {
           borderSide: BorderSide(color: colorScheme.primary),
         ),
         filled: true,
-        fillColor: enabled
-            ? colorScheme.surface
-            : colorScheme.surfaceContainerHighest,
+        fillColor:
+            enabled ? colorScheme.surface : colorScheme.surfaceContainerHighest,
       ),
     );
   }

@@ -143,7 +143,7 @@ class _HomePageTwoState extends State<HomePageTwo>
                   height: 48.0,
                   padding: EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: Icon(

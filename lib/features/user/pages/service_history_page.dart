@@ -22,6 +22,7 @@ import 'package:photo_view/photo_view_gallery.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class ServiceHistoryPage extends StatefulWidget {
   const ServiceHistoryPage({Key? key}) : super(key: key);
@@ -56,8 +57,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
   // (dan reset ke loading) setiap kali build dipanggil.
   final Map<String, Future<Map<String, dynamic>?>> _testimonialFutures = {};
   final Map<String, Future<Map<String, dynamic>?>> _additionalCostFutures = {};
-  final Map<String, Future<List<Map<String, dynamic>>>> _additionalCostsFutures =
-      {};
+  final Map<String, Future<List<Map<String, dynamic>>>>
+      _additionalCostsFutures = {};
 
   Future<Map<String, dynamic>?> _testimonialFutureFor(String serviceId) {
     return _testimonialFutures.putIfAbsent(
@@ -662,368 +663,363 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
       builder: (context, snapshot) {
         final hasTestimonial = snapshot.data != null;
 
-        return InkWell(
-          onTap: () {
-            setState(() {
-              _expandedCards[service['id'].toString()] = !isExpanded;
-            });
-          },
-          child: Card(
-            margin: EdgeInsets.only(bottom: 16),
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8,
-                    children: [
-                      Text(
-                        'Service #${service['id']}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+        return Padding(
+          padding: EdgeInsets.only(bottom: 16),
+          child: AnrCard(
+            onTap: () {
+              setState(() {
+                _expandedCards[service['id'].toString()] = !isExpanded;
+              });
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  children: [
+                    Text(
+                      'Service #${service['id']}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(context, status,
+                                serviceCost: serviceCost)
+                            .withAlpha(26),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _getStatusText(status, serviceCost: serviceCost),
+                        style: TextStyle(
                           color: _getStatusColor(context, status,
-                                  serviceCost: serviceCost)
-                              .withAlpha(26),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          _getStatusText(status, serviceCost: serviceCost),
-                          style: TextStyle(
-                            color: _getStatusColor(context, status,
-                                serviceCost: serviceCost),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    _getDeviceDisplay(service),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    DeviceProblems.getProblemName(service['problem'] ?? ''),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  if (isExpanded) ...[
-                    SizedBox(height: 16),
-                    _buildLocationSection(service),
-
-                    // Tambahkan section biaya tambahan jika status ADDITIONAL_PAYMENT
-                    if (hasAdditionalPayment)
-                      _buildAdditionalCostSection(service),
-
-                    // Tambahkan section dokumentasi kondisi awal jika ada
-                    if (service['pre_service_docs'] != null &&
-                        (service['pre_service_docs'] as List).isNotEmpty) ...[
-                      SizedBox(height: 16),
-                      Divider(color: Theme.of(context).colorScheme.outline),
-                      SizedBox(height: 16),
-                      _buildPreServiceDocumentationSection(service),
-                    ],
-
-                    // Tambahkan section kata sandi dan catatan alamat jika ada
-                    if (service['device_password'] != null ||
-                        service['address_note'] != null) ...[
-                      SizedBox(height: 16),
-                      Divider(color: Theme.of(context).colorScheme.outline),
-                      SizedBox(height: 16),
-                      _buildAdditionalInfoSection(service),
-                    ],
-                  ],
-                  SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Biaya Service',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          Text(
-                            hasPayment
-                                ? _currencyFormat
-                                    .format(service['service_cost'])
-                                : 'Menunggu',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  hasPayment ? AppColors.success : Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-
-                          // Tambahkan FutureBuilder untuk mengecek dan menampilkan biaya tambahan
-                          FutureBuilder<Map<String, dynamic>?>(
-                            future: _additionalCostFutureFor(
-                                service['id'].toString()),
-                            builder: (context, snapshot) {
-                              if (!snapshot.hasData || snapshot.data == null) {
-                                return SizedBox.shrink();
-                              }
-
-                              final additionalCost = snapshot.data!;
-                              if (additionalCost['amount'] == null ||
-                                  additionalCost['amount'] <= 0) {
-                                return SizedBox.shrink();
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Biaya Service Tambahan',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: AppColors.warning,
-                                      ),
-                                    ),
-                                    Text(
-                                      _currencyFormat
-                                          .format(additionalCost['amount']),
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.warning,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                      if (hasPayment)
-                        status == 'PAID'
-                            ? Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.success
-                                      .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: AppColors.success,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle,
-                                      color: AppColors.success,
-                                      size: 16,
-                                    ),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Lunas',
-                                      style: GoogleFonts.poppins(
-                                        color: AppColors.success,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : needsPayment
-                                ? ElevatedButton(
-                                    onPressed: () => _createPayment(
-                                        service['id'].toString()),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor:
-                                          Theme.of(context).colorScheme.primary,
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 20, vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      elevation: 0,
-                                    ),
-                                    child: Text(
-                                      'Bayar Sekarang',
-                                      style: GoogleFonts.poppins(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onPrimary,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  )
-                                : SizedBox(),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Dibuat: ${_formatDate(service['created_at'])}',
-                        style: TextStyle(
+                              serviceCost: serviceCost),
                           fontSize: 12,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Icon(
-                        isExpanded ? Icons.expand_less : Icons.expand_more,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Text(
+                  _getDeviceDisplay(service),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
-                  if (canGiveFeedback) ...[
+                ),
+                SizedBox(height: 4),
+                Text(
+                  DeviceProblems.getProblemName(service['problem'] ?? ''),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                if (isExpanded) ...[
+                  SizedBox(height: 16),
+                  _buildLocationSection(service),
+
+                  // Tambahkan section biaya tambahan jika status ADDITIONAL_PAYMENT
+                  if (hasAdditionalPayment)
+                    _buildAdditionalCostSection(service),
+
+                  // Tambahkan section dokumentasi kondisi awal jika ada
+                  if (service['pre_service_docs'] != null &&
+                      (service['pre_service_docs'] as List).isNotEmpty) ...[
                     SizedBox(height: 16),
                     Divider(color: Theme.of(context).colorScheme.outline),
                     SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    _buildPreServiceDocumentationSection(service),
+                  ],
+
+                  // Tambahkan section kata sandi dan catatan alamat jika ada
+                  if (service['device_password'] != null ||
+                      service['address_note'] != null) ...[
+                    SizedBox(height: 16),
+                    Divider(color: Theme.of(context).colorScheme.outline),
+                    SizedBox(height: 16),
+                    _buildAdditionalInfoSection(service),
+                  ],
+                ],
+                SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () => _showRatingDialog(service),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: hasTestimonial
-                                      ? AppColors.success
-                                          .withValues(alpha: 0.1)
-                                      : AppColors.warning
-                                          .withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: hasTestimonial
-                                        ? AppColors.success
-                                        : AppColors.warning,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Icon(
-                                      hasTestimonial
-                                          ? Icons.edit
-                                          : Icons.star_rounded,
-                                      color: hasTestimonial
-                                          ? AppColors.success
-                                          : AppColors.warning,
-                                      size: 28,
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      hasTestimonial
-                                          ? 'Update Testimoni'
-                                          : 'Beri Testimoni',
-                                      style: GoogleFonts.poppins(
-                                        color: hasTestimonial
-                                            ? AppColors.success
-                                            : AppColors.warning,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                        Text(
+                          'Biaya Service',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: InkWell(
-                            onTap: service['complain'] == true
-                                ? null
-                                : () => _showComplaintDialog(service),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                color: service['complain'] == true
-                                    ? Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant
-                                        .withValues(alpha: 0.1)
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .error
-                                        .withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: service['complain'] == true
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant
-                                        : Theme.of(context).colorScheme.error,
-                                    width: 1),
-                              ),
+                        Text(
+                          hasPayment
+                              ? _currencyFormat.format(service['service_cost'])
+                              : 'Menunggu',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: hasPayment
+                                ? AppColors.success
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                          ),
+                        ),
+
+                        // Tambahkan FutureBuilder untuk mengecek dan menampilkan biaya tambahan
+                        FutureBuilder<Map<String, dynamic>?>(
+                          future: _additionalCostFutureFor(
+                              service['id'].toString()),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData || snapshot.data == null) {
+                              return SizedBox.shrink();
+                            }
+
+                            final additionalCost = snapshot.data!;
+                            if (additionalCost['amount'] == null ||
+                                additionalCost['amount'] <= 0) {
+                              return SizedBox.shrink();
+                            }
+
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4.0),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(
-                                    Icons.warning_rounded,
-                                    color: service['complain'] == true
-                                        ? Theme.of(context)
-                                            .colorScheme
-                                            .onSurfaceVariant
-                                        : Theme.of(context).colorScheme.error,
-                                    size: 28,
-                                  ),
-                                  SizedBox(height: 4),
                                   Text(
-                                    service['complain'] == true
-                                        ? 'Sudah Dikomplain'
-                                        : 'Ajukan Komplain',
-                                    style: GoogleFonts.poppins(
-                                      color: service['complain'] == true
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant
-                                          : Theme.of(context)
-                                              .colorScheme
-                                              .error,
-                                      fontWeight: FontWeight.w500,
+                                    'Biaya Service Tambahan',
+                                    style: TextStyle(
                                       fontSize: 12,
+                                      color: AppColors.warning,
+                                    ),
+                                  ),
+                                  Text(
+                                    _currencyFormat
+                                        .format(additionalCost['amount']),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.warning,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ),
+                            );
+                          },
                         ),
                       ],
                     ),
+                    if (hasPayment)
+                      status == 'PAID'
+                          ? Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: AppColors.success,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: AppColors.success,
+                                    size: 16,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Lunas',
+                                    style: GoogleFonts.poppins(
+                                      color: AppColors.success,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : needsPayment
+                              ? ElevatedButton(
+                                  onPressed: () =>
+                                      _createPayment(service['id'].toString()),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        Theme.of(context).colorScheme.primary,
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    'Bayar Sekarang',
+                                    style: GoogleFonts.poppins(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                )
+                              : SizedBox(),
                   ],
+                ),
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Dibuat: ${_formatDate(service['created_at'])}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+                if (canGiveFeedback) ...[
+                  SizedBox(height: 16),
+                  Divider(color: Theme.of(context).colorScheme.outline),
+                  SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () => _showRatingDialog(service),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: hasTestimonial
+                                  ? AppColors.success.withValues(alpha: 0.1)
+                                  : AppColors.warning.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: hasTestimonial
+                                    ? AppColors.success
+                                    : AppColors.warning,
+                                width: 1,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  hasTestimonial
+                                      ? Icons.edit
+                                      : Icons.star_rounded,
+                                  color: hasTestimonial
+                                      ? AppColors.success
+                                      : AppColors.warning,
+                                  size: 28,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  hasTestimonial
+                                      ? 'Update Testimoni'
+                                      : 'Beri Testimoni',
+                                  style: GoogleFonts.poppins(
+                                    color: hasTestimonial
+                                        ? AppColors.success
+                                        : AppColors.warning,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: InkWell(
+                          onTap: service['complain'] == true
+                              ? null
+                              : () => _showComplaintDialog(service),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: service['complain'] == true
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant
+                                      .withValues(alpha: 0.1)
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .error
+                                      .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: service['complain'] == true
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant
+                                      : Theme.of(context).colorScheme.error,
+                                  width: 1),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.warning_rounded,
+                                  color: service['complain'] == true
+                                      ? Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant
+                                      : Theme.of(context).colorScheme.error,
+                                  size: 28,
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  service['complain'] == true
+                                      ? 'Sudah Dikomplain'
+                                      : 'Ajukan Komplain',
+                                  style: GoogleFonts.poppins(
+                                    color: service['complain'] == true
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant
+                                        : Theme.of(context).colorScheme.error,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         );
@@ -1158,7 +1154,9 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                   child: Text(
                     'LANJUT',
                     style: GoogleFonts.poppins(
-                      color: rating > 0 ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurfaceVariant,
+                      color: rating > 0
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1212,7 +1210,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                   margin: EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Theme.of(context).colorScheme.outline),
+                    border: Border.all(
+                        color: Theme.of(context).colorScheme.outline),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -1284,7 +1283,9 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.password, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              Icon(Icons.password,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
               SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -1550,7 +1551,9 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                                 'Jumlah:',
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
                                 ),
                               ),
                               Text(
@@ -1559,7 +1562,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                                 style: GoogleFonts.poppins(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
                             ],
@@ -1601,7 +1605,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                   decoration: BoxDecoration(
                     color: AppColors.success.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                    border: Border.all(
+                        color: AppColors.success.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1634,7 +1639,8 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                           'Dibayar: ${_formatDate(additionalCost['updated_at'])}',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -1654,7 +1660,9 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                             'Jumlah:',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                           ),
                           SizedBox(width: 4),
@@ -1717,7 +1725,13 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Riwayat Service'),
+        title: Text(
+          'Riwayat Service',
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.w700),
+        ),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -1752,14 +1766,11 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : _services.isEmpty
-              ? Center(
-                  child: Text(
-                    'Belum ada riwayat service',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 16,
-                    ),
-                  ),
+              ? const AnrEmptyState(
+                  icon: Icons.history_rounded,
+                  title: 'Belum ada riwayat service',
+                  message:
+                      'Permintaan service dan perkembangannya akan tampil di sini.',
                 )
               : RefreshIndicator(
                   onRefresh: () async {
@@ -1778,10 +1789,21 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                       return true;
                     },
                     child: ListView.builder(
-                      padding: EdgeInsets.all(16),
-                      itemCount: _services.length + (_hasMoreData ? 1 : 0),
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 32),
+                      itemCount: _services.length + (_hasMoreData ? 2 : 1),
                       itemBuilder: (context, index) {
-                        if (index == _services.length) {
+                        if (index == 0) {
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 24),
+                            child: AnrSectionHeader(
+                              title: 'Perjalanan Service',
+                              subtitle:
+                                  '${_services.length} permintaan terbaru dan status terkini.',
+                            ),
+                          );
+                        }
+                        final serviceIndex = index - 1;
+                        if (serviceIndex == _services.length) {
                           return _isLoadingMore
                               ? Center(
                                   child: Padding(
@@ -1791,7 +1813,7 @@ class _ServiceHistoryPageState extends State<ServiceHistoryPage> {
                                 )
                               : SizedBox.shrink();
                         }
-                        final service = _services[index];
+                        final service = _services[serviceIndex];
                         return _buildServiceCard(service);
                       },
                     ),

@@ -11,9 +11,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Service HP Online: Panggil Saja!</string>
+	<string>ANRServices</string>
 	<key>CFBundleDisplayName</key>
-	<string>Service HP Online: Panggil Saja!</string>
+	<string>ANRServices</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

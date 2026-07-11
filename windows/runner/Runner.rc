@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "servicehponline" "\0"
+            VALUE "CompanyName", "ANRServices" "\0"
+            VALUE "FileDescription", "ANRServices" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "servicehponline" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2024 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 ANRServices. All rights reserved." "\0"
             VALUE "OriginalFilename", "servicehponline.exe" "\0"
-            VALUE "ProductName", "servicehponline" "\0"
+            VALUE "ProductName", "ANRServices" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

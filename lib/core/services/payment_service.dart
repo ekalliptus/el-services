@@ -282,7 +282,7 @@ class PaymentService {
           'quantity': 1,
           'name': 'Biaya Tambahan Service #${serviceId}',
           'category': 'Service',
-          'merchant_name': 'Service HP Online',
+          'merchant_name': 'ANRServices',
         }
       ];
 

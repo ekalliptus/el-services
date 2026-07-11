@@ -10,6 +10,7 @@ import 'package:servicehponline/features/admin/widgets/filter_widget.dart';
 import 'package:servicehponline/features/admin/dialogs/update_cost_dialog.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({Key? key}) : super(key: key);
@@ -773,8 +774,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       // tanpa offset sehingga bisa memuat ulang baris yang sudah tampil.
       // Dedupe berdasarkan id agar tidak ada baris ganda di daftar.
       final existingIds = _services.map((s) => s['id']).toSet();
-      final newRows =
-          data.where((s) => existingIds.add(s['id'])).toList();
+      final newRows = data.where((s) => existingIds.add(s['id'])).toList();
 
       if (newRows.isNotEmpty) {
         if (!mounted) return;
@@ -1075,7 +1075,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('Biaya tambahan harus diisi'),
-                                backgroundColor: Theme.of(context).colorScheme.error,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.error,
                               ),
                             );
                             return;
@@ -1085,7 +1086,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('Catatan harus diisi'),
-                                backgroundColor: Theme.of(context).colorScheme.error,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.error,
                               ),
                             );
                             return;
@@ -1106,7 +1108,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 SnackBar(
                                   content:
                                       Text('Biaya tambahan harus lebih dari 0'),
-                                  backgroundColor: Theme.of(context).colorScheme.error,
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.error,
                                 ),
                               );
                               setState(() => isLoading = false);
@@ -1158,7 +1161,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                               SnackBar(
                                 content: Text(
                                     'Gagal menambahkan biaya tambahan: $e'),
-                                backgroundColor: Theme.of(context).colorScheme.error,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.error,
                               ),
                             );
                           }
@@ -1317,22 +1321,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            'Admin Dashboard',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          title: AnrWordmark(fontSize: 22),
           actions: [
             IconButton(
-              icon: Icon(Icons.refresh,
-                  color: Theme.of(context).colorScheme.onPrimary, size: 22),
+              icon: Icon(Icons.refresh, size: 22),
               onPressed: _loadServices,
               tooltip: 'Refresh Data',
             ),
             IconButton(
-              icon: Icon(Icons.logout,
-                  color: Theme.of(context).colorScheme.onPrimary, size: 22),
+              icon: Icon(Icons.logout, size: 22),
               onPressed: _logout,
               tooltip: 'Logout',
             ),
@@ -1377,15 +1374,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   child: _isLoading
                       ? Center(child: CircularProgressIndicator())
                       : _filteredServices.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Tidak ada data service',
-                                style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    )
+                          ? AnrEmptyState(
+                              icon: Icons.build_circle_outlined,
+                              title: 'Tidak ada data service',
+                              message:
+                                  'Ubah pencarian atau filter untuk melihat data lain.',
+                            )
                           : RefreshIndicator(
                               onRefresh: _loadServices,
                               child: NotificationListener<ScrollNotification>(
@@ -1431,7 +1425,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             // Indikator loading untuk upload dokumentasi
             if (_isUploadingDoc)
               Container(
-                color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.54),
+                color:
+                    Theme.of(context).colorScheme.scrim.withValues(alpha: 0.54),
                 child: Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

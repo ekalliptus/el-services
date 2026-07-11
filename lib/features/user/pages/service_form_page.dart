@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:servicehponline/data/models/service_model.dart';
@@ -5,6 +7,7 @@ import 'package:servicehponline/data/models/device_problems.dart';
 import 'package:servicehponline/features/user/pages/confirmation_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class ServiceFormPage extends StatefulWidget {
   final String deviceType;
@@ -184,13 +187,9 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'Data Diri',
-                style: GoogleFonts.poppins(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+              const AnrSectionHeader(
+                title: 'Data Diri',
+                subtitle: 'Informasi kontak untuk koordinasi service.',
               ),
               SizedBox(height: 16.0),
               TextFormField(
@@ -293,13 +292,9 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 ),
               ],
               SizedBox(height: 24.0),
-              Text(
-                'Detail Perangkat',
-                style: GoogleFonts.poppins(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+              const AnrSectionHeader(
+                title: 'Detail Perangkat',
+                subtitle: 'Ceritakan perangkat dan masalah yang dialami.',
               ),
               SizedBox(height: 16.0),
               if (widget.deviceType == 'android') ...[
@@ -379,13 +374,9 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 },
               ),
               SizedBox(height: 24.0),
-              Text(
-                'Password Perangkat',
-                style: GoogleFonts.poppins(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+              const AnrSectionHeader(
+                title: 'Password Perangkat',
+                subtitle: 'Pilih akses yang diperlukan selama pemeriksaan.',
               ),
               SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
@@ -419,13 +410,9 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 ),
               ],
               SizedBox(height: 24.0),
-              Text(
-                'Metode Pengiriman',
-                style: GoogleFonts.poppins(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
+              const AnrSectionHeader(
+                title: 'Metode Pengiriman',
+                subtitle: 'Pilih cara perangkat sampai ke teknisi.',
               ),
               SizedBox(height: 16.0),
               Row(
@@ -457,22 +444,9 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
                 ],
               ),
               SizedBox(height: 32.0),
-              ElevatedButton(
+              AnrButton(
+                label: 'Lanjutkan',
                 onPressed: _submitForm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: Text(
-                  'Lanjutkan',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
               ),
               SizedBox(height: 32.0),
             ],

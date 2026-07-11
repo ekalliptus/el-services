@@ -8,6 +8,7 @@ import 'package:servicehponline/features/admin/pages/database_backup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:servicehponline/features/auth/pages/login_page.dart';
 import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   const SuperAdminDashboard({Key? key}) : super(key: key);
@@ -102,7 +103,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Super Admin Dashboard'),
+        title: AnrWordmark(fontSize: 22),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
@@ -120,15 +121,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Admin Info Panel
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: Theme.of(context).colorScheme.primary),
-                      ),
+                    AnrCard(
+                      color: Theme.of(context).colorScheme.primaryContainer,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -223,17 +217,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     SizedBox(height: 24),
 
                     // System Status Panel
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: Theme.of(context).colorScheme.outline),
-                      ),
+                    AnrCard(
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -278,34 +264,27 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return AnrCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: color.withAlpha(25),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withAlpha(127)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 48,
-              color: color,
+      color: color.withValues(alpha: 0.08),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 48,
+            color: color,
+          ),
+          SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: color.withAlpha(204),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
