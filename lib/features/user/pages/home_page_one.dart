@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:servicehponline/core/utils/extra.dart';
 import 'package:servicehponline/features/user/widgets/page_indicator_widget.dart';
 import 'package:servicehponline/data/models/device_problems.dart';
 import 'package:servicehponline/features/user/widgets/service_card_widget.dart';
@@ -24,6 +23,8 @@ import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:servicehponline/features/maintenance/maintenance_service.dart';
 import 'package:servicehponline/features/maintenance/maintenance_page.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class HomePageOne extends StatefulWidget {
   final Function() nextPage;
@@ -199,7 +200,8 @@ class _HomePageOneState extends State<HomePageOne>
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.location_off, size: 64, color: Colors.red),
+                Icon(Icons.location_off,
+                    size: 64, color: Theme.of(context).colorScheme.error),
                 SizedBox(height: 16),
                 Text(
                   'Aplikasi membutuhkan akses lokasi untuk melanjutkan. Silakan aktifkan GPS pada perangkat Anda.',
@@ -214,7 +216,7 @@ class _HomePageOneState extends State<HomePageOne>
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -223,7 +225,7 @@ class _HomePageOneState extends State<HomePageOne>
                       child: Text(
                         'AKTIFKAN GPS',
                         style: GoogleFonts.poppins(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -274,7 +276,7 @@ class _HomePageOneState extends State<HomePageOne>
             'Maaf, layanan untuk perangkat ini belum tersedia',
             style: GoogleFonts.poppins(),
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -482,7 +484,7 @@ class _HomePageOneState extends State<HomePageOne>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal keluar dari aplikasi: ${e.toString()}'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -500,18 +502,21 @@ class _HomePageOneState extends State<HomePageOne>
 
   // Tambahkan fungsi _buildAvatar sebelum build
   Widget _buildAvatar(Map<String, dynamic> testimonial) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color:
-            testimonial['photo_url'] != null ? Colors.transparent : Colors.blue,
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        color: testimonial['photo_url'] != null
+            ? Colors.transparent
+            : colorScheme.primary,
+        border: Border.all(color: colorScheme.outline, width: 1),
       ),
       child: CircleAvatar(
-        backgroundColor:
-            testimonial['photo_url'] != null ? Colors.grey[200] : Colors.blue,
+        backgroundColor: testimonial['photo_url'] != null
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primary,
         backgroundImage: testimonial['photo_url'] != null
             ? NetworkImage(testimonial['photo_url'])
             : null,
@@ -524,7 +529,7 @@ class _HomePageOneState extends State<HomePageOne>
                       : '?';
                 }(),
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
                 ),
@@ -566,6 +571,7 @@ class _HomePageOneState extends State<HomePageOne>
   Widget build(BuildContext context) {
     // Menggunakan _isGpsEnabled untuk mengontrol status GPS
     bool isGpsActive = _isGpsEnabled;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return WillPopScope(
       onWillPop: () async {
@@ -575,7 +581,7 @@ class _HomePageOneState extends State<HomePageOne>
       child: Opacity(
         opacity: isGpsActive ? 1.0 : 0.5,
         child: Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: colorScheme.surface,
           body: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -590,6 +596,8 @@ class _HomePageOneState extends State<HomePageOne>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          const AnrWordmark(fontSize: 22),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: GestureDetector(
                               onTap: () async {
@@ -603,7 +611,7 @@ class _HomePageOneState extends State<HomePageOne>
                                   Icon(
                                     Icons.location_on,
                                     size: 20,
-                                    color: Colors.grey[600],
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                   SizedBox(width: 4),
                                   Expanded(
@@ -612,7 +620,7 @@ class _HomePageOneState extends State<HomePageOne>
                                           ? "Memuat lokasi..."
                                           : _currentAddress,
                                       style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
+                                        color: colorScheme.onSurfaceVariant,
                                         fontSize: 14.0,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -633,11 +641,12 @@ class _HomePageOneState extends State<HomePageOne>
                               ),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: colorScheme.surface,
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: colorScheme.shadow
+                                          .withValues(alpha: 0.1),
                                       blurRadius: 10,
                                       offset: Offset(0, 4),
                                     ),
@@ -645,11 +654,17 @@ class _HomePageOneState extends State<HomePageOne>
                                 ),
                                 child: CircleAvatar(
                                   radius: 24,
-                                  backgroundColor: Colors.grey[100],
+                                  backgroundColor:
+                                      colorScheme.surfaceContainerHighest,
                                   backgroundImage: currentUser?.photoURL != null
                                       ? NetworkImage(currentUser!.photoURL!)
-                                      : AssetImage(AppImages.logo)
-                                          as ImageProvider,
+                                      : null,
+                                  child: currentUser?.photoURL == null
+                                      ? Icon(
+                                          Icons.person_outline,
+                                          color: colorScheme.onSurfaceVariant,
+                                        )
+                                      : null,
                                 ),
                               ),
                               itemBuilder: (BuildContext context) => [
@@ -659,13 +674,13 @@ class _HomePageOneState extends State<HomePageOne>
                                     children: [
                                       Icon(
                                         Icons.person_outline,
-                                        color: Colors.grey[700],
+                                        color: colorScheme.onSurface,
                                       ),
                                       SizedBox(width: 12),
                                       Text(
                                         'Profil Saya',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.grey[700],
+                                          color: colorScheme.onSurface,
                                         ),
                                       ),
                                     ],
@@ -675,12 +690,13 @@ class _HomePageOneState extends State<HomePageOne>
                                   value: 'logout',
                                   child: Row(
                                     children: [
-                                      Icon(Icons.logout, color: Colors.red),
+                                      Icon(Icons.logout,
+                                          color: colorScheme.error),
                                       SizedBox(width: 12),
                                       Text(
                                         'Keluar',
                                         style: GoogleFonts.poppins(
-                                          color: Colors.red,
+                                          color: colorScheme.error,
                                         ),
                                       ),
                                     ],
@@ -723,7 +739,8 @@ class _HomePageOneState extends State<HomePageOne>
                                             child: Text(
                                               'BATAL',
                                               style: GoogleFonts.poppins(
-                                                color: Colors.grey,
+                                                color: colorScheme
+                                                    .onSurfaceVariant,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
@@ -736,7 +753,7 @@ class _HomePageOneState extends State<HomePageOne>
                                             child: Text(
                                               'KELUAR',
                                               style: GoogleFonts.poppins(
-                                                color: Colors.red,
+                                                color: colorScheme.error,
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
@@ -770,7 +787,7 @@ class _HomePageOneState extends State<HomePageOne>
                                     Text(
                                       "${_getGreeting()}, ${widget.username}",
                                       style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
+                                        color: colorScheme.onSurfaceVariant,
                                         fontSize: 14.0,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -779,7 +796,7 @@ class _HomePageOneState extends State<HomePageOne>
                                     Text(
                                       "Pilih perangkat\nyang sedang bermasalah",
                                       style: GoogleFonts.poppins(
-                                        color: Colors.black87,
+                                        color: colorScheme.onSurface,
                                         fontSize: 24.0,
                                         fontWeight: FontWeight.bold,
                                         height: 1.3,
@@ -842,181 +859,139 @@ class _HomePageOneState extends State<HomePageOne>
                               SizedBox(height: 12),
 
                               // Recent History Section
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Riwayat Service Terakhir',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
+                              AnrSectionHeader(
+                                title: 'Riwayat Service Terakhir',
+                                trailing: TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/history');
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size(50, 30),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushNamed(context, '/history');
-                                    },
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size(50, 30),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      'Lihat Semua',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blue,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                  child: const Text('Lihat Semua'),
+                                ),
                               ),
                               SizedBox(height: 12),
                               if (_isLoadingHistory)
                                 Center(child: CircularProgressIndicator())
                               else if (_recentServices.isEmpty)
-                                Container(
-                                  padding: EdgeInsets.symmetric(vertical: 24),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      'Belum ada riwayat service',
-                                      style: GoogleFonts.poppins(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
+                                const AnrCard(
+                                  child: AnrEmptyState(
+                                    icon: Icons.history_rounded,
+                                    title: 'Belum ada riwayat service',
+                                    message:
+                                        'Permintaan service terbaru akan tampil di sini.',
                                   ),
                                 )
                               else
                                 Column(
                                   children: _recentServices.map((service) {
-                                    return Container(
-                                      margin: EdgeInsets.only(bottom: 12),
-                                      padding: EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(
-                                          16,
-                                        ),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Container(
-                                                padding: EdgeInsets.all(12),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white,
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                    12,
+                                    return Padding(
+                                      padding: EdgeInsets.only(bottom: 12),
+                                      child: AnrCard(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.all(12),
+                                                  decoration: BoxDecoration(
+                                                    color: colorScheme.surface,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                      12,
+                                                    ),
+                                                  ),
+                                                  child: Icon(
+                                                    service.device.contains(
+                                                      'iphone',
+                                                    )
+                                                        ? Icons.phone_iphone
+                                                        : Icons.phone_android,
+                                                    color: colorScheme.primary,
+                                                    size: 24,
                                                   ),
                                                 ),
-                                                child: Icon(
-                                                  service.device.contains(
-                                                    'iphone',
-                                                  )
-                                                      ? Icons.phone_iphone
-                                                      : Icons.phone_android,
-                                                  color: Colors.blue,
-                                                  size: 24,
-                                                ),
-                                              ),
-                                              SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      DeviceProblems
-                                                          .formatDeviceName(
-                                                        {
-                                                          'device':
-                                                              service.device,
-                                                          'brand':
-                                                              service.brand,
-                                                          'model':
-                                                              service.model,
-                                                        },
-                                                      ),
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontSize: 14,
-                                                        color: Colors.black87,
-                                                      ),
-                                                    ),
-                                                    SizedBox(height: 4),
-                                                    Text(
-                                                      DeviceProblems
-                                                          .getProblemName(
-                                                        service.problem,
-                                                      ),
-                                                      maxLines: 2,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                        fontSize: 13,
-                                                        color: Colors.grey[600],
-                                                      ),
-                                                    ),
-                                                    SizedBox(height: 8),
-                                                    Container(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        color: _getStatusColor(
-                                                          service.status,
-                                                          serviceCost: service
-                                                                          .price !=
-                                                                      null &&
-                                                                  service.price !=
-                                                                      '-'
-                                                              ? service.price
-                                                              : null,
-                                                        ).withAlpha(26),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(
-                                                          20,
-                                                        ),
-                                                      ),
-                                                      child: Text(
-                                                        _getStatusText(
-                                                          service.status,
-                                                          serviceCost: service
-                                                                          .price !=
-                                                                      null &&
-                                                                  service.price !=
-                                                                      '-'
-                                                              ? service.price
-                                                              : null,
+                                                SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        DeviceProblems
+                                                            .formatDeviceName(
+                                                          {
+                                                            'device':
+                                                                service.device,
+                                                            'brand':
+                                                                service.brand,
+                                                            'model':
+                                                                service.model,
+                                                          },
                                                         ),
                                                         style:
                                                             GoogleFonts.poppins(
-                                                          fontSize: 12,
                                                           fontWeight:
-                                                              FontWeight.w500,
+                                                              FontWeight.w600,
+                                                          fontSize: 14,
+                                                          color: colorScheme
+                                                              .onSurface,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 4),
+                                                      Text(
+                                                        DeviceProblems
+                                                            .getProblemName(
+                                                          service.problem,
+                                                        ),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                          fontSize: 13,
+                                                          color: colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                      ),
+                                                      SizedBox(height: 8),
+                                                      Container(
+                                                        padding: EdgeInsets
+                                                            .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 4,
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
                                                           color:
                                                               _getStatusColor(
+                                                            context,
+                                                            service.status,
+                                                            serviceCost: service
+                                                                            .price !=
+                                                                        null &&
+                                                                    service.price !=
+                                                                        '-'
+                                                                ? service.price
+                                                                : null,
+                                                          ).withAlpha(26),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                            20,
+                                                          ),
+                                                        ),
+                                                        child: Text(
+                                                          _getStatusText(
                                                             service.status,
                                                             serviceCost: service
                                                                             .price !=
@@ -1026,15 +1001,34 @@ class _HomePageOneState extends State<HomePageOne>
                                                                 ? service.price
                                                                 : null,
                                                           ),
+                                                          style: GoogleFonts
+                                                              .poppins(
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                FontWeight.w500,
+                                                            color:
+                                                                _getStatusColor(
+                                                              context,
+                                                              service.status,
+                                                              serviceCost: service
+                                                                              .price !=
+                                                                          null &&
+                                                                      service.price !=
+                                                                          '-'
+                                                                  ? service
+                                                                      .price
+                                                                  : null,
+                                                            ),
+                                                          ),
                                                         ),
                                                       ),
-                                                    ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     );
                                   }).toList(),
@@ -1042,44 +1036,26 @@ class _HomePageOneState extends State<HomePageOne>
 
                               // Testimonial Section
                               SizedBox(height: 24),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Testimoni',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              AllTestimonialsPage(),
-                                        ),
-                                      );
-                                    },
-                                    style: TextButton.styleFrom(
-                                      padding: EdgeInsets.zero,
-                                      minimumSize: Size(50, 30),
-                                      tapTargetSize:
-                                          MaterialTapTargetSize.shrinkWrap,
-                                    ),
-                                    child: Text(
-                                      'Lihat Semua',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blue,
+                              AnrSectionHeader(
+                                title: 'Testimoni',
+                                trailing: TextButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            AllTestimonialsPage(),
                                       ),
-                                    ),
+                                    );
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size(50, 30),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                ],
+                                  child: const Text('Lihat Semua'),
+                                ),
                               ),
                               SizedBox(height: 12),
                               FutureBuilder<List<Map<String, dynamic>>>(
@@ -1093,22 +1069,12 @@ class _HomePageOneState extends State<HomePageOne>
                                   }
 
                                   if (snapshot.hasError) {
-                                    return Container(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 24,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          'Gagal memuat testimoni',
-                                          style: GoogleFonts.poppins(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
+                                    return const AnrCard(
+                                      child: AnrEmptyState(
+                                        icon: Icons.cloud_off_rounded,
+                                        title: 'Gagal memuat testimoni',
+                                        message:
+                                            'Tarik halaman ke bawah untuk mencoba lagi.',
                                       ),
                                     );
                                   }
@@ -1116,22 +1082,12 @@ class _HomePageOneState extends State<HomePageOne>
                                   final testimonials = snapshot.data ?? [];
 
                                   if (testimonials.isEmpty) {
-                                    return Container(
-                                      padding: EdgeInsets.symmetric(
-                                        vertical: 24,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(16),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          'Belum ada testimoni',
-                                          style: GoogleFonts.poppins(
-                                            color: Colors.grey[600],
-                                            fontSize: 14,
-                                          ),
-                                        ),
+                                    return const AnrCard(
+                                      child: AnrEmptyState(
+                                        icon: Icons.format_quote_rounded,
+                                        title: 'Belum ada testimoni',
+                                        message:
+                                            'Cerita pelanggan akan tampil di sini.',
                                       ),
                                     );
                                   }
@@ -1152,11 +1108,12 @@ class _HomePageOneState extends State<HomePageOne>
                                           ),
                                           padding: EdgeInsets.all(16),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey[100],
+                                            color: colorScheme
+                                                .surfaceContainerHighest,
                                             borderRadius:
                                                 BorderRadius.circular(16),
                                             border: Border.all(
-                                              color: Colors.grey[200]!,
+                                              color: colorScheme.outline,
                                               width: 1,
                                             ),
                                           ),
@@ -1194,8 +1151,8 @@ class _HomePageOneState extends State<HomePageOne>
                                                           ),
                                                           style: GoogleFonts
                                                               .poppins(
-                                                            color: Colors
-                                                                .grey[600],
+                                                            color: colorScheme
+                                                                .onSurfaceVariant,
                                                             fontSize: 14,
                                                           ),
                                                           maxLines: 1,
@@ -1219,7 +1176,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                                 0)
                                                         ? Icons.star
                                                         : Icons.star_border,
-                                                    color: Colors.amber,
+                                                    color: AppColors.warning,
                                                     size: 20,
                                                   ),
                                                 ),
@@ -1231,7 +1188,7 @@ class _HomePageOneState extends State<HomePageOne>
                                                 style: GoogleFonts.poppins(
                                                   fontSize: 14,
                                                   height: 1.5,
-                                                  color: Colors.black87,
+                                                  color: colorScheme.onSurface,
                                                 ),
                                                 maxLines: 3,
                                                 overflow: TextOverflow.ellipsis,
@@ -1252,7 +1209,8 @@ class _HomePageOneState extends State<HomePageOne>
                                                     DateFormat('dd MMMM yyyy')
                                                         .format(ts),
                                                     style: GoogleFonts.poppins(
-                                                      color: Colors.grey[600],
+                                                      color: colorScheme
+                                                          .onSurfaceVariant,
                                                       fontSize: 12,
                                                     ),
                                                   );
@@ -1306,7 +1264,7 @@ class _HomePageOneState extends State<HomePageOne>
                   child: Text(
                     'KELUAR',
                     style: GoogleFonts.poppins(
-                      color: Colors.red,
+                      color: Theme.of(context).colorScheme.error,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1318,7 +1276,7 @@ class _HomePageOneState extends State<HomePageOne>
                   child: Text(
                     'TUTUP',
                     style: GoogleFonts.poppins(
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1354,23 +1312,25 @@ class _HomePageOneState extends State<HomePageOne>
     }
   }
 
-  Color _getStatusColor(String? status, {dynamic serviceCost}) {
-    if (status == null) return Colors.grey;
+  Color _getStatusColor(BuildContext context, String? status,
+      {dynamic serviceCost}) {
+    final colorScheme = Theme.of(context).colorScheme;
+    if (status == null) return colorScheme.onSurfaceVariant;
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return serviceCost != null ? Colors.orange : Colors.blue;
+        return serviceCost != null ? AppColors.warning : colorScheme.primary;
       case 'PROCESSED':
-        return Colors.blue;
+        return colorScheme.primary;
       case 'COMPLETED':
-        return Colors.green;
+        return AppColors.success;
       case 'PAID':
-        return Colors.green;
+        return AppColors.success;
       case 'EXPIRED':
-        return Colors.red;
+        return colorScheme.error;
       case 'COMPLAINED':
-        return Colors.red;
+        return colorScheme.error;
       default:
-        return Colors.grey;
+        return colorScheme.onSurfaceVariant;
     }
   }
 

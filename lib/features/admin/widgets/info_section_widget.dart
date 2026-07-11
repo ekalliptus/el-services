@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
 import 'package:servicehponline/data/models/device_problems.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -75,7 +76,7 @@ class InfoSectionWidget extends StatelessWidget {
                       padding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: AppColors.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: GestureDetector(

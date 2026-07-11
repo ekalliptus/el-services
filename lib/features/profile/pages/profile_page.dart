@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -134,7 +136,7 @@ class _ProfilePageState extends State<ProfilePage> {
             animType: AnimType.bottomSlide,
             title: 'Berhasil',
             desc: 'Profil berhasil diperbarui',
-            btnOkColor: Colors.blue,
+            btnOkColor: Theme.of(context).colorScheme.primary,
             btnOkOnPress: () {},
           ).show();
         }
@@ -158,7 +160,7 @@ class _ProfilePageState extends State<ProfilePage> {
           desc: e.toString().contains('Exception')
               ? e.toString().replaceAll('Exception: ', '')
               : 'Gagal memperbarui profil. Silakan coba lagi.',
-          btnOkColor: Colors.blue,
+          btnOkColor: Theme.of(context).colorScheme.primary,
           btnOkOnPress: () {},
         ).show();
       }
@@ -243,6 +245,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return WillPopScope(
       onWillPop: () async {
         if (_isLoading) {
@@ -254,7 +257,7 @@ class _ProfilePageState extends State<ProfilePage> {
             title: 'Peringatan',
             desc: 'Sedang menyimpan perubahan. Mohon tunggu sebentar.',
             btnOkText: 'OK',
-            btnOkColor: Colors.blue,
+            btnOkColor: Theme.of(context).colorScheme.primary,
             btnOkOnPress: () {},
           ).show();
           return false;
@@ -271,7 +274,7 @@ class _ProfilePageState extends State<ProfilePage> {
             desc:
                 'Perubahan yang belum disimpan akan hilang. Yakin ingin keluar?',
             btnOkText: 'Ya',
-            btnOkColor: Colors.blue,
+            btnOkColor: Theme.of(context).colorScheme.primary,
             btnOkOnPress: () {
               shouldPop = true;
             },
@@ -290,20 +293,20 @@ class _ProfilePageState extends State<ProfilePage> {
         return true;
       },
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: colorScheme.surface,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: colorScheme.surface,
           elevation: 0,
           title: Text(
             'Profil Saya',
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontSize: 18.0,
               fontWeight: FontWeight.w600,
             ),
           ),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.black87),
+            icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
             onPressed: () async {
               if (_isLoading) {
                 // Jika sedang loading, tampilkan dialog peringatan
@@ -314,7 +317,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   title: 'Peringatan',
                   desc: 'Sedang menyimpan perubahan. Mohon tunggu sebentar.',
                   btnOkText: 'OK',
-                  btnOkColor: Colors.blue,
+                  btnOkColor: colorScheme.primary,
                   btnOkOnPress: () {},
                 ).show();
                 return;
@@ -330,7 +333,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   desc:
                       'Perubahan yang belum disimpan akan hilang. Yakin ingin keluar?',
                   btnOkText: 'Ya',
-                  btnOkColor: Colors.blue,
+                  btnOkColor: colorScheme.primary,
                   btnOkOnPress: () {
                     _loadProfileData(); // Kembalikan data ke kondisi sebelumnya
                     Navigator.pop(context);
@@ -346,7 +349,7 @@ class _ProfilePageState extends State<ProfilePage> {
           actions: [
             if (!_isEditing)
               IconButton(
-                icon: Icon(Icons.edit, color: Colors.black87),
+                icon: Icon(Icons.edit, color: colorScheme.onSurface),
                 onPressed: () {
                   setState(() {
                     _isEditing = true;
@@ -355,7 +358,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             if (_isEditing)
               IconButton(
-                icon: Icon(Icons.check, color: Colors.blue),
+                icon: Icon(Icons.check, color: colorScheme.primary),
                 onPressed: _isLoading ? null : _updateProfile,
               ),
           ],
@@ -364,81 +367,70 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               // Profile Header
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Stack(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey[100],
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: AnrCard(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: colorScheme.surfaceContainerHighest,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipOval(
+                              child: widget.user.photoURL != null
+                                  ? Image.network(
+                                      widget.user.photoURL!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Icon(
+                                          Icons.person,
+                                          size: 60,
+                                          color: colorScheme.onSurfaceVariant,
+                                        );
+                                      },
+                                    )
+                                  : Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                            ),
                           ),
-                          child: ClipOval(
-                            child: widget.user.photoURL != null
-                                ? Image.network(
-                                    widget.user.photoURL!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(
-                                        Icons.person,
-                                        size: 60,
-                                        color: Colors.grey[400],
-                                      );
-                                    },
-                                  )
-                                : Icon(
-                                    Icons.person,
-                                    size: 60,
-                                    color: Colors.grey[400],
-                                  ),
-                          ),
+                        ],
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        widget.user.displayName ?? 'Pengguna',
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      widget.user.displayName ?? 'Pengguna',
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      widget.user.email ?? 'Email tidak tersedia',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey[600],
+                      SizedBox(height: 4),
+                      Text(
+                        widget.user.email ?? 'Email tidak tersedia',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 24),
@@ -450,14 +442,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Informasi Pribadi',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
-                        ),
-                      ),
+                      AnrSectionHeader(title: 'Informasi Pribadi'),
                       SizedBox(height: 16),
                       _buildTextField(
                         controller: _nameController,
@@ -545,13 +530,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                   padding: EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    side: BorderSide(color: Colors.grey[300]!),
+                                    side:
+                                        BorderSide(color: colorScheme.outline),
                                   ),
                                 ),
                                 child: Text(
                                   'BATAL',
                                   style: GoogleFonts.poppins(
-                                    color: Colors.grey[600],
+                                    color: colorScheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -559,63 +545,22 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             SizedBox(width: 16),
                             Expanded(
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _updateProfile,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                child: _isLoading
-                                    ? SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                  Colors.white),
-                                        ),
-                                      )
-                                    : Text(
-                                        'SIMPAN',
-                                        style: GoogleFonts.poppins(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                              child: AnrButton(
+                                label: 'SIMPAN',
+                                onPressed: _updateProfile,
+                                loading: _isLoading,
                               ),
                             ),
                           ],
                         ),
                       SizedBox(height: 24),
                       // Account Info Section
-                      Container(
+                      AnrCard(
                         padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                              offset: Offset(0, 5),
-                            ),
-                          ],
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Informasi Akun',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
-                            ),
+                            AnrSectionHeader(title: 'Informasi Akun'),
                             SizedBox(height: 16),
                             _buildInfoItem(
                               icon: Icons.verified_user,
@@ -624,8 +569,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                   ? 'Terverifikasi'
                                   : 'Belum Terverifikasi',
                               valueColor: widget.user.emailVerified
-                                  ? Colors.green
-                                  : Colors.orange,
+                                  ? AppColors.success
+                                  : AppColors.warning,
                             ),
                             Divider(height: 24),
                             _buildInfoItem(
@@ -665,34 +610,38 @@ class _ProfilePageState extends State<ProfilePage> {
     String? Function(String?)? validator,
     int? maxLines = 1,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return TextFormField(
       controller: controller,
       enabled: enabled,
       keyboardType: keyboardType,
       validator: validator,
       style: GoogleFonts.poppins(
-        color: enabled ? Colors.black87 : Colors.grey,
+        color: enabled ? colorScheme.onSurface : colorScheme.onSurfaceVariant,
       ),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: GoogleFonts.poppins(
-          color: Colors.grey[600],
+          color: colorScheme.onSurfaceVariant,
         ),
-        prefixIcon: Icon(icon, color: enabled ? Colors.blue : Colors.grey),
+        prefixIcon: Icon(icon,
+            color:
+                enabled ? colorScheme.primary : colorScheme.onSurfaceVariant),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outline),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.blue),
+          borderSide: BorderSide(color: colorScheme.primary),
         ),
         filled: true,
-        fillColor: enabled ? Colors.white : Colors.grey[100],
+        fillColor:
+            enabled ? colorScheme.surface : colorScheme.surfaceContainerHighest,
       ),
     );
   }
@@ -703,15 +652,16 @@ class _ProfilePageState extends State<ProfilePage> {
     required String value,
     Color? valueColor,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
         Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: colorScheme.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: Colors.blue, size: 20),
+          child: Icon(icon, color: colorScheme.primary, size: 20),
         ),
         SizedBox(width: 16),
         Expanded(
@@ -722,7 +672,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 title,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               SizedBox(height: 4),
@@ -731,7 +681,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: valueColor ?? Colors.black87,
+                  color: valueColor ?? colorScheme.onSurface,
                 ),
               ),
             ],

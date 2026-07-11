@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'package:servicehponline/core/services/authentication.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:servicehponline/features/profile/pages/profile_setup_page.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:servicehponline/features/admin/pages/super_admin_dashboard.dart';
@@ -252,7 +253,7 @@ class _HomeState extends State<Home> {
               child: Text(
                 'BATAL',
                 style: GoogleFonts.poppins(
-                  color: Colors.grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -380,7 +381,8 @@ class _HomeState extends State<Home> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(errorMessage),
-                              backgroundColor: Colors.red,
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.error,
                             ),
                           );
                         } finally {
@@ -396,13 +398,14 @@ class _HomeState extends State<Home> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary),
                       ),
                     )
                   : Text(
                       'LOGIN',
                       style: GoogleFonts.poppins(
-                        color: Colors.blue,
+                        color: Theme.of(context).colorScheme.primary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -749,8 +752,9 @@ class _HomeState extends State<Home> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          final colorScheme = Theme.of(context).colorScheme;
           return Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: colorScheme.surface,
             body: SafeArea(
               child: SingleChildScrollView(
                 child: Padding(
@@ -761,47 +765,45 @@ class _HomeState extends State<Home> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.1),
-                        Container(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(51),
-                                offset: const Offset(0, 15),
-                                blurRadius: 30,
-                              ),
-                            ],
-                          ),
-                          child: Image.asset(
-                            'assets/images/app-logo.png',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                            height: MediaQuery.of(context).size.height * 0.09),
+                        const AnrWordmark(fontSize: 28),
                         SizedBox(
-                            height: MediaQuery.of(context).size.height * 0.04),
-                        Text(
-                          "Punya Masalah\nDengan Perangkatmu?",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.poppins(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                            height: 1.3,
+                            height: MediaQuery.of(context).size.height * 0.06),
+                        Container(
+                          width: 96,
+                          height: 96,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Icon(
+                            Icons.build_rounded,
+                            size: 46,
+                            color: colorScheme.onPrimary,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 28),
                         Text(
-                          "Silahkan masuk untuk melanjutkan",
+                          "Punya masalah\ndengan perangkatmu?",
                           textAlign: TextAlign.center,
                           style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            color: Colors.black54,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: colorScheme.onSurface,
+                            height: 1.25,
+                            letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        const SizedBox(height: 12),
+                        Text(
+                          "Masuk untuk mulai memesan layanan servis.",
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 15,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 36),
                         // Google Sign In Button
                         InkWell(
                           onTap: _isGoogleLoading ? null : _handleGoogleSignIn,
@@ -810,9 +812,9 @@ class _HomeState extends State<Home> {
                             padding: const EdgeInsets.symmetric(
                                 vertical: 12, horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(32),
-                              border: Border.all(color: Colors.grey.shade300),
+                              border: Border.all(color: colorScheme.outline),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -824,7 +826,7 @@ class _HomeState extends State<Home> {
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.grey.shade400),
+                                          colorScheme.onSurfaceVariant),
                                     ),
                                   )
                                 else
@@ -845,7 +847,7 @@ class _HomeState extends State<Home> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: colorScheme.onSurface,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -876,9 +878,9 @@ class _HomeState extends State<Home> {
                             padding: const EdgeInsets.symmetric(
                                 vertical: 12, horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: colorScheme.surface,
                               borderRadius: BorderRadius.circular(32),
-                              border: Border.all(color: Colors.grey.shade300),
+                              border: Border.all(color: colorScheme.outline),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -898,7 +900,7 @@ class _HomeState extends State<Home> {
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.black87,
+                                      color: colorScheme.onSurface,
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -928,7 +930,7 @@ class _HomeState extends State<Home> {
                                 text: TextSpan(
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
-                                    color: Colors.black54,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                                   children: [
                                     TextSpan(
@@ -936,14 +938,14 @@ class _HomeState extends State<Home> {
                                             'Saya telah membaca dan menyetujui '),
                                     TextSpan(
                                       text: 'Ketentuan Layanan',
-                                      style: TextStyle(color: Colors.blue),
+                                      style: TextStyle(color: colorScheme.primary),
                                     ),
                                     TextSpan(text: ' dan '),
                                     TextSpan(
                                       text: 'Kebijakan Privasi',
-                                      style: TextStyle(color: Colors.blue),
+                                      style: TextStyle(color: colorScheme.primary),
                                     ),
-                                    TextSpan(text: ' Service HP Online'),
+                                    TextSpan(text: ' ANRServices'),
                                   ],
                                 ),
                               ),
@@ -958,7 +960,7 @@ class _HomeState extends State<Home> {
                             'Login sebagai Admin',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: Colors.grey[600],
+                              color: colorScheme.onSurfaceVariant,
                               decoration: TextDecoration.underline,
                             ),
                           ),

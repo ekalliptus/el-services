@@ -10,6 +10,8 @@ import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class AppVersionManagerPage extends StatefulWidget {
   const AppVersionManagerPage({Key? key}) : super(key: key);
@@ -345,9 +347,11 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'SELECT * FROM admins WHERE id = \'${SupabaseConfig.client.auth.currentUser?.id ?? ""}\';',
@@ -362,9 +366,11 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'UPDATE admins SET role = \'super_admin\' WHERE id = \'${SupabaseConfig.client.auth.currentUser?.id ?? ""}\';',
@@ -379,9 +385,11 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'SELECT name FROM storage.buckets;',
@@ -396,9 +404,11 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outline),
                     ),
                     child: SelectableText(
                       'CREATE POLICY "Super Admin dapat mengakses storage" ON storage.objects FOR ALL USING (auth.uid() IN (SELECT id FROM admins WHERE role = \'super_admin\'));',
@@ -417,14 +427,15 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                     padding: EdgeInsets.all(8),
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: Theme.of(context).colorScheme.errorContainer,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.red.shade200),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.error),
                     ),
                     child: SelectableText(
                       errorDetails,
                       style: TextStyle(
-                        color: Colors.red.shade800,
+                        color: Theme.of(context).colorScheme.error,
                         fontSize: 12,
                         fontFamily: 'monospace',
                       ),
@@ -434,9 +445,10 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                   Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: Theme.of(context).colorScheme.primaryContainer,
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.blue.shade200),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.primary),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -445,7 +457,9 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                           'Catatan Penting:',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade800,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
                           ),
                         ),
                         SizedBox(height: 4),
@@ -549,11 +563,11 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
           SnackBar(
             content: Text(
                 'Beberapa kolom tidak tersedia di tabel versions: ${missingColumns.join(", ")}'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warning,
             duration: Duration(seconds: 5),
             action: SnackBarAction(
               label: 'PERBAIKI',
-              textColor: Colors.white,
+              textColor: Theme.of(context).colorScheme.onPrimary,
               onPressed: () {
                 _showFixTableSchemaGuide(missingColumns);
               },
@@ -665,7 +679,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -691,9 +705,10 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: SelectableText(
                   '''CREATE TABLE versions (
@@ -959,7 +974,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
           SnackBar(
             content: Text(
                 'Kolom penting tidak ditemukan: ${missingCriticalColumns.join(", ")}'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
 
@@ -1012,7 +1027,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
           SnackBar(
             content: Text(
                 'Beberapa data tidak akan disimpan karena kolom tidak tersedia'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppColors.warning,
           ),
         );
       }
@@ -1123,7 +1138,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     } finally {
@@ -1185,7 +1200,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                     'Rekomendasi: Tambahkan kolom yang hilang untuk penyimpanan data yang lengkap.',
                     style: TextStyle(
                       fontStyle: FontStyle.italic,
-                      color: Colors.blue.shade800,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
                   ),
                 ],
@@ -1200,7 +1215,7 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                 onPressed: () => Navigator.of(context).pop(true),
                 child: Text('LANJUTKAN TANPA KOLOM INI'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
+                  backgroundColor: AppColors.warning,
                 ),
               ),
             ],
@@ -1213,7 +1228,10 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Kelola Versi Aplikasi'),
+        title: Text(
+          'Kelola Versi Aplikasi',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         actions: [
           // Tambahkan tombol untuk memeriksa koneksi storage
           IconButton(
@@ -1234,8 +1252,9 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                         content: Text(_isBucketCreated
                             ? 'Koneksi ke bucket storage berhasil!'
                             : 'Gagal terhubung ke bucket storage'),
-                        backgroundColor:
-                            _isBucketCreated ? Colors.green : Colors.red,
+                        backgroundColor: _isBucketCreated
+                            ? AppColors.success
+                            : Theme.of(context).colorScheme.error,
                       ),
                     );
                   },
@@ -1254,13 +1273,13 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                     padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: _isBucketCreated
-                          ? Colors.green.shade50
-                          : Colors.amber.shade50,
+                          ? AppColors.success.withValues(alpha: 0.12)
+                          : AppColors.warning.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: _isBucketCreated
-                            ? Colors.green.shade200
-                            : Colors.amber.shade200,
+                            ? AppColors.success.withValues(alpha: 0.5)
+                            : AppColors.warning.withValues(alpha: 0.5),
                       ),
                     ),
                     child: _isLoadingBucket
@@ -1288,8 +1307,8 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                                     ? Icons.cloud_done
                                     : Icons.cloud_off,
                                 color: _isBucketCreated
-                                    ? Colors.green
-                                    : Colors.amber,
+                                    ? AppColors.success
+                                    : AppColors.warning,
                               ),
                               SizedBox(width: 8),
                               Expanded(
@@ -1325,302 +1344,289 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
                   ),
                   SizedBox(height: 16),
                   if (_latestVersion != null) ...[
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Versi Terbaru',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                    AnrCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Versi Terbaru',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.refresh),
-                                  tooltip: 'Muat ulang data versi',
-                                  onPressed: _loadVersions,
-                                )
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.refresh),
+                                tooltip: 'Muat ulang data versi',
+                                onPressed: _loadVersions,
+                              )
+                            ],
+                          ),
+                          SizedBox(height: 8),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Versi: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text:
+                                      '${_latestVersion!['latest_version_name']} ',
+                                ),
+                                TextSpan(
+                                  text:
+                                      '(kode: ${_latestVersion!['latest_version_code']})',
+                                  style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant),
+                                ),
                               ],
                             ),
-                            SizedBox(height: 8),
+                          ),
+                          SizedBox(height: 4),
+                          if (_latestVersion!.containsKey('is_mandatory'))
                             Text.rich(
                               TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: 'Versi: ',
+                                    text: 'Status: ',
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   TextSpan(
                                     text:
-                                        '${_latestVersion!['latest_version_name']} ',
-                                  ),
-                                  TextSpan(
-                                    text:
-                                        '(kode: ${_latestVersion!['latest_version_code']})',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            if (_latestVersion!.containsKey('is_mandatory'))
-                              Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: 'Status: ',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    TextSpan(
-                                      text: _latestVersion!['is_mandatory'] ==
+                                        _latestVersion!['is_mandatory'] == true
+                                            ? 'Wajib'
+                                            : 'Opsional',
+                                    style: TextStyle(
+                                      color: _latestVersion!['is_mandatory'] ==
                                               true
-                                          ? 'Wajib'
-                                          : 'Opsional',
-                                      style: TextStyle(
-                                        color:
-                                            _latestVersion!['is_mandatory'] ==
-                                                    true
-                                                ? Colors.red
-                                                : Colors.green,
-                                      ),
+                                          ? Theme.of(context).colorScheme.error
+                                          : AppColors.success,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
+                            ),
+                          SizedBox(height: 4),
+                          Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: 'Tanggal Rilis: ',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text: (() {
+                                    final parsed = DateTime.tryParse(
+                                        _latestVersion!['created_at']
+                                                ?.toString() ??
+                                            '');
+                                    return parsed != null
+                                        ? DateFormat('dd MMM yyyy, HH:mm')
+                                            .format(parsed.toLocal())
+                                        : 'Tidak tersedia';
+                                  })(),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_latestVersion!.containsKey('file_size') &&
+                              _latestVersion!['file_size'] != null) ...[
                             SizedBox(height: 4),
                             Text.rich(
                               TextSpan(
                                 children: [
                                   TextSpan(
-                                    text: 'Tanggal Rilis: ',
+                                    text: 'Ukuran File: ',
                                     style:
                                         TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   TextSpan(
-                                    text: (() {
-                                      final parsed = DateTime.tryParse(
-                                          _latestVersion!['created_at']
-                                                  ?.toString() ??
-                                              '');
-                                      return parsed != null
-                                          ? DateFormat('dd MMM yyyy, HH:mm')
-                                              .format(parsed.toLocal())
-                                          : 'Tidak tersedia';
-                                    })(),
+                                    text: _formatFileSize(
+                                        _latestVersion!['file_size']),
                                   ),
                                 ],
                               ),
                             ),
-                            if (_latestVersion!.containsKey('file_size') &&
-                                _latestVersion!['file_size'] != null) ...[
-                              SizedBox(height: 4),
-                              Text.rich(
-                                TextSpan(
-                                  children: [
-                                    TextSpan(
-                                      text: 'Ukuran File: ',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    TextSpan(
-                                      text: _formatFileSize(
-                                          _latestVersion!['file_size']),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            if (_latestVersion!.containsKey('release_notes') &&
-                                _latestVersion!['release_notes'] != null) ...[
-                              SizedBox(height: 8),
-                              Text(
-                                'Catatan Rilis:',
-                                style: TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 4),
-                              Container(
-                                padding: EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(_latestVersion!['release_notes']),
-                              ),
-                            ],
-                            if (_latestVersion!
-                                    .containsKey('apk_download_url') &&
-                                _latestVersion!['apk_download_url'] !=
-                                    null) ...[
-                              SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                icon: Icon(Icons.download),
-                                label: Text('Unduh APK'),
-                                onPressed: () async {
-                                  final url =
-                                      _latestVersion!['apk_download_url'];
-                                  // Buka URL di browser
-                                  try {
-                                    await Clipboard.setData(
-                                        ClipboardData(text: url));
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(
-                                              'URL download disalin ke clipboard')),
-                                    );
-                                  } catch (e) {
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content:
-                                              Text('Gagal menyalin URL: $e')),
-                                    );
-                                  }
-                                },
-                              ),
-                            ],
                           ],
-                        ),
+                          if (_latestVersion!.containsKey('release_notes') &&
+                              _latestVersion!['release_notes'] != null) ...[
+                            SizedBox(height: 8),
+                            Text(
+                              'Catatan Rilis:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 4),
+                            Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(_latestVersion!['release_notes']),
+                            ),
+                          ],
+                          if (_latestVersion!.containsKey('apk_download_url') &&
+                              _latestVersion!['apk_download_url'] != null) ...[
+                            SizedBox(height: 8),
+                            OutlinedButton.icon(
+                              icon: Icon(Icons.download),
+                              label: Text('Unduh APK'),
+                              onPressed: () async {
+                                final url = _latestVersion!['apk_download_url'];
+                                // Buka URL di browser
+                                try {
+                                  await Clipboard.setData(
+                                      ClipboardData(text: url));
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'URL download disalin ke clipboard')),
+                                  );
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text('Gagal menyalin URL: $e')),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     SizedBox(height: 16),
                   ],
-                  Card(
-                    elevation: 2,
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Tambah Versi Baru',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                  AnrCard(
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AnrSectionHeader(title: 'Tambah Versi Baru'),
+                          SizedBox(height: 16),
+                          TextFormField(
+                            controller: _versionNameController,
+                            decoration: InputDecoration(
+                              labelText: 'Nama Versi (misalnya: 1.0.0)',
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Nama versi harus diisi';
+                              }
+                              final RegExp versionRegex =
+                                  RegExp(r'^\d+\.\d+\.\d+$');
+                              if (!versionRegex.hasMatch(value)) {
+                                return 'Format versi harus x.y.z (misal: 1.0.0)';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16),
+                          TextFormField(
+                            controller: _versionCodeController,
+                            decoration: InputDecoration(
+                              labelText:
+                                  'Kode Versi (angka, harus lebih besar dari versi sebelumnya)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Kode versi harus diisi';
+                              }
+                              final int? code = int.tryParse(value);
+                              if (code == null) {
+                                return 'Kode versi harus berupa angka';
+                              }
+                              if (_latestVersion != null &&
+                                  code <=
+                                      _latestVersion!['latest_version_code']) {
+                                return 'Kode versi harus lebih besar dari versi sebelumnya (${_latestVersion!['latest_version_code']})';
+                              }
+                              return null;
+                            },
+                          ),
+                          SizedBox(height: 16),
+                          TextFormField(
+                            controller: _releaseNotesController,
+                            decoration: InputDecoration(
+                              labelText: 'Catatan Rilis',
+                              border: OutlineInputBorder(),
+                              hintText:
+                                  'Masukkan informasi tentang fitur atau perbaikan di versi ini',
+                            ),
+                            maxLines: 5,
+                          ),
+                          SizedBox(height: 16),
+                          OutlinedButton.icon(
+                            onPressed: _selectApkFile,
+                            icon: Icon(Icons.file_upload),
+                            label: Text(_selectedApkFile == null
+                                ? 'Pilih File APK'
+                                : 'APK Terpilih: ${path.basename(_selectedApkFile!.path)}'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: Size(double.infinity, 56),
+                            ),
+                          ),
+                          if (_apkError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                _apkError!,
+                                style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                    fontSize: 12),
                               ),
                             ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: _versionNameController,
-                              decoration: InputDecoration(
-                                labelText: 'Nama Versi (misalnya: 1.0.0)',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Nama versi harus diisi';
-                                }
-                                final RegExp versionRegex =
-                                    RegExp(r'^\d+\.\d+\.\d+$');
-                                if (!versionRegex.hasMatch(value)) {
-                                  return 'Format versi harus x.y.z (misal: 1.0.0)';
-                                }
-                                return null;
-                              },
-                            ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: _versionCodeController,
-                              decoration: InputDecoration(
-                                labelText:
-                                    'Kode Versi (angka, harus lebih besar dari versi sebelumnya)',
-                                border: OutlineInputBorder(),
-                              ),
-                              keyboardType: TextInputType.number,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Kode versi harus diisi';
-                                }
-                                final int? code = int.tryParse(value);
-                                if (code == null) {
-                                  return 'Kode versi harus berupa angka';
-                                }
-                                if (_latestVersion != null &&
-                                    code <=
-                                        _latestVersion![
-                                            'latest_version_code']) {
-                                  return 'Kode versi harus lebih besar dari versi sebelumnya (${_latestVersion!['latest_version_code']})';
-                                }
-                                return null;
-                              },
-                            ),
-                            SizedBox(height: 16),
-                            TextFormField(
-                              controller: _releaseNotesController,
-                              decoration: InputDecoration(
-                                labelText: 'Catatan Rilis',
-                                border: OutlineInputBorder(),
-                                hintText:
-                                    'Masukkan informasi tentang fitur atau perbaikan di versi ini',
-                              ),
-                              maxLines: 5,
-                            ),
-                            SizedBox(height: 16),
-                            OutlinedButton.icon(
-                              onPressed: _selectApkFile,
-                              icon: Icon(Icons.file_upload),
-                              label: Text(_selectedApkFile == null
-                                  ? 'Pilih File APK'
-                                  : 'APK Terpilih: ${path.basename(_selectedApkFile!.path)}'),
-                              style: OutlinedButton.styleFrom(
-                                minimumSize: Size(double.infinity, 56),
+                          if (_selectedApkFile != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                'Ukuran File: ${_formatFileSize(_selectedApkFile!.lengthSync())}',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant),
                               ),
                             ),
-                            if (_apkError != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  _apkError!,
-                                  style: TextStyle(
-                                      color: Colors.red, fontSize: 12),
-                                ),
-                              ),
-                            if (_selectedApkFile != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text(
-                                  'Ukuran File: ${_formatFileSize(_selectedApkFile!.lengthSync())}',
-                                  style: TextStyle(
-                                      fontSize: 12, color: Colors.grey[600]),
-                                ),
-                              ),
-                            SizedBox(height: 16),
-                            CheckboxListTile(
-                              title: Text('Pembaruan Wajib'),
-                              subtitle: Text(
-                                'Jika dicentang, pengguna harus menginstal pembaruan ini untuk terus menggunakan aplikasi',
-                                style: TextStyle(fontSize: 12),
-                              ),
-                              value: _isMandatory,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isMandatory = value ?? false;
-                                });
-                              },
-                              contentPadding: EdgeInsets.zero,
-                              controlAffinity: ListTileControlAffinity.leading,
+                          SizedBox(height: 16),
+                          CheckboxListTile(
+                            title: Text('Pembaruan Wajib'),
+                            subtitle: Text(
+                              'Jika dicentang, pengguna harus menginstal pembaruan ini untuk terus menggunakan aplikasi',
+                              style: TextStyle(fontSize: 12),
                             ),
-                            SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: _isLoading ? null : _publishVersion,
-                              child: Text('Unggah dan Simpan Versi Baru'),
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: Size(double.infinity, 56),
-                              ),
-                            ),
-                          ],
-                        ),
+                            value: _isMandatory,
+                            onChanged: (value) {
+                              setState(() {
+                                _isMandatory = value ?? false;
+                              });
+                            },
+                            contentPadding: EdgeInsets.zero,
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                          SizedBox(height: 24),
+                          AnrButton(
+                            label: 'Unggah dan Simpan Versi Baru',
+                            onPressed: _publishVersion,
+                            loading: _isLoading,
+                            icon: Icons.cloud_upload_outlined,
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -1833,9 +1839,10 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: SelectableText(
                   _generateAlterTableSQL(missingColumns),
@@ -1850,9 +1857,10 @@ class _AppVersionManagerPageState extends State<AppVersionManagerPage> {
               Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.grey.shade300),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                 ),
                 child: SelectableText(
                   '''DROP TABLE IF EXISTS versions;

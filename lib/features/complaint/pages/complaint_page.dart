@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -67,23 +69,26 @@ class _ComplaintPageState extends State<ComplaintPage> {
   }
 
   Widget _buildAvatar(Map<String, dynamic> service, firebase_auth.User? user) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: user?.photoURL != null ? Colors.transparent : Colors.blue,
+        color:
+            user?.photoURL != null ? Colors.transparent : colorScheme.primary,
       ),
       child: CircleAvatar(
-        backgroundColor:
-            user?.photoURL != null ? Colors.grey[200] : Colors.blue,
+        backgroundColor: user?.photoURL != null
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primary,
         backgroundImage:
             user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
         child: user?.photoURL == null
             ? Text(
                 _initialNama(service['customer_name'], user?.displayName),
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
                 ),
@@ -98,6 +103,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
       await showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
+          final colorScheme = Theme.of(context).colorScheme;
           return Container(
             padding: EdgeInsets.all(16),
             child: Column(
@@ -136,13 +142,13 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withValues(
-                                    red: 33, green: 150, blue: 243, alpha: 26),
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.camera_alt,
-                                color: Colors.blue,
+                                color: colorScheme.primary,
                                 size: 32,
                               ),
                             ),
@@ -150,7 +156,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Text(
                               'Kamera',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -179,13 +185,12 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(
-                                    red: 76, green: 175, blue: 80, alpha: 26),
+                                color: AppColors.success.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.photo_library,
-                                color: Colors.green,
+                                color: AppColors.success,
                                 size: 32,
                               ),
                             ),
@@ -193,7 +198,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Text(
                               'Galeri',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -217,7 +222,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
         animType: AnimType.scale,
         title: 'Error',
         desc: 'Gagal memilih foto. Silakan coba lagi.',
-        btnOkColor: Colors.red,
+        btnOkColor: Theme.of(context).colorScheme.error,
         btnOkText: 'OK',
         btnOkOnPress: () {},
       ).show();
@@ -229,6 +234,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
       await showModalBottomSheet(
         context: context,
         builder: (BuildContext context) {
+          final colorScheme = Theme.of(context).colorScheme;
           return Container(
             padding: EdgeInsets.all(16),
             child: Column(
@@ -266,13 +272,13 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withValues(
-                                    red: 33, green: 150, blue: 243, alpha: 26),
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.videocam,
-                                color: Colors.blue,
+                                color: colorScheme.primary,
                                 size: 32,
                               ),
                             ),
@@ -280,7 +286,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Text(
                               'Kamera',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -308,13 +314,12 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.green.withValues(
-                                    red: 76, green: 175, blue: 80, alpha: 26),
+                                color: AppColors.success.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.video_library,
-                                color: Colors.green,
+                                color: AppColors.success,
                                 size: 32,
                               ),
                             ),
@@ -322,7 +327,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             Text(
                               'Galeri',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -346,7 +351,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
         animType: AnimType.scale,
         title: 'Error',
         desc: 'Gagal memilih video. Silakan coba lagi.',
-        btnOkColor: Colors.red,
+        btnOkColor: Theme.of(context).colorScheme.error,
         btnOkText: 'OK',
         btnOkOnPress: () {},
       ).show();
@@ -380,7 +385,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Detail komplain wajib diisi'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           duration: Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.all(16),
@@ -396,7 +401,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
         animType: AnimType.scale,
         title: 'Peringatan',
         desc: 'Mohon isi detail komplain Anda',
-        btnOkColor: Colors.red,
+        btnOkColor: Theme.of(context).colorScheme.error,
         btnOkText: 'OK',
         btnOkOnPress: () {},
       ).show();
@@ -510,7 +515,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
           title: 'Berhasil',
           desc:
               'Komplain Anda telah dikirim. Admin akan segera menindaklanjuti.',
-          btnOkColor: Colors.blue,
+          btnOkColor: Theme.of(context).colorScheme.primary,
           btnOkText: 'Ke Beranda',
           btnOkOnPress: () {
             Navigator.of(context).pushNamedAndRemoveUntil(
@@ -519,7 +524,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
             );
           },
           btnCancelText: 'Ke Riwayat',
-          btnCancelColor: Colors.green,
+          btnCancelColor: AppColors.success,
           btnCancelOnPress: () {
             Navigator.of(context).pushNamedAndRemoveUntil(
               '/history',
@@ -559,7 +564,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
         animType: AnimType.scale,
         title: 'Error',
         desc: errorMessage,
-        btnOkColor: Colors.red,
+        btnOkColor: Theme.of(context).colorScheme.error,
         btnOkText: 'OK',
         btnOkOnPress: () {},
       ).show();
@@ -571,6 +576,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
   @override
   Widget build(BuildContext context) {
     final currentUser = _auth.currentUser;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return PopScope(
       canPop: !_isSubmitting && !_hasUnsavedChanges,
@@ -584,7 +590,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 'Mohon tunggu, komplain sedang diproses...',
                 style: GoogleFonts.poppins(),
               ),
-              backgroundColor: Colors.orange,
+              backgroundColor: AppColors.warning,
               duration: Duration(seconds: 2),
             ),
           );
@@ -608,7 +614,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
               actions: [
@@ -617,7 +623,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                   child: Text(
                     'TIDAK',
                     style: GoogleFonts.poppins(
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -630,7 +636,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                   child: Text(
                     'YA',
                     style: GoogleFonts.poppins(
-                      color: Colors.red,
+                      color: colorScheme.error,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -649,10 +655,10 @@ class _ComplaintPageState extends State<ComplaintPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: colorScheme.surface,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.black87),
+            icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
             onPressed: () async {
               if (_isSubmitting) return;
 
@@ -673,7 +679,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                       'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     actions: [
@@ -682,7 +688,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                         child: Text(
                           'TIDAK',
                           style: GoogleFonts.poppins(
-                            color: Colors.grey[600],
+                            color: colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -692,7 +698,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                         child: Text(
                           'YA',
                           style: GoogleFonts.poppins(
-                            color: Colors.red,
+                            color: colorScheme.error,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -711,96 +717,79 @@ class _ComplaintPageState extends State<ComplaintPage> {
           title: Text(
             'Ajukan Komplain',
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
         body: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      _buildAvatar(widget.service, currentUser),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Service #${widget.service['id']}',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
+              AnrCard(
+                child: Row(
+                  children: [
+                    _buildAvatar(widget.service, currentUser),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Service #${widget.service['id']}',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              widget.service['device']
-                                          ?.toString()
-                                          .toLowerCase() ==
-                                      'android'
-                                  ? '${widget.service['brand']} - ${widget.service['model']}'
-                                  : '${widget.service['brand']} - ${widget.service['model']}',
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                              ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            widget.service['device']
+                                        ?.toString()
+                                        .toLowerCase() ==
+                                    'android'
+                                ? '${widget.service['brand']} - ${widget.service['model']}'
+                                : '${widget.service['brand']} - ${widget.service['model']}',
+                            style: GoogleFonts.poppins(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 24),
-              Row(
-                children: [
-                  Text(
-                    'Detail Komplain',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
+              AnrSectionHeader(
+                title: 'Detail Komplain',
+                subtitle: 'Jelaskan masalah yang Anda alami.',
+                trailing: Text(
+                  'Wajib',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.error,
                   ),
-                  SizedBox(width: 8),
-                  Text(
-                    "(Wajib Diisi)",
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.red[700],
-                    ),
-                  ),
-                ],
+                ),
               ),
               SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: _isSubmitting ? Colors.grey[100] : Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
+              TextField(
+                controller: _complaintController,
+                maxLines: 8,
+                maxLength: 500,
+                enabled: !_isSubmitting,
+                decoration: InputDecoration(
+                  hintText: 'Jelaskan detail komplain Anda...',
+                  counterText: '',
+                  fillColor: _isSubmitting
+                      ? colorScheme.surfaceContainerHighest
+                      : colorScheme.surface,
                 ),
-                child: TextField(
-                  controller: _complaintController,
-                  maxLines: 8,
-                  maxLength: 500,
-                  enabled: !_isSubmitting,
-                  decoration: InputDecoration(
-                    hintText: 'Jelaskan detail komplain Anda...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(16),
-                    counterText: '',
-                  ),
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  height: 1.5,
                 ),
               ),
               Padding(
@@ -808,31 +797,23 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 child: Text(
                   'Maksimal 500 karakter',
                   style: GoogleFonts.poppins(
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
               ),
               SizedBox(height: 24),
-              Row(
-                children: [
-                  Text(
-                    'Dokumentasi',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
+              AnrSectionHeader(
+                title: 'Dokumentasi',
+                subtitle: 'Tambahkan foto atau video pendukung.',
+                trailing: Text(
+                  'Opsional',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colorScheme.onSurfaceVariant,
                   ),
-                  SizedBox(width: 8),
-                  Text(
-                    "(Opsional)",
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                      color: Colors.blue[700],
-                    ),
-                  ),
-                ],
+                ),
               ),
               SizedBox(height: 8),
               Row(
@@ -843,13 +824,13 @@ class _ComplaintPageState extends State<ComplaintPage> {
                       child: Container(
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colorScheme.outline),
                         ),
                         child: _selectedImage != null
                             ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(16),
                                 child: Image.file(
                                   _selectedImage!,
                                   fit: BoxFit.cover,
@@ -860,14 +841,14 @@ class _ComplaintPageState extends State<ComplaintPage> {
                                 children: [
                                   Icon(
                                     Icons.add_photo_alternate_outlined,
-                                    color: Colors.grey[600],
+                                    color: colorScheme.onSurfaceVariant,
                                     size: 32,
                                   ),
                                   SizedBox(height: 8),
                                   Text(
                                     'Tambah Foto',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurfaceVariant,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -883,9 +864,9 @@ class _ComplaintPageState extends State<ComplaintPage> {
                       child: Container(
                         height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[300]!),
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colorScheme.outline),
                         ),
                         child: _selectedVideo != null
                             ? Stack(
@@ -894,7 +875,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
                                   if (_videoController?.value.isInitialized ??
                                       false)
                                     ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(16),
                                       child: AspectRatio(
                                         aspectRatio:
                                             _videoController!.value.aspectRatio,
@@ -913,14 +894,14 @@ class _ComplaintPageState extends State<ComplaintPage> {
                                 children: [
                                   Icon(
                                     Icons.videocam_outlined,
-                                    color: Colors.grey[600],
+                                    color: colorScheme.onSurfaceVariant,
                                     size: 32,
                                   ),
                                   SizedBox(height: 8),
                                   Text(
                                     'Tambah Video',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.grey[600],
+                                      color: colorScheme.onSurfaceVariant,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -941,11 +922,15 @@ class _ComplaintPageState extends State<ComplaintPage> {
                             ? null
                             : () => setState(() => _selectedImage = null),
                         icon: Icon(Icons.delete_outline,
-                            color: _isSubmitting ? Colors.grey : Colors.red),
+                            color: _isSubmitting
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.error),
                         label: Text(
                           'Hapus Foto',
                           style: GoogleFonts.poppins(
-                            color: _isSubmitting ? Colors.grey : Colors.red,
+                            color: _isSubmitting
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.error,
                             fontSize: 12,
                           ),
                         ),
@@ -962,11 +947,15 @@ class _ComplaintPageState extends State<ComplaintPage> {
                                 });
                               },
                         icon: Icon(Icons.delete_outline,
-                            color: _isSubmitting ? Colors.grey : Colors.red),
+                            color: _isSubmitting
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.error),
                         label: Text(
                           'Hapus Video',
                           style: GoogleFonts.poppins(
-                            color: _isSubmitting ? Colors.grey : Colors.red,
+                            color: _isSubmitting
+                                ? colorScheme.onSurfaceVariant
+                                : colorScheme.error,
                             fontSize: 12,
                           ),
                         ),
@@ -975,34 +964,11 @@ class _ComplaintPageState extends State<ComplaintPage> {
                 ),
               ],
               SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitComplaint,
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    disabledBackgroundColor: Colors.blue.withOpacity(0.6),
-                  ),
-                  child: _isSubmitting
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          'Kirim Komplain',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
+              AnrButton(
+                label: 'Kirim Komplain',
+                onPressed: _isSubmitting ? null : _submitComplaint,
+                icon: Icons.send_rounded,
+                loading: _isSubmitting,
               ),
             ],
           ),

@@ -34,6 +34,7 @@ class LocationSectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     if (service['shipping_method'] == 'antar') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,7 +42,7 @@ class LocationSectionWidget extends StatelessWidget {
           Text(
             'Lokasi Service Center',
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontSize: 14.0,
               fontWeight: FontWeight.w600,
             ),
@@ -58,14 +59,14 @@ class LocationSectionWidget extends StatelessWidget {
               Icon(
                 Icons.location_on,
                 size: 16,
-                color: Colors.red,
+                color: colorScheme.error,
               ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Jl. Raya Kalimalang No.46, RT.7/RW.1, Duren Sawit, Kec. Duren Sawit, Kota Jakarta Timur, DKI Jakarta 13440',
                   style: GoogleFonts.poppins(
-                    color: Colors.black54,
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 12.0,
                   ),
                 ),
@@ -101,7 +102,7 @@ class LocationSectionWidget extends StatelessWidget {
           Text(
             'Lokasi Penjemputan',
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontSize: 14.0,
               fontWeight: FontWeight.w600,
             ),
@@ -118,14 +119,14 @@ class LocationSectionWidget extends StatelessWidget {
               Icon(
                 Icons.location_on,
                 size: 16,
-                color: Colors.red,
+                color: colorScheme.error,
               ),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Koordinat: ${service['latitude']}, ${service['longitude']}',
                   style: GoogleFonts.poppins(
-                    color: Colors.black54,
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 12.0,
                   ),
                 ),
@@ -139,18 +140,18 @@ class LocationSectionWidget extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.map, color: Colors.blue, size: 16),
+                      Icon(Icons.map, color: colorScheme.primary, size: 16),
                       SizedBox(width: 4),
                       Text(
                         'Buka Maps',
                         style: GoogleFonts.poppins(
-                          color: Colors.blue,
+                          color: colorScheme.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),

@@ -15,6 +15,7 @@ class DocumentationSectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     // Dokumentasi biasa dari service
     Map<String, List<Map<String, dynamic>>> serviceDocs = {
       'damage': [], // Foto Kerusakan
@@ -68,7 +69,7 @@ class DocumentationSectionWidget extends StatelessWidget {
       return Text(
         'Belum ada dokumentasi',
         style: GoogleFonts.poppins(
-          color: Colors.grey[600],
+          color: colorScheme.onSurfaceVariant,
           fontStyle: FontStyle.italic,
         ),
       );
@@ -81,9 +82,9 @@ class DocumentationSectionWidget extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,7 +94,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: Colors.blue,
+                    color: colorScheme.primary,
                   ),
                 ),
                 if (serviceDocs['damage']!.isNotEmpty) ...[
@@ -103,7 +104,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -116,7 +117,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -129,7 +130,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -142,7 +143,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
-                      color: Colors.grey[700],
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -157,9 +158,9 @@ class DocumentationSectionWidget extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: colorScheme.surfaceContainerHigh,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +170,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: Colors.red,
+                    color: colorScheme.error,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -181,13 +182,13 @@ class DocumentationSectionWidget extends StatelessWidget {
                       Icon(
                         Icons.calendar_today,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                       SizedBox(width: 8),
                       Text(
                         _formatDate(complaints[0]['created_at']),
                         style: GoogleFonts.poppins(
-                          color: Colors.grey[600],
+                          color: colorScheme.onSurfaceVariant,
                           fontSize: 12,
                         ),
                       ),
@@ -202,7 +203,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                       ? complaints[0]['description']
                       : 'Tidak ada deskripsi komplain',
                   style: GoogleFonts.poppins(
-                    color: Colors.grey[700],
+                    color: colorScheme.onSurfaceVariant,
                     fontSize: 14,
                     height: 1.5,
                   ),
@@ -214,7 +215,7 @@ class DocumentationSectionWidget extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
-                      color: Colors.red,
+                      color: colorScheme.error,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -230,6 +231,7 @@ class DocumentationSectionWidget extends StatelessWidget {
 
   Widget _buildDocumentationGrid(
       BuildContext context, List<Map<String, dynamic>> docs) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
@@ -250,8 +252,8 @@ class DocumentationSectionWidget extends StatelessWidget {
           onTap: () => showDocumentationPreview(context, url, isVideo),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey[100],
-              border: Border.all(color: Colors.grey[300]!),
+              color: colorScheme.surfaceContainerHighest,
+              border: Border.all(color: colorScheme.outline),
               borderRadius: BorderRadius.circular(8),
               image: !isVideo && url != null
                   ? DecorationImage(

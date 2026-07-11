@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
@@ -67,23 +69,26 @@ class _TestimonialPageState extends State<TestimonialPage> {
   }
 
   Widget _buildAvatar(Map<String, dynamic> service, firebase_auth.User? user) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: user?.photoURL != null ? Colors.transparent : Colors.blue,
+        color:
+            user?.photoURL != null ? Colors.transparent : colorScheme.primary,
       ),
       child: CircleAvatar(
-        backgroundColor:
-            user?.photoURL != null ? Colors.grey[200] : Colors.blue,
+        backgroundColor: user?.photoURL != null
+            ? colorScheme.surfaceContainerHighest
+            : colorScheme.primary,
         backgroundImage:
             user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
         child: user?.photoURL == null
             ? Text(
                 _initialNama(service['customer_name'], user?.displayName),
                 style: GoogleFonts.poppins(
-                  color: Colors.white,
+                  color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 20,
                 ),
@@ -107,7 +112,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
         animType: AnimType.scale,
         title: 'Peringatan',
         desc: 'Mohon isi testimoni Anda',
-        btnOkColor: Colors.red,
+        btnOkColor: Theme.of(context).colorScheme.error,
         btnOkText: 'OK',
         btnOkOnPress: () {},
       ).show();
@@ -179,7 +184,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
           desc: widget.isUpdate
               ? 'Testimoni Anda berhasil diperbarui'
               : 'Terima kasih atas testimoni Anda',
-          btnOkColor: Colors.blue,
+          btnOkColor: Theme.of(context).colorScheme.primary,
           btnOkText: 'OK',
           btnOkOnPress: () {
             Navigator.pushAndRemoveUntil(
@@ -220,7 +225,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
         animType: AnimType.scale,
         title: 'Error',
         desc: errorMessage,
-        btnOkColor: Colors.red,
+        btnOkColor: Theme.of(context).colorScheme.error,
         btnOkText: 'OK',
         btnOkOnPress: () {},
       ).show();
@@ -232,6 +237,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
   @override
   Widget build(BuildContext context) {
     final currentUser = _auth.currentUser;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return WillPopScope(
       onWillPop: () async {
@@ -254,7 +260,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                 'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.black87,
+                  color: colorScheme.onSurface,
                 ),
               ),
               actions: [
@@ -263,7 +269,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                   child: Text(
                     'TIDAK',
                     style: GoogleFonts.poppins(
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -275,7 +281,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                   child: Text(
                     'YA',
                     style: GoogleFonts.poppins(
-                      color: Colors.red,
+                      color: colorScheme.error,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -289,10 +295,10 @@ class _TestimonialPageState extends State<TestimonialPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: colorScheme.surface,
           elevation: 0,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.black87),
+            icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
             onPressed: () async {
               if (_isSubmitting) return;
 
@@ -311,7 +317,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                       'Data yang telah diisi akan hilang. Anda yakin ingin membatalkan?',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.black87,
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     actions: [
@@ -320,7 +326,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                         child: Text(
                           'TIDAK',
                           style: GoogleFonts.poppins(
-                            color: Colors.grey[600],
+                            color: colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -332,7 +338,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                         child: Text(
                           'YA',
                           style: GoogleFonts.poppins(
-                            color: Colors.red,
+                            color: colorScheme.error,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -351,60 +357,54 @@ class _TestimonialPageState extends State<TestimonialPage> {
           title: Text(
             widget.isUpdate ? 'Update Testimoni' : 'Tulis Testimoni',
             style: GoogleFonts.poppins(
-              color: Colors.black87,
+              color: colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
         body: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      _buildAvatar(widget.service, currentUser),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Service #${widget.service['id']}',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
+              AnrCard(
+                child: Row(
+                  children: [
+                    _buildAvatar(widget.service, currentUser),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Service #${widget.service['id']}',
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              widget.service['device']
-                                          ?.toString()
-                                          .toLowerCase() ==
-                                      'android'
-                                  ? '${widget.service['brand']} - ${widget.service['model']}'
-                                  : '${widget.service['brand']} - ${widget.service['model']}',
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey[600],
-                              ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            widget.service['device']
+                                        ?.toString()
+                                        .toLowerCase() ==
+                                    'android'
+                                ? '${widget.service['brand']} - ${widget.service['model']}'
+                                : '${widget.service['brand']} - ${widget.service['model']}',
+                            style: GoogleFonts.poppins(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: 24),
-              Text(
-                'Rating Anda',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              AnrSectionHeader(
+                title: 'Rating Anda',
+                subtitle: 'Pilih penilaian untuk layanan ini.',
               ),
               SizedBox(height: 8),
               Row(
@@ -421,7 +421,7 @@ class _TestimonialPageState extends State<TestimonialPage> {
                       padding: EdgeInsets.only(right: index == 4 ? 0 : 4),
                       child: Icon(
                         index < _currentRating ? Icons.star : Icons.star_border,
-                        color: Colors.amber,
+                        color: AppColors.warning,
                         size: MediaQuery.of(context).size.width < 360 ? 20 : 28,
                       ),
                     ),
@@ -430,26 +430,14 @@ class _TestimonialPageState extends State<TestimonialPage> {
               ),
               SizedBox(height: 24),
               if (widget.isUpdate && _previousTestimonial != null) ...[
-                Text(
-                  'Testimoni Sebelumnya',
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
+                AnrSectionHeader(title: 'Testimoni Sebelumnya'),
                 SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
+                AnrCard(
+                  color: colorScheme.surfaceContainerHighest,
                   child: Text(
                     _previousTestimonial!,
                     style: GoogleFonts.poppins(
-                      color: Colors.grey[700],
+                      color: colorScheme.onSurfaceVariant,
                       fontSize: 14,
                       height: 1.5,
                     ),
@@ -457,12 +445,9 @@ class _TestimonialPageState extends State<TestimonialPage> {
                 ),
                 SizedBox(height: 24),
               ],
-              Text(
-                widget.isUpdate ? 'Update Testimoni' : 'Testimoni',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
+              AnrSectionHeader(
+                title: widget.isUpdate ? 'Update Testimoni' : 'Testimoni',
+                subtitle: 'Bagikan pengalaman Anda secara singkat dan jelas.',
               ),
               SizedBox(height: 8),
               TextField(
@@ -473,42 +458,17 @@ class _TestimonialPageState extends State<TestimonialPage> {
                   hintText: widget.isUpdate
                       ? 'Tulis testimoni baru Anda...'
                       : 'Bagikan pengalaman Anda...',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: _isSubmitting ? Colors.grey[100] : Colors.grey[50],
+                  fillColor: _isSubmitting
+                      ? colorScheme.surfaceContainerHighest
+                      : colorScheme.surfaceContainerHigh,
                 ),
               ),
               SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitTestimonial,
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    disabledBackgroundColor: Colors.blue.withOpacity(0.6),
-                  ),
-                  child: _isSubmitting
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        )
-                      : Text(
-                          widget.isUpdate
-                              ? 'Update Testimoni'
-                              : 'Kirim Testimoni',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                ),
+              AnrButton(
+                label: widget.isUpdate ? 'Update Testimoni' : 'Kirim Testimoni',
+                onPressed: _isSubmitting ? null : _submitTestimonial,
+                icon: widget.isUpdate ? Icons.save_rounded : Icons.send_rounded,
+                loading: _isSubmitting,
               ),
             ],
           ),

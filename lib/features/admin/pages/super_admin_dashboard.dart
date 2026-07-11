@@ -7,6 +7,8 @@ import 'package:servicehponline/features/admin/pages/system_settings_page.dart';
 import 'package:servicehponline/features/admin/pages/database_backup_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:servicehponline/features/auth/pages/login_page.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class SuperAdminDashboard extends StatefulWidget {
   const SuperAdminDashboard({Key? key}) : super(key: key);
@@ -101,7 +103,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Super Admin Dashboard'),
+        title: AnrWordmark(fontSize: 22),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
@@ -119,14 +121,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Admin Info Panel
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
+                    AnrCard(
+                      color: Theme.of(context).colorScheme.primaryContainer,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -135,7 +131,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
                             ),
                           ),
                           SizedBox(height: 8),
@@ -158,7 +156,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         _buildMenuCard(
                           icon: Icons.system_update,
                           title: 'Kelola Versi Aplikasi',
-                          color: Colors.green,
+                          color: AppColors.success,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -188,7 +186,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         _buildMenuCard(
                           icon: Icons.settings,
                           title: 'Pengaturan Sistem',
-                          color: Colors.orange,
+                          color: AppColors.warning,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -203,7 +201,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                         _buildMenuCard(
                           icon: Icons.backup,
                           title: 'Backup Database',
-                          color: Colors.blue,
+                          color: Theme.of(context).colorScheme.primary,
                           onTap: () {
                             Navigator.push(
                               context,
@@ -219,14 +217,9 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     SizedBox(height: 24),
 
                     // System Status Panel
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
+                    AnrCard(
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -240,7 +233,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           SizedBox(height: 8),
                           Row(
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green),
+                              Icon(Icons.check_circle,
+                                  color: AppColors.success),
                               SizedBox(width: 8),
                               Text('Database: Terhubung'),
                             ],
@@ -248,7 +242,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                           SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(Icons.check_circle, color: Colors.green),
+                              Icon(Icons.check_circle,
+                                  color: AppColors.success),
                               SizedBox(width: 8),
                               Text('Storage: Terhubung'),
                             ],
@@ -269,34 +264,27 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return InkWell(
+    return AnrCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: color.withAlpha(25),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withAlpha(127)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 48,
-              color: color,
+      color: color.withValues(alpha: 0.08),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: 48,
+            color: color,
+          ),
+          SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
-            SizedBox(height: 16),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: color.withAlpha(204),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

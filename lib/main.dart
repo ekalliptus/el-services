@@ -13,7 +13,8 @@ import 'package:servicehponline/features/user/widgets/request_service_flow_widge
 import 'package:servicehponline/features/user/pages/service_history_page.dart';
 import 'package:servicehponline/features/admin/admin_dashboard.dart';
 import 'package:servicehponline/features/admin/pages/super_admin_dashboard.dart';
-import 'package:servicehponline/core/constants/constants.dart';
+import 'package:servicehponline/core/theme/app_theme.dart';
+import 'package:servicehponline/core/theme/theme_provider.dart';
 import 'package:servicehponline/core/services/supabase_config.dart';
 import 'package:provider/provider.dart';
 import 'package:servicehponline/core/services/realtime_service.dart';
@@ -119,6 +120,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         BlocProvider(
           create: (context) => AuthBloc()..add(AuthCheckRequested()),
         ),
@@ -130,72 +132,23 @@ class _MyAppState extends State<MyApp> {
           create: (_) => UpdateService(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Service HP Online',
-        debugShowCheckedModeBanner: false,
-        localizationsDelegates: [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: [
-          const Locale('id', 'ID'),
-          const Locale('en', 'US'),
-        ],
-        locale: const Locale('id', 'ID'),
-        theme: ThemeData(
-          scaffoldBackgroundColor: Colors.white,
-          appBarTheme: AppBarTheme(
-            backgroundColor: Colors.white,
-            elevation: 0,
-            iconTheme: IconThemeData(color: Constants.primaryColor),
-            titleTextStyle: TextStyle(
-              color: Colors.black87,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-            centerTitle: false,
-            toolbarHeight: 60,
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Constants.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              padding: EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: Colors.white,
-            labelStyle: TextStyle(color: Colors.black54),
-            prefixIconColor: Colors.black54,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Constants.primaryColor),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.red),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.red),
-            ),
-          ),
-        ),
-        initialRoute: '/',
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) => MaterialApp(
+          title: 'ANRServices',
+          debugShowCheckedModeBanner: false,
+          localizationsDelegates: [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: [
+            const Locale('id', 'ID'),
+            const Locale('en', 'US'),
+          ],
+          locale: const Locale('id', 'ID'),
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: themeProvider.mode,
         routes: {
           '/': (context) {
             // Periksa pembaruan aplikasi setiap kali aplikasi berjalan
@@ -297,6 +250,7 @@ class _MyAppState extends State<MyApp> {
           '/profile_setup': (context) =>
               const ProfileSetupPage(isFirstTime: true),
         },
+        ),
       ),
     );
   }

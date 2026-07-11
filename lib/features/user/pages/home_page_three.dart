@@ -19,6 +19,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:servicehponline/features/user/widgets/pattern_lock_dialog.dart';
 import 'package:flutter/services.dart';
+import 'package:servicehponline/core/theme/app_colors.dart';
+import 'package:servicehponline/core/widgets/widgets.dart';
 
 class HomePageThree extends StatefulWidget {
   final String selectedDevice;
@@ -294,12 +296,15 @@ class _HomePageThreeState extends State<HomePageThree>
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.camera_alt,
-                                color: Colors.blue,
+                                color: Theme.of(context).colorScheme.primary,
                                 size: 32,
                               ),
                             ),
@@ -307,7 +312,9 @@ class _HomePageThreeState extends State<HomePageThree>
                             Text(
                               'Kamera',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -325,12 +332,12 @@ class _HomePageThreeState extends State<HomePageThree>
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: AppColors.success.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.photo_library,
-                                color: Colors.green,
+                                color: AppColors.success,
                                 size: 32,
                               ),
                             ),
@@ -338,7 +345,9 @@ class _HomePageThreeState extends State<HomePageThree>
                             Text(
                               'Galeri',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -362,12 +371,15 @@ class _HomePageThreeState extends State<HomePageThree>
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.videocam,
-                                color: Colors.blue,
+                                color: Theme.of(context).colorScheme.primary,
                                 size: 32,
                               ),
                             ),
@@ -375,7 +387,9 @@ class _HomePageThreeState extends State<HomePageThree>
                             Text(
                               'Kamera',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -393,12 +407,12 @@ class _HomePageThreeState extends State<HomePageThree>
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: AppColors.success.withValues(alpha: 0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.video_library,
-                                color: Colors.green,
+                                color: AppColors.success,
                                 size: 32,
                               ),
                             ),
@@ -406,7 +420,9 @@ class _HomePageThreeState extends State<HomePageThree>
                             Text(
                               'Galeri',
                               style: GoogleFonts.poppins(
-                                color: Colors.grey[700],
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -493,7 +509,9 @@ class _HomePageThreeState extends State<HomePageThree>
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Theme.of(context).colorScheme.error),
       );
     } finally {
       if (mounted) {
@@ -508,7 +526,7 @@ class _HomePageThreeState extends State<HomePageThree>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Opacity(
           opacity: isGpsEnabled ? 1.0 : 0.5,
@@ -526,23 +544,10 @@ class _HomePageThreeState extends State<HomePageThree>
                       children: [
                         PageIndicator(currentPage: 2, darkMode: false),
                         SizedBox(height: 20.0),
-                        Text(
-                          "Data Service",
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 32.0,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        SizedBox(height: 12.0),
-                        Text(
-                          "Lengkapi data berikut dengan benar\nsupaya cepat kami setujui proses perbaikan",
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontSize: 16.0,
-                            height: 1.5,
-                          ),
+                        const AnrSectionHeader(
+                          title: 'Data Service',
+                          subtitle:
+                              'Lengkapi data berikut agar proses perbaikan dapat segera ditinjau.',
                         ),
                       ],
                     ),
@@ -561,20 +566,21 @@ class _HomePageThreeState extends State<HomePageThree>
                             Container(
                               padding: EdgeInsets.all(16.0),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                                 borderRadius: BorderRadius.circular(16.0),
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(
+                                    color:
+                                        Theme.of(context).colorScheme.outline),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Detail Perangkat',
-                                    style: TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 18.0,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(height: 16.0),
                                   _buildDetailItem(
@@ -606,8 +612,12 @@ class _HomePageThreeState extends State<HomePageThree>
                                           ),
                                           borderSide: BorderSide(
                                             color: _brandFieldHighlighted
-                                                ? Colors.red
-                                                : Colors.grey[300]!,
+                                                ? Theme.of(context)
+                                                    .colorScheme
+                                                    .error
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .outline,
                                             width: _brandFieldHighlighted
                                                 ? 2.0
                                                 : 1.0,
@@ -618,7 +628,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                             12.0,
                                           ),
                                           borderSide: BorderSide(
-                                            color: Colors.blue,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
                                           ),
                                         ),
                                         errorBorder: OutlineInputBorder(
@@ -626,7 +638,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                             12.0,
                                           ),
                                           borderSide: BorderSide(
-                                            color: Colors.red,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .error,
                                           ),
                                         ),
                                         focusedErrorBorder: OutlineInputBorder(
@@ -634,7 +648,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                             12.0,
                                           ),
                                           borderSide: BorderSide(
-                                            color: Colors.red,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .error,
                                             width: 2,
                                           ),
                                         ),
@@ -664,7 +680,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                             'Model/Tipe HP',
                                             style: GoogleFonts.poppins(
                                               fontWeight: FontWeight.w500,
-                                              color: Colors.black87,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface,
                                             ),
                                           ),
                                           SizedBox(width: 8),
@@ -673,7 +691,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                             style: GoogleFonts.poppins(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w400,
-                                              color: Colors.red[700],
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .error,
                                             ),
                                           ),
                                         ],
@@ -697,8 +717,12 @@ class _HomePageThreeState extends State<HomePageThree>
                                             ),
                                             borderSide: BorderSide(
                                               color: _modelFieldHighlighted
-                                                  ? Colors.red
-                                                  : Colors.grey[300]!,
+                                                  ? Theme.of(context)
+                                                      .colorScheme
+                                                      .error
+                                                  : Theme.of(context)
+                                                      .colorScheme
+                                                      .outline,
                                               width: _modelFieldHighlighted
                                                   ? 2.0
                                                   : 1.0,
@@ -709,7 +733,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                               12.0,
                                             ),
                                             borderSide: BorderSide(
-                                              color: Colors.blue,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
                                             ),
                                           ),
                                           errorBorder: OutlineInputBorder(
@@ -717,7 +743,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                               12.0,
                                             ),
                                             borderSide: BorderSide(
-                                              color: Colors.red,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .error,
                                             ),
                                           ),
                                           focusedErrorBorder:
@@ -725,7 +753,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                             borderRadius:
                                                 BorderRadius.circular(12.0),
                                             borderSide: BorderSide(
-                                              color: Colors.red,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .error,
                                               width: 2,
                                             ),
                                           ),
@@ -748,9 +778,11 @@ class _HomePageThreeState extends State<HomePageThree>
                             Container(
                               padding: EdgeInsets.all(16.0),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                                 borderRadius: BorderRadius.circular(16.0),
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(
+                                    color:
+                                        Theme.of(context).colorScheme.outline),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,11 +791,12 @@ class _HomePageThreeState extends State<HomePageThree>
                                     children: [
                                       Text(
                                         'Keterangan Kerusakan',
-                                        style: TextStyle(
-                                          color: Colors.black87,
-                                          fontSize: 18.0,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                       ),
                                       SizedBox(width: 8.0),
                                       Text(
@@ -771,7 +804,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                         style: GoogleFonts.poppins(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w400,
-                                          color: Colors.blue[700],
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
                                         ),
                                       ),
                                     ],
@@ -794,7 +829,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                           12.0,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Colors.grey[300]!,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline,
                                         ),
                                       ),
                                       focusedBorder: OutlineInputBorder(
@@ -802,7 +839,9 @@ class _HomePageThreeState extends State<HomePageThree>
                                           12.0,
                                         ),
                                         borderSide: BorderSide(
-                                          color: Colors.blue,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
                                         ),
                                       ),
                                     ),
@@ -815,29 +854,10 @@ class _HomePageThreeState extends State<HomePageThree>
                             SizedBox(height: 20.0),
                             _buildDevicePasswordSection(),
                             SizedBox(height: 20.0),
-                            ElevatedButton(
+                            AnrButton(
+                              label: 'Lanjutkan',
                               onPressed: _isLoading ? null : _createService,
-                              child: _isLoading
-                                  ? SizedBox(
-                                      width: 24.0,
-                                      height: 24.0,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.0,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                          Colors.white,
-                                        ),
-                                      ),
-                                    )
-                                  : Text('Lanjutkan'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(vertical: 16.0),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                              ),
+                              loading: _isLoading,
                             ),
                           ],
                         ),
@@ -857,20 +877,19 @@ class _HomePageThreeState extends State<HomePageThree>
     return Container(
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Data Diri',
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 18.0,
-              fontWeight: FontWeight.w500,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 16),
           // Nama Lengkap
@@ -883,7 +902,7 @@ class _HomePageThreeState extends State<HomePageThree>
                     'Nama Lengkap',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(width: 8),
@@ -892,7 +911,7 @@ class _HomePageThreeState extends State<HomePageThree>
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Colors.red[700],
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ],
@@ -912,8 +931,8 @@ class _HomePageThreeState extends State<HomePageThree>
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
                       color: _nameFieldHighlighted
-                          ? Colors.red
-                          : Colors.grey[300]!,
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.outline,
                       width: _nameFieldHighlighted ? 2.0 : 1.0,
                     ),
                   ),
@@ -949,7 +968,7 @@ class _HomePageThreeState extends State<HomePageThree>
                     'Nomor WhatsApp',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(width: 8),
@@ -958,7 +977,7 @@ class _HomePageThreeState extends State<HomePageThree>
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Colors.red[700],
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ],
@@ -978,14 +997,15 @@ class _HomePageThreeState extends State<HomePageThree>
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
                       color: _whatsappFieldHighlighted
-                          ? Colors.red
-                          : Colors.grey[300]!,
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.outline,
                       width: _whatsappFieldHighlighted ? 2.0 : 1.0,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.blue),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary),
                   ),
                 ),
                 validator: (value) {
@@ -1019,7 +1039,7 @@ class _HomePageThreeState extends State<HomePageThree>
                     'Alamat',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   SizedBox(width: 8),
@@ -1028,7 +1048,7 @@ class _HomePageThreeState extends State<HomePageThree>
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Colors.red[700],
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ],
@@ -1049,22 +1069,25 @@ class _HomePageThreeState extends State<HomePageThree>
                     borderRadius: BorderRadius.circular(12.0),
                     borderSide: BorderSide(
                       color: _addressFieldHighlighted
-                          ? Colors.red
-                          : Colors.grey[300]!,
+                          ? Theme.of(context).colorScheme.error
+                          : Theme.of(context).colorScheme.outline,
                       width: _addressFieldHighlighted ? 2.0 : 1.0,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: Colors.blue),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: Colors.red),
+                    borderSide:
+                        BorderSide(color: Theme.of(context).colorScheme.error),
                   ),
                   focusedErrorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12.0),
-                    borderSide: BorderSide(color: Colors.red, width: 2),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.error, width: 2),
                   ),
                 ),
                 validator: (value) {
@@ -1107,20 +1130,23 @@ class _HomePageThreeState extends State<HomePageThree>
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.history, size: 16, color: Colors.blue),
+            Icon(Icons.history,
+                size: 16, color: Theme.of(context).colorScheme.primary),
             SizedBox(width: 4),
             Text(
               title,
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.blue,
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -1134,12 +1160,15 @@ class _HomePageThreeState extends State<HomePageThree>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.black54, fontSize: 14.0)),
+        Text(label,
+            style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 14.0)),
         SizedBox(height: 4.0),
         Text(
           value,
           style: TextStyle(
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
             fontSize: 14.0,
             fontWeight: FontWeight.w500,
           ),
@@ -1197,9 +1226,9 @@ class _HomePageThreeState extends State<HomePageThree>
     return Container(
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1208,11 +1237,10 @@ class _HomePageThreeState extends State<HomePageThree>
             children: [
               Text(
                 'Dokumentasi',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
               SizedBox(width: 8.0),
               Text(
@@ -1220,7 +1248,7 @@ class _HomePageThreeState extends State<HomePageThree>
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w400,
-                  color: Colors.blue[700],
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],
@@ -1235,7 +1263,7 @@ class _HomePageThreeState extends State<HomePageThree>
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w500,
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               SizedBox(height: 8),
@@ -1246,12 +1274,15 @@ class _HomePageThreeState extends State<HomePageThree>
                       Icon(
                         Icons.photo_library,
                         size: 48.0,
-                        color: Colors.black54,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       SizedBox(height: 8.0),
                       Text(
                         'Belum ada foto kerusakan',
-                        style: TextStyle(color: Colors.black54, fontSize: 16.0),
+                        style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 16.0),
                       ),
                     ],
                   ),
@@ -1290,12 +1321,14 @@ class _HomePageThreeState extends State<HomePageThree>
                             child: Container(
                               padding: EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.black54,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.close,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                                 size: 16,
                               ),
                             ),
@@ -1332,7 +1365,7 @@ class _HomePageThreeState extends State<HomePageThree>
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w500,
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               SizedBox(height: 8),
@@ -1343,12 +1376,15 @@ class _HomePageThreeState extends State<HomePageThree>
                       Icon(
                         Icons.photo_library,
                         size: 48.0,
-                        color: Colors.black54,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                       SizedBox(height: 8.0),
                       Text(
                         'Belum ada foto tampak belakang',
-                        style: TextStyle(color: Colors.black54, fontSize: 16.0),
+                        style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 16.0),
                       ),
                     ],
                   ),
@@ -1387,12 +1423,14 @@ class _HomePageThreeState extends State<HomePageThree>
                             child: Container(
                               padding: EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: Colors.black54,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.close,
-                                color: Colors.white,
+                                color: Theme.of(context).colorScheme.surface,
                                 size: 16,
                               ),
                             ),
@@ -1429,7 +1467,7 @@ class _HomePageThreeState extends State<HomePageThree>
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.w500,
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               SizedBox(height: 8),
@@ -1437,11 +1475,17 @@ class _HomePageThreeState extends State<HomePageThree>
                 Center(
                   child: Column(
                     children: [
-                      Icon(Icons.videocam, size: 48.0, color: Colors.black54),
+                      Icon(Icons.videocam,
+                          size: 48.0,
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
                       SizedBox(height: 8.0),
                       Text(
                         'Belum ada video',
-                        style: TextStyle(color: Colors.black54, fontSize: 16.0),
+                        style: TextStyle(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 16.0),
                       ),
                     ],
                   ),
@@ -1475,7 +1519,8 @@ class _HomePageThreeState extends State<HomePageThree>
                         child: Container(
                           padding: EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.black54,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
@@ -1529,20 +1574,19 @@ class _HomePageThreeState extends State<HomePageThree>
     return Container(
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Pilih Jasa Pengiriman',
-            style: TextStyle(
-              color: Colors.black87,
-              fontSize: 18.0,
-              fontWeight: FontWeight.w500,
-            ),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 16.0),
           Row(
@@ -1559,8 +1603,8 @@ class _HomePageThreeState extends State<HomePageThree>
                   label: Text('Jemput'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _selectedShipping == 'Jemput'
-                        ? Colors.blue
-                        : Colors.grey[300],
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
                     padding: EdgeInsets.symmetric(
                       horizontal: 24.0,
                       vertical: 12.0,
@@ -1584,8 +1628,8 @@ class _HomePageThreeState extends State<HomePageThree>
                   label: Text('Antar'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _selectedShipping == 'Antar'
-                        ? Colors.blue
-                        : Colors.grey[300],
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outline,
                     padding: EdgeInsets.symmetric(
                       horizontal: 24.0,
                       vertical: 12.0,
@@ -1603,7 +1647,7 @@ class _HomePageThreeState extends State<HomePageThree>
             Text(
               'Pilih Lokasi Penjemputan',
               style: TextStyle(
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14.0,
                 fontWeight: FontWeight.w500,
               ),
@@ -1619,7 +1663,9 @@ class _HomePageThreeState extends State<HomePageThree>
               SizedBox(height: 8.0),
               Text(
                 'Koordinat: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}',
-                style: TextStyle(color: Colors.black54, fontSize: 12.0),
+                style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12.0),
               ),
             ],
           ],
@@ -1628,17 +1674,23 @@ class _HomePageThreeState extends State<HomePageThree>
             Container(
               padding: EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12.0),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue, size: 24.0),
+                  Icon(Icons.info_outline,
+                      color: Theme.of(context).colorScheme.primary, size: 24.0),
                   SizedBox(width: 12.0),
                   Expanded(
                     child: Text(
                       'Silakan antar perangkat Anda ke alamat service center kami',
-                      style: TextStyle(color: Colors.blue, fontSize: 14.0),
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontSize: 14.0),
                     ),
                   ),
                 ],
@@ -1648,7 +1700,7 @@ class _HomePageThreeState extends State<HomePageThree>
             Text(
               'Lokasi Service Center',
               style: TextStyle(
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14.0,
                 fontWeight: FontWeight.w500,
               ),
@@ -1662,12 +1714,15 @@ class _HomePageThreeState extends State<HomePageThree>
             SizedBox(height: 8.0),
             Row(
               children: [
-                Icon(Icons.location_on, size: 16, color: Colors.red),
+                Icon(Icons.location_on,
+                    size: 16, color: Theme.of(context).colorScheme.error),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Jl. Manunggal Juang II No.40, RT./rw/RW.06, Sukapura, Kec. Cilincing, Jkt Utara, Daerah Khusus Ibukota Jakarta 14140',
-                    style: TextStyle(color: Colors.black54, fontSize: 12.0),
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12.0),
                   ),
                 ),
               ],
@@ -1678,7 +1733,7 @@ class _HomePageThreeState extends State<HomePageThree>
               icon: Icon(Icons.directions),
               label: Text('Buka di Google Maps'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,
                 padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
                 shape: RoundedRectangleBorder(
@@ -1700,9 +1755,9 @@ class _HomePageThreeState extends State<HomePageThree>
       key: _passwordSectionKey,
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16.0),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1711,11 +1766,10 @@ class _HomePageThreeState extends State<HomePageThree>
             children: [
               Text(
                 'Kata Sandi Perangkat',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
               if (isPasswordRequired) ...[
                 SizedBox(width: 8),
@@ -1724,7 +1778,7 @@ class _HomePageThreeState extends State<HomePageThree>
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Colors.red[700],
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
               ] else ...[
@@ -1734,7 +1788,7 @@ class _HomePageThreeState extends State<HomePageThree>
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: Colors.orange[700],
+                    color: AppColors.warning,
                   ),
                 ),
               ],
@@ -1754,22 +1808,25 @@ class _HomePageThreeState extends State<HomePageThree>
                 borderRadius: BorderRadius.circular(12.0),
                 borderSide: BorderSide(
                   color: _passwordFieldHighlighted
-                      ? Colors.red
-                      : Colors.grey[300]!,
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.outline,
                   width: _passwordFieldHighlighted ? 2.0 : 1.0,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
-                borderSide: BorderSide(color: Colors.blue),
+                borderSide:
+                    BorderSide(color: Theme.of(context).colorScheme.primary),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
-                borderSide: BorderSide(color: Colors.red),
+                borderSide:
+                    BorderSide(color: Theme.of(context).colorScheme.error),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12.0),
-                borderSide: BorderSide(color: Colors.red, width: 2),
+                borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.error, width: 2),
               ),
             ),
             hint: Text('Pilih Kata Sandi Perangkat'),
@@ -1812,19 +1869,23 @@ class _HomePageThreeState extends State<HomePageThree>
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.outline),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.blue),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.primary),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.red),
+                  borderSide:
+                      BorderSide(color: Theme.of(context).colorScheme.error),
                 ),
                 focusedErrorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12.0),
-                  borderSide: BorderSide(color: Colors.red, width: 2),
+                  borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.error, width: 2),
                 ),
                 hintText: _selectedPasswordType == 'PIN'
                     ? 'Contoh: 1234 (min. 4 digit)'
@@ -1856,17 +1917,19 @@ class _HomePageThreeState extends State<HomePageThree>
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green),
+                  Icon(Icons.check_circle, color: AppColors.success),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Pola telah diatur',
-                      style: GoogleFonts.poppins(color: Colors.grey[700]),
+                      style: GoogleFonts.poppins(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant),
                     ),
                   ),
                 ],
@@ -1911,6 +1974,7 @@ class _HomePageThreeState extends State<HomePageThree>
 
   // Helper method untuk mendapatkan icon yang sesuai berdasarkan jenis password
   Widget getPasswordTypeIcon(String passwordType) {
+    final colorScheme = Theme.of(context).colorScheme;
     switch (passwordType) {
       case 'Tidak Ada':
         return Row(
@@ -1918,13 +1982,14 @@ class _HomePageThreeState extends State<HomePageThree>
           children: [
             Icon(
               Icons.no_encryption_outlined,
-              color: Colors.grey[700],
+              color: colorScheme.onSurfaceVariant,
               size: 20,
             ),
             SizedBox(width: 8),
             Text(
               "Tidak Ada",
-              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+              style:
+                  TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
             ),
           ],
         );
@@ -1932,11 +1997,11 @@ class _HomePageThreeState extends State<HomePageThree>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.grid_3x3, color: Colors.orange[700], size: 20),
+            Icon(Icons.grid_3x3, color: AppColors.warning, size: 20),
             SizedBox(width: 8),
             Text(
               "Pola",
-              style: TextStyle(fontSize: 14, color: Colors.orange[700]),
+              style: TextStyle(fontSize: 14, color: AppColors.warning),
             ),
           ],
         );
@@ -1944,11 +2009,11 @@ class _HomePageThreeState extends State<HomePageThree>
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.dialpad, color: Colors.blue[700], size: 20),
+            Icon(Icons.dialpad, color: colorScheme.primary, size: 20),
             SizedBox(width: 8),
             Text(
               "PIN",
-              style: TextStyle(fontSize: 14, color: Colors.blue[700]),
+              style: TextStyle(fontSize: 14, color: colorScheme.primary),
             ),
           ],
         );
@@ -2049,7 +2114,8 @@ class _HomePageThreeState extends State<HomePageThree>
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.white),
+              Icon(Icons.warning_amber_rounded,
+                  color: Theme.of(context).colorScheme.onError),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -2059,7 +2125,7 @@ class _HomePageThreeState extends State<HomePageThree>
               ),
             ],
           ),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
           duration: Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.all(10),
