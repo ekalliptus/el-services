@@ -1,3 +1,33 @@
+# Service HP Online (ANRServices)
+
+Aplikasi mobile layanan servis perangkat (service HP) yang menghubungkan pelanggan dengan teknisi: pemesanan servis, keluhan, testimoni, dan panel admin. Dibangun dengan Flutter untuk Android dan iOS.
+
+## Fitur
+
+- Autentikasi: Firebase Auth dengan email/password dan Google Sign-In.
+- Panel pengguna: pemesanan servis/maintenance, pengajuan komplain, testimoni, profil.
+- Panel admin dan super admin: kelola order, komplain, testimoni, dan versi aplikasi.
+- Peta dan lokasi: `flutter_map` + `geolocator` + `geocoding`.
+- Pembaruan dalam aplikasi (in-app update): APK diunduh dari Supabase Storage, informasi versi dari tabel Supabase.
+
+## Tech Stack
+
+- Flutter (Dart), state management `flutter_bloc`
+- Firebase (Auth, Core), Supabase (database, storage, update APK)
+- `flutter_map`, `geolocator`, `flutter_screenutil`, `webview_flutter`
+
+## Menjalankan
+
+```bash
+cp .env.example .env   # isi kredensial Supabase/Firebase
+flutter pub get
+flutter run
+```
+
+Build APK: `flutter build apk --release`.
+
+## Sistem Update Dalam Aplikasi
+
 # Service HP Online
 
 ## In-App Update System
@@ -56,3 +86,4 @@ CREATE TABLE versions (
 
 - APK yang diunggah harus diinstal secara manual oleh pengguna
 - Pastikan APK ditandatangani dengan kunci yang sama untuk memungkinkan instalasi sebagai pembaruan
+
